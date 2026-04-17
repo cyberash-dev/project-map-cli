@@ -1,0 +1,60 @@
+project:
+  name: express-minimal
+  language: typescript
+  frameworks: [express, typeorm]
+
+root: .
+
+exclude:
+  - "node_modules/**"
+  - "**/*.test.ts"
+
+sections:
+  - contexts
+  - entities
+  - enums
+  - endpoints
+  - storage
+  - metadata
+
+contexts:
+  custom: []
+  auto:
+    min_files: 1
+    known_roles:
+      handlers: HTTP handlers
+      domain: Domain layer
+      entities: Domain entities
+      repositories: Persistence layer
+
+entities:
+  top_n: 10
+  include_fields: true
+  include_private_methods: false
+  importance:
+    method_count: 0.5
+    field_count: 0.3
+    inbound_references: 1.0
+
+enums:
+  base_classes: []
+
+endpoints:
+  framework: express
+  routes_module: null
+  app_var: app
+
+storage:
+  base_class: Base
+  migrations_dir: null
+  last_n: 10
+
+interactions:
+  dir: null
+
+workers:
+  patterns: []
+
+output:
+  markdown: PROJECT_MAP.md
+  json: null

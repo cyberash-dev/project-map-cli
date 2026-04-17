@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+.project-map/cache/
+tests/fixtures/**/PROJECT_MAP.md
+tests/fixtures/**/project-map.json

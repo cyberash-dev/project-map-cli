@@ -1,0 +1,61 @@
+project:
+  name: aiohttp-minimal
+  language: python
+  frameworks: [aiohttp, sqlalchemy, alembic]
+
+root: .
+
+exclude:
+  - "tests/**"
+
+sections:
+  - contexts
+  - entities
+  - enums
+  - endpoints
+  - storage
+  - interactions
+  - workers
+  - metadata
+
+contexts:
+  custom: []
+  auto:
+    min_files: 1
+    known_roles:
+      handlers: HTTP handlers
+      entities: Domain entities
+      interactions: External service clients
+
+entities:
+  top_n: 10
+  include_fields: true
+  include_private_methods: false
+  importance:
+    method_count: 0.5
+    field_count: 0.3
+    inbound_references: 1.0
+
+enums:
+  base_classes: [Enum, IntEnum, StrEnum]
+
+endpoints:
+  framework: aiohttp
+  routes_module: null
+  app_var: null
+
+storage:
+  base_class: Base
+  migrations_dir: migrations
+  last_n: 5
+
+interactions:
+  dir: interactions
+
+workers:
+  patterns:
+    - "class *Worker"
+
+output:
+  markdown: PROJECT_MAP.md
+  json: project-map.json
