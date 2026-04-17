@@ -44,6 +44,14 @@ export class TypeScriptEntitiesAdapter implements ILanguageAdapter<Entity[]> {
         entities.push(proto);
         seen.add(proto.name);
       }
+
+      if (this.language === "typescript") {
+        for (const iface of typeEntitiesIn(file)) {
+          if (seen.has(iface.name)) continue;
+          entities.push(iface);
+          seen.add(iface.name);
+        }
+      }
     }
     return entities;
   }
@@ -177,6 +185,109 @@ function prototypeEntitiesIn(file: ParsedFile): Entity[] {
       referencedFrom: 0,
       importance: 0,
     });
+  }
+  return out;
+}
+
+function typeEntitiesIn(file: ParsedFile): Entity[] {
+  const root = rootOf(file.tree);
+  const out: Entity[] = [];
+
+  for (const iface of findAll(root, (n) => n.type === "interface_declaration")) {
+    const nameNode = iface.childForFieldName("name");
+    if (!nameNode) continue;
+    const name = nameNode.text;
+    if (!name || name.startsWith("_") || name.length < 2) continue;
+
+    const body = firstChild(iface, "object_type") ?? firstChild(iface, "interface_body");
+    const methods = body ? methodSignaturesOf(body) : [];
+    const fields = body ? propertySignaturesOf(body) : [];
+    const bases = interfaceHeritageOf(iface);
+    if (methods.length < 2 && bases.length === 0 && fields.length < 2) continue;
+
+    out.push({
+      name,
+      source: { file: file.relPath, line: line1Based(iface) },
+      inherits: bases,
+      fields,
+      methods: methods.slice(0, 8),
+      referencedFrom: 0,
+      importance: 0,
+    });
+  }
+
+  for (const alias of findAll(root, (n) => n.type === "type_alias_declaration")) {
+    const nameNode = alias.childForFieldName("name");
+    if (!nameNode) continue;
+    const name = nameNode.text;
+    if (!name || name.startsWith("_") || name.length < 2) continue;
+
+    const value = alias.childForFieldName("value");
+    if (!value || value.type !== "object_type") continue;
+    const methods = methodSignaturesOf(value);
+    const fields = propertySignaturesOf(value);
+    if (methods.length < 2 && fields.length < 2) continue;
+
+    out.push({
+      name,
+      source: { file: file.relPath, line: line1Based(alias) },
+      inherits: [],
+      fields,
+      methods: methods.slice(0, 8),
+      referencedFrom: 0,
+      importance: 0,
+    });
+  }
+
+  return out;
+}
+
+function firstChild(node: SyntaxNode, type: string): SyntaxNode | null {
+  for (const c of node.namedChildren) {
+    if (c.type === type) return c;
+  }
+  return null;
+}
+
+function methodSignaturesOf(body: SyntaxNode): string[] {
+  const names: string[] = [];
+  for (const m of body.namedChildren) {
+    if (m.type === "method_signature") {
+      const n = m.childForFieldName("name");
+      if (n) names.push(n.text);
+    }
+  }
+  return names;
+}
+
+function propertySignaturesOf(body: SyntaxNode): Field[] {
+  const fields: Field[] = [];
+  for (const m of body.namedChildren) {
+    if (m.type === "property_signature") {
+      const name = m.childForFieldName("name");
+      const typeNode = m.childForFieldName("type");
+      if (name) {
+        const typeText = typeNode ? typeNode.text.replace(/^:\s*/, "").trim() : null;
+        fields.push({ name: name.text, type: typeText });
+      }
+    }
+  }
+  return fields.slice(0, 12);
+}
+
+function interfaceHeritageOf(iface: SyntaxNode): string[] {
+  const out: string[] = [];
+  const extendsClause = firstChild(iface, "extends_type_clause");
+  if (!extendsClause) return out;
+  for (const c of extendsClause.namedChildren) {
+    if (c.type === "type_identifier" || c.type === "identifier") {
+      out.push(c.text);
+    } else if (c.type === "generic_type") {
+      const typeName = c.childForFieldName("name");
+      if (typeName && (typeName.type === "type_identifier" || typeName.type === "identifier")) {
+        out.push(typeName.text);
+      }
+    }
   }
   return out;
 }

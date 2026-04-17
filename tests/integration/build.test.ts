@@ -122,6 +122,40 @@ describe("typescript-express-minimal fixture", () => {
     const noiseEndpoints = map.endpoints.filter((e) => e.source.file === "handlers/noise.ts");
     expect(noiseEndpoints).toEqual([]);
   });
+
+  it("extracts interfaces and object-type type aliases as entities", async () => {
+    const logger = new ConsoleLogger(false);
+    const loader = new CosmiconfigLoader();
+    const config = await loader.load(TS_FIXTURE, null);
+    if (!config) throw new Error("config missing");
+    const parser = new TreeSitterParserRegistry(ALL_LANGUAGES, logger);
+    const useCase = new BuildProjectMapUseCase({
+      config,
+      walker: new GlobbyWalker(),
+      reader: new NodeFileReader(),
+      parser,
+      clock: new SystemClock(),
+      logger,
+      revision: new GitRevisionProvider(),
+      toolVersion: "test",
+    });
+
+    const { map } = await useCase.execute(TS_FIXTURE);
+    const byName = new Map(map.entities.map((e) => [e.name, e]));
+
+    expect(byName.has("Timestamped")).toBe(true);
+    expect(byName.get("Timestamped")?.fields.map((f) => f.name)).toEqual(["createdAt", "updatedAt"]);
+
+    expect(byName.has("Auditable")).toBe(true);
+    expect(byName.get("Auditable")?.inherits).toEqual(["Identifiable", "Timestamped"]);
+
+    expect(byName.has("UserPayload")).toBe(true);
+    expect(byName.get("UserPayload")?.fields.map((f) => f.name)).toEqual(["id", "email", "status"]);
+
+    // Single-field interface and string-literal union type alias must be skipped
+    expect(byName.has("Identifiable")).toBe(false);
+    expect(byName.has("UserAction")).toBe(false);
+  });
 });
 
 describe("javascript-prototype-minimal fixture", () => {
