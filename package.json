@@ -1,6 +1,6 @@
 {
   "name": "project-map-cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "CLI that builds a deterministic PROJECT_MAP.md architectural map for a single repository (Python, JS/TS, Go, Java, Kotlin)",
   "license": "MIT",
   "author": "cyberash",
