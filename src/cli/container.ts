@@ -9,10 +9,11 @@ import { ConsoleLogger } from "../infrastructure/logger/console.js";
 import { TreeSitterParserRegistry } from "../infrastructure/parser/tree-sitter.js";
 import { GitRevisionProvider } from "../infrastructure/revision/git.js";
 import { InitConfigUseCase } from "../features/init/init.use-case.js";
+import { InstallClaudeHookUseCase } from "../features/install-hooks/install-claude-hook.use-case.js";
 import { InstallGitHookUseCase } from "../features/install-hooks/install-git-hook.use-case.js";
-import { PrintClaudeHookUseCase } from "../features/install-hooks/print-claude-hook.use-case.js";
 import { PrintVersionUseCase } from "../features/version/version.use-case.js";
 import { chmod } from "node:fs/promises";
+import { homedir } from "node:os";
 
 export type Container = {
   toolVersion: string;
@@ -75,6 +76,11 @@ export function installGitHookUseCase(c: Container): InstallGitHookUseCase {
   });
 }
 
-export function printClaudeHookUseCase(): PrintClaudeHookUseCase {
-  return new PrintClaudeHookUseCase();
+export function installClaudeHookUseCase(c: Container): InstallClaudeHookUseCase {
+  return new InstallClaudeHookUseCase({
+    reader: c.reader,
+    writer: c.writer,
+    logger: c.logger,
+    homeDir: () => homedir(),
+  });
 }

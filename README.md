@@ -255,11 +255,13 @@ forget. Install it via:
 
 ```sh
 project-map install-claude-hook --scope project   # or --scope user
+project-map install-claude-hook --scope user --force   # reinstall / update
 ```
 
-That command **prints** the settings.json snippet (it doesn't auto-edit your
-settings — merge it yourself). Paste into `.claude/settings.json` (for just
-this project) or `~/.claude/settings.json` (global).
+The command **writes directly** into `.claude/settings.json` (project) or
+`~/.claude/settings.json` (user), merging with any existing hooks and
+preserving the rest of the file. Idempotent: a second run without
+`--force` detects the existing hook and exits without duplicating.
 
 Effect: every turn the agent sees "PROJECT_MAP.md exists — read it before
 broad searches", gated only on the file being present.

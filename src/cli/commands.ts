@@ -7,8 +7,8 @@ import {
   buildUseCase,
   createContainer,
   initUseCase,
+  installClaudeHookUseCase,
   installGitHookUseCase,
-  printClaudeHookUseCase,
   versionUseCase,
 } from "./container.js";
 import type { Framework, Language } from "../core/domain/language.js";
@@ -130,11 +130,19 @@ export function createProgram(): Command {
 
   program
     .command("install-claude-hook")
-    .description("Print a Claude Code settings.json snippet + CLAUDE.md directive.")
+    .description("Install a Claude Code UserPromptSubmit hook that points the agent at PROJECT_MAP.md.")
     .option("--scope <scope>", "project | user", "project")
-    .action((opts) => {
+    .option("--force", "reinstall even if already present", false)
+    .action(async (opts) => {
       const scope = opts.scope === "user" ? "user" : "project";
-      process.stdout.write(printClaudeHookUseCase().render(scope));
+      const container = createContainer(TOOL_VERSION, false);
+      const useCase = installClaudeHookUseCase(container);
+      const result = await useCase.execute({
+        cwd: process.cwd(),
+        scope,
+        force: Boolean(opts.force),
+      });
+      if (!result.written && !result.alreadyInstalled) process.exitCode = 1;
     });
 
   program
