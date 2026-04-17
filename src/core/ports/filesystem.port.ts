@@ -7,6 +7,7 @@ export type WalkOptions = {
   readonly root: string;
   readonly include: readonly string[];
   readonly exclude: readonly string[];
+  readonly respectGitignore?: boolean;
 };
 
 export interface IFileWalker {

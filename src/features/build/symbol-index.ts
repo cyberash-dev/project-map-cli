@@ -5,11 +5,12 @@ import {
   rootOf,
   type SyntaxNode,
 } from "../../infrastructure/parser/ts-utils.js";
-import type { SymbolIndex } from "./extraction-context.js";
+import type { SymbolIndex, VariableBinding } from "./extraction-context.js";
 
 export function buildSymbolIndex(files: readonly ParsedFile[], language: Language): SymbolIndex {
   const defs = new Map<string, Array<{ file: string; line: number }>>();
   const importsByFile = new Map<string, string[]>();
+  const variables = new Map<string, VariableBinding[]>();
 
   for (const file of files) {
     if (file.language !== language) continue;
@@ -21,6 +22,11 @@ export function buildSymbolIndex(files: readonly ParsedFile[], language: Languag
     }
     const imports = collectImports(root, language);
     importsByFile.set(file.relPath, imports);
+    for (const v of collectVariableBindings(root, language)) {
+      const arr = variables.get(v.name) ?? [];
+      arr.push({ file: file.relPath, line: v.line, factory: v.factory });
+      variables.set(v.name, arr);
+    }
   }
 
   const inbound = new Map<string, number>();
@@ -29,7 +35,7 @@ export function buildSymbolIndex(files: readonly ParsedFile[], language: Languag
       inbound.set(imp, (inbound.get(imp) ?? 0) + 1);
     }
   }
-  return { defs, inbound, importsByFile };
+  return { defs, inbound, importsByFile, variables };
 }
 
 function collectDefNames(
@@ -80,6 +86,51 @@ function collectDefNames(
       break;
   }
   return out;
+}
+
+function collectVariableBindings(
+  root: SyntaxNode,
+  language: Language,
+): Array<{ name: string; line: number; factory: string }> {
+  const out: Array<{ name: string; line: number; factory: string }> = [];
+  if (language !== "typescript" && language !== "javascript") return out;
+
+  for (const decl of findAll(root, (x) => x.type === "variable_declarator")) {
+    const nameNode = decl.childForFieldName("name");
+    if (!nameNode || nameNode.type !== "identifier") continue;
+    const init = decl.childForFieldName("value");
+    if (!init) continue;
+    const factory = factoryOf(init);
+    if (factory === null) continue;
+    out.push({
+      name: nameNode.text,
+      line: nameNode.startPosition.row + 1,
+      factory,
+    });
+  }
+  return out;
+}
+
+function factoryOf(init: SyntaxNode): string | null {
+  if (init.type === "call_expression") {
+    const fn = init.childForFieldName("function");
+    if (!fn) return null;
+    if (fn.type === "identifier") return fn.text;
+    if (fn.type === "member_expression") {
+      const obj = fn.childForFieldName("object");
+      const prop = fn.childForFieldName("property");
+      if (obj && prop) return `${obj.text}.${prop.text}`;
+    }
+    return null;
+  }
+  if (init.type === "new_expression") {
+    const ctor = init.childForFieldName("constructor");
+    if (ctor && (ctor.type === "identifier" || ctor.type === "member_expression")) {
+      return `new ${ctor.text}`;
+    }
+    return null;
+  }
+  return null;
 }
 
 function collectImports(root: SyntaxNode, language: Language): string[] {

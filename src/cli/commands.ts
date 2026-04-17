@@ -1,3 +1,4 @@
+import { createRequire } from "node:module";
 import * as path from "node:path";
 import { Command } from "commander";
 import { renderJson } from "../features/build/rendering/json.js";
@@ -14,7 +15,8 @@ import type { Framework, Language } from "../core/domain/language.js";
 import { ALL_LANGUAGES, FRAMEWORKS_BY_LANGUAGE } from "../core/domain/language.js";
 import { SECTION_IDS, type SectionId } from "../core/domain/project-map.js";
 
-const TOOL_VERSION = "0.1.0";
+const require = createRequire(import.meta.url);
+const TOOL_VERSION = (require("../../package.json") as { version: string }).version;
 
 const ALL_FRAMEWORKS = Array.from(new Set(Object.values(FRAMEWORKS_BY_LANGUAGE).flat()));
 

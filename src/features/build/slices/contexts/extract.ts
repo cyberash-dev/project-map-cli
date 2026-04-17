@@ -12,7 +12,8 @@ export class ContextsExtractor implements IExtractor<BoundedContext[]> {
     for (const file of ctx.files) {
       const parts = file.relPath.split("/");
       if (parts.length < 2) continue;
-      const top = parts.slice(0, Math.min(2, parts.length - 1)).join("/");
+      const maxParts = Math.min(cfg.depth, parts.length - 1);
+      const top = parts.slice(0, maxParts).join("/");
       fileCountsByTopDir.set(top, (fileCountsByTopDir.get(top) ?? 0) + 1);
     }
 

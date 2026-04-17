@@ -18,6 +18,7 @@ export const ConfigFileSchema = z
       frameworks: z.array(z.enum(FRAMEWORK_VALUES)).default([]),
     }),
     root: z.string().default("."),
+    respect_gitignore: z.boolean().default(false),
     exclude: z.array(z.string()).default([]),
     sections: z.array(z.enum(SECTION_VALUES)).default([...SECTION_IDS]),
     overview: z
@@ -33,11 +34,12 @@ export const ConfigFileSchema = z
         auto: z
           .object({
             min_files: z.number().int().positive().default(10),
+            depth: z.number().int().min(1).max(10).default(2),
             known_roles: z.record(z.string(), z.string()).default({}),
           })
-          .default({ min_files: 10, known_roles: {} }),
+          .default({ min_files: 10, depth: 2, known_roles: {} }),
       })
-      .default({ custom: [], auto: { min_files: 10, known_roles: {} } }),
+      .default({ custom: [], auto: { min_files: 10, depth: 2, known_roles: {} } }),
     entities: z
       .object({
         top_n: z.number().int().positive().default(30),

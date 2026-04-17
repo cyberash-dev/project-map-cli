@@ -1,7 +1,7 @@
-import { readFile } from "node:fs/promises";
+import { readFile, rm, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { ALL_LANGUAGES } from "../../src/core/domain/language.js";
 import { BuildProjectMapUseCase } from "../../src/features/build/build.use-case.js";
 import { renderMarkdown } from "../../src/features/build/rendering/markdown.js";
@@ -15,6 +15,9 @@ import { GitRevisionProvider } from "../../src/infrastructure/revision/git.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.resolve(HERE, "../fixtures/python-aiohttp-minimal");
+const TS_FIXTURE = path.resolve(HERE, "../fixtures/typescript-express-minimal");
+const PROTO_FIXTURE = path.resolve(HERE, "../fixtures/javascript-prototype-minimal");
+const GITIGNORE_FIXTURE = path.resolve(HERE, "../fixtures/javascript-gitignore-minimal");
 
 describe("python-aiohttp-minimal fixture", () => {
   it("extracts entities, enums, endpoints, storage, workers, interactions", async () => {
@@ -83,6 +86,114 @@ describe("python-aiohttp-minimal fixture", () => {
     const a = renderMarkdown((await new BuildProjectMapUseCase(deps).execute(FIXTURE)).map, config);
     const b = renderMarkdown((await new BuildProjectMapUseCase(deps).execute(FIXTURE)).map, config);
     expect(stripTimestamps(a)).toEqual(stripTimestamps(b));
+  });
+});
+
+describe("typescript-express-minimal fixture", () => {
+  it("extracts express router endpoints and rejects non-framework .get/.post calls", async () => {
+    const logger = new ConsoleLogger(false);
+    const loader = new CosmiconfigLoader();
+    const config = await loader.load(TS_FIXTURE, null);
+    expect(config).not.toBeNull();
+    if (!config) return;
+
+    const parser = new TreeSitterParserRegistry(ALL_LANGUAGES, logger);
+    const useCase = new BuildProjectMapUseCase({
+      config,
+      walker: new GlobbyWalker(),
+      reader: new NodeFileReader(),
+      parser,
+      clock: new SystemClock(),
+      logger,
+      revision: new GitRevisionProvider(),
+      toolVersion: "test",
+    });
+
+    const { map } = await useCase.execute(TS_FIXTURE);
+
+    expect(map.metadata.errors).toEqual([]);
+
+    const routerEndpoints = map.endpoints.filter((e) => e.source.file === "handlers/users.ts");
+    expect(routerEndpoints).toHaveLength(3);
+    expect(routerEndpoints.find((e) => e.method === "GET")?.path).toBe("/users");
+    expect(routerEndpoints.find((e) => e.method === "POST")?.path).toBe("/users");
+    expect(routerEndpoints.find((e) => e.method === "DELETE")?.path).toBe("/users/:id");
+
+    const noiseEndpoints = map.endpoints.filter((e) => e.source.file === "handlers/noise.ts");
+    expect(noiseEndpoints).toEqual([]);
+  });
+});
+
+describe("javascript-prototype-minimal fixture", () => {
+  it("extracts prototype-based entities and honors contexts.auto.depth", async () => {
+    const logger = new ConsoleLogger(false);
+    const loader = new CosmiconfigLoader();
+    const config = await loader.load(PROTO_FIXTURE, null);
+    expect(config).not.toBeNull();
+    if (!config) return;
+
+    const parser = new TreeSitterParserRegistry(ALL_LANGUAGES, logger);
+    const useCase = new BuildProjectMapUseCase({
+      config,
+      walker: new GlobbyWalker(),
+      reader: new NodeFileReader(),
+      parser,
+      clock: new SystemClock(),
+      logger,
+      revision: new GitRevisionProvider(),
+      toolVersion: "test",
+    });
+
+    const { map } = await useCase.execute(PROTO_FIXTURE);
+
+    expect(map.metadata.errors).toEqual([]);
+
+    const contextPaths = map.contexts.map((c) => c.path).sort();
+    expect(contextPaths).toEqual(["src/domain/models", "src/domain/registries"]);
+
+    const byName = new Map(map.entities.map((e) => [e.name, e]));
+    expect(byName.has("Animal")).toBe(true);
+    expect(byName.has("Dog")).toBe(true);
+    expect(byName.has("Registry")).toBe(true);
+
+    expect(byName.get("Dog")?.inherits).toEqual(["Animal"]);
+    expect(byName.get("Animal")?.methods).toEqual(["speak", "toString"]);
+    expect(byName.get("Registry")?.methods).toEqual(["add", "get", "remove"]);
+  });
+});
+
+describe("javascript-gitignore-minimal fixture", () => {
+  const ignoredPath = path.join(GITIGNORE_FIXTURE, "src/generated.js");
+
+  beforeAll(async () => {
+    await writeFile(ignoredPath, "export function gen() { return 1; }\n", "utf8");
+  });
+  afterAll(async () => {
+    await rm(ignoredPath, { force: true });
+  });
+
+  it("skips files matched by .gitignore when respect_gitignore is true", async () => {
+    const logger = new ConsoleLogger(false);
+    const loader = new CosmiconfigLoader();
+    const config = await loader.load(GITIGNORE_FIXTURE, null);
+    expect(config).not.toBeNull();
+    if (!config) return;
+    expect(config.respectGitignore).toBe(true);
+
+    const parser = new TreeSitterParserRegistry(ALL_LANGUAGES, logger);
+    const useCase = new BuildProjectMapUseCase({
+      config,
+      walker: new GlobbyWalker(),
+      reader: new NodeFileReader(),
+      parser,
+      clock: new SystemClock(),
+      logger,
+      revision: new GitRevisionProvider(),
+      toolVersion: "test",
+    });
+
+    const { map } = await useCase.execute(GITIGNORE_FIXTURE);
+    expect(map.metadata.scannedFiles).toBe(1);
   });
 });
 

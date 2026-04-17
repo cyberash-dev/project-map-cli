@@ -4,10 +4,17 @@ import type { IFileReader } from "../../core/ports/filesystem.port.js";
 import type { ILogger } from "../../core/ports/logger.port.js";
 import type { ISourceParser, ParsedFile } from "../../core/ports/parser.port.js";
 
+export type VariableBinding = {
+  readonly file: string;
+  readonly line: number;
+  readonly factory: string;
+};
+
 export type SymbolIndex = {
   readonly defs: ReadonlyMap<string, ReadonlyArray<{ file: string; line: number }>>;
   readonly inbound: ReadonlyMap<string, number>;
   readonly importsByFile: ReadonlyMap<string, readonly string[]>;
+  readonly variables: ReadonlyMap<string, ReadonlyArray<VariableBinding>>;
 };
 
 export type ExtractionContext = {

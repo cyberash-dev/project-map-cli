@@ -115,6 +115,7 @@ export function defaultConfigYaml(
   frameworks: ${frameworksStr}
 
 root: .
+respect_gitignore: true
 
 exclude:
 ${excludeList}
@@ -137,6 +138,7 @@ contexts:
   custom: []
   auto:
     min_files: 10
+    depth: 2
     known_roles:
 ${knownRolesLines}
 

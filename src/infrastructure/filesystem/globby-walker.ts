@@ -12,6 +12,7 @@ export class GlobbyWalker implements IFileWalker {
       dot: false,
       followSymbolicLinks: false,
       onlyFiles: true,
+      gitignore: opts.respectGitignore ?? false,
     });
 
     return matches

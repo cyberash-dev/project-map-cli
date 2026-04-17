@@ -15,6 +15,7 @@ export type EntitiesConfig = {
 export type ContextsConfig = {
   readonly custom: ReadonlyArray<{ readonly path: string; readonly role: string }>;
   readonly minFiles: number;
+  readonly depth: number;
   readonly knownRoles: Readonly<Record<string, string>>;
 };
 
@@ -58,6 +59,7 @@ export type ResolvedConfig = {
     readonly frameworks: readonly Framework[];
   };
   readonly root: string;
+  readonly respectGitignore: boolean;
   readonly exclude: readonly string[];
   readonly sections: readonly SectionId[];
   readonly overview: OverviewConfig;

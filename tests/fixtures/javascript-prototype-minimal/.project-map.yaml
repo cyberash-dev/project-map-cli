@@ -1,34 +1,27 @@
 project:
-  name: express-minimal
-  language: typescript
-  frameworks: [express, typeorm]
+  name: proto-minimal
+  language: javascript
+  frameworks: []
 
 root: .
+respect_gitignore: false
 
-exclude:
-  - "node_modules/**"
-  - "**/*.test.ts"
+exclude: []
 
 sections:
   - contexts
   - entities
-  - enums
-  - endpoints
-  - storage
   - metadata
 
 contexts:
   custom: []
   auto:
     min_files: 1
-    known_roles:
-      handlers: HTTP handlers
-      domain: Domain layer
-      entities: Domain entities
-      repositories: Persistence layer
+    depth: 3
+    known_roles: {}
 
 entities:
-  top_n: 10
+  top_n: 30
   include_fields: true
   include_private_methods: false
   importance:
@@ -40,7 +33,7 @@ enums:
   base_classes: []
 
 endpoints:
-  framework: express
+  framework: null
   routes_module: null
   app_var: null
 

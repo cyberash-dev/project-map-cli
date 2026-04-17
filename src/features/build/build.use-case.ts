@@ -62,6 +62,7 @@ export class BuildProjectMapUseCase {
       root: projectRoot,
       include,
       exclude: config.exclude,
+      respectGitignore: config.respectGitignore,
     });
     this.deps.logger.info(
       `scanned ${discovered.length} ${config.project.language} file(s) under ${projectRoot}`,

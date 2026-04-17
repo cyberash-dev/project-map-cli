@@ -76,6 +76,7 @@ function resolveConfig(raw: ConfigFile, sourcePath: string, cwd: string): Resolv
   const contexts: ContextsConfig = {
     custom: raw.contexts.custom,
     minFiles: raw.contexts.auto.min_files,
+    depth: raw.contexts.auto.depth,
     knownRoles,
   };
 
@@ -120,6 +121,7 @@ function resolveConfig(raw: ConfigFile, sourcePath: string, cwd: string): Resolv
       frameworks: raw.project.frameworks as readonly Framework[],
     },
     root: relRoot,
+    respectGitignore: raw.respect_gitignore,
     exclude,
     sections: raw.sections as ResolvedConfig["sections"],
     overview,
