@@ -8,6 +8,7 @@ import {
   createContainer,
   initUseCase,
   installClaudeHookUseCase,
+  installClaudeSkillUseCase,
   installGitHookUseCase,
   versionUseCase,
 } from "./container.js";
@@ -128,21 +129,44 @@ export function createProgram(): Command {
       if (!result.written) process.exitCode = 1;
     });
 
-  program
-    .command("install-claude-hook")
-    .description("Install a Claude Code UserPromptSubmit hook that points the agent at PROJECT_MAP.md.")
+  const claude = program
+    .command("claude")
+    .description("Claude Code integration (UserPromptSubmit hook + /project-map skill).");
+
+  claude
+    .command("install")
+    .description("Install the UserPromptSubmit hook and the /project-map skill.")
     .option("--scope <scope>", "project | user", "project")
     .option("--force", "reinstall even if already present", false)
+    .option("--no-hook", "skip the UserPromptSubmit hook")
+    .option("--no-skill", "skip the SKILL.md install")
     .action(async (opts) => {
       const scope = opts.scope === "user" ? "user" : "project";
+      const force = Boolean(opts.force);
+      const installHook = opts.hook !== false;
+      const installSkill = opts.skill !== false;
+
+      if (!installHook && !installSkill) {
+        process.stderr.write("nothing to install: both --no-hook and --no-skill passed.\n");
+        process.exitCode = 1;
+        return;
+      }
+
       const container = createContainer(TOOL_VERSION, false);
-      const useCase = installClaudeHookUseCase(container);
-      const result = await useCase.execute({
-        cwd: process.cwd(),
-        scope,
-        force: Boolean(opts.force),
-      });
-      if (!result.written && !result.alreadyInstalled) process.exitCode = 1;
+      const cwd = process.cwd();
+      const results: Array<{ written: boolean; alreadyInstalled: boolean }> = [];
+
+      if (installHook) {
+        const hookResult = await installClaudeHookUseCase(container).execute({ cwd, scope, force });
+        results.push(hookResult);
+      }
+      if (installSkill) {
+        const skillResult = await installClaudeSkillUseCase(container).execute({ cwd, scope, force });
+        results.push(skillResult);
+      }
+
+      const anyProgress = results.some((r) => r.written || r.alreadyInstalled);
+      if (!anyProgress) process.exitCode = 1;
     });
 
   program

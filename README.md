@@ -247,24 +247,41 @@ external-service clients, and workers — deterministic, AST-derived, no LLM
 guesses. Fall back to Explore/LSP only if the map does not answer.
 ```
 
-### 2. UserPromptSubmit hook (harder, fires on every prompt)
+### 2. Claude Code integration — hook + `/project-map` skill
 
-A Claude Code `UserPromptSubmit` hook injects a system reminder into the
-agent's context on every user prompt — short, cheap, and impossible to
-forget. Install it via:
+A single command installs both a `UserPromptSubmit` hook **and** a
+`/project-map` slash-command skill that walks a fresh repo through
+install → init → first build → optional git hooks:
 
 ```sh
-project-map install-claude-hook --scope project   # or --scope user
-project-map install-claude-hook --scope user --force   # reinstall / update
+project-map claude install                     # project scope, hook + skill
+project-map claude install --scope user        # write to ~/.claude/
+project-map claude install --force             # reinstall / update both
+project-map claude install --no-skill          # hook only
+project-map claude install --no-hook           # skill only
 ```
 
-The command **writes directly** into `.claude/settings.json` (project) or
-`~/.claude/settings.json` (user), merging with any existing hooks and
-preserving the rest of the file. Idempotent: a second run without
-`--force` detects the existing hook and exits without duplicating.
+Targets per scope:
 
-Effect: every turn the agent sees "PROJECT_MAP.md exists — read it before
-broad searches", gated only on the file being present.
+| Component | `--scope project`                               | `--scope user`                                   |
+| --------- | ----------------------------------------------- | ------------------------------------------------ |
+| Hook      | `.claude/settings.json`                         | `~/.claude/settings.json`                        |
+| Skill     | `.claude/skills/project-map/SKILL.md`           | `~/.claude/skills/project-map/SKILL.md`          |
+
+The command **writes directly** into those files, merging with any existing
+hooks and preserving the rest of `settings.json`. Idempotent: a second run
+without `--force` detects the existing hook/skill and exits without
+duplicating. The skill is refused (without `--force`) if the existing
+`SKILL.md` was hand-edited — no silent overwrites of user changes.
+
+Effects:
+
+- **Hook** — every turn the agent sees "PROJECT_MAP.md exists — read it
+  before broad searches", gated only on the file being present.
+- **Skill** — typing `/project-map` in any repo triggers the onboarding
+  flow: preflight, language/framework detection, CLI install via the
+  detected package manager, `init`, first `build --json`, and a
+  multi-select prompt for git hooks.
 
 ### 3. Git hook (hardest, gates commits or pushes)
 

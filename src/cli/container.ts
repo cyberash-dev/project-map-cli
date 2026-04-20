@@ -10,6 +10,7 @@ import { TreeSitterParserRegistry } from "../infrastructure/parser/tree-sitter.j
 import { GitRevisionProvider } from "../infrastructure/revision/git.js";
 import { InitConfigUseCase } from "../features/init/init.use-case.js";
 import { InstallClaudeHookUseCase } from "../features/install-hooks/install-claude-hook.use-case.js";
+import { InstallClaudeSkillUseCase } from "../features/install-hooks/install-claude-skill.use-case.js";
 import { InstallGitHookUseCase } from "../features/install-hooks/install-git-hook.use-case.js";
 import { PrintVersionUseCase } from "../features/version/version.use-case.js";
 import { chmod } from "node:fs/promises";
@@ -78,6 +79,15 @@ export function installGitHookUseCase(c: Container): InstallGitHookUseCase {
 
 export function installClaudeHookUseCase(c: Container): InstallClaudeHookUseCase {
   return new InstallClaudeHookUseCase({
+    reader: c.reader,
+    writer: c.writer,
+    logger: c.logger,
+    homeDir: () => homedir(),
+  });
+}
+
+export function installClaudeSkillUseCase(c: Container): InstallClaudeSkillUseCase {
+  return new InstallClaudeSkillUseCase({
     reader: c.reader,
     writer: c.writer,
     logger: c.logger,
