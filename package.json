@@ -1,6 +1,6 @@
 {
   "name": "project-map-cli",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "CLI that builds a deterministic PROJECT_MAP.md architectural map for a single repository (Python, JS/TS, Go, Java, Kotlin)",
   "license": "MIT",
   "author": "cyberash",
@@ -47,6 +47,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@tree-sitter-grammars/tree-sitter-kotlin": "1.1.0",
     "commander": "14.0.0",
     "cosmiconfig": "9.0.0",
     "globby": "14.1.0",
@@ -58,7 +59,6 @@
     "tree-sitter-go": "0.23.4",
     "tree-sitter-java": "0.23.5",
     "tree-sitter-javascript": "0.23.1",
-    "@tree-sitter-grammars/tree-sitter-kotlin": "1.1.0",
     "tree-sitter-python": "0.23.6",
     "tree-sitter-typescript": "0.23.2",
     "yaml": "2.8.1",
