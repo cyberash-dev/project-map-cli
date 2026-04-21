@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/cyberash-dev/project-map-cli/main/assets/banner.png" alt="project-map-cli" width="100%" />
+</p>
+
 # project-map
 
 CLI that generates a deterministic `PROJECT_MAP.md` — a flat, AST-derived
