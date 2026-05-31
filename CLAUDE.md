@@ -28,6 +28,7 @@ tests/
 ```
 
 **Invariants (enforced by code review, not tooling):**
+
 - `core/` is pure — no `features/`, `infrastructure/`, or `cli/` imports.
 - Slice code under `features/build/slices/<kind>/` imports only `core/` ports
   and its own `adapters/`. Never import from `infrastructure/` directly.
@@ -39,6 +40,7 @@ tests/
 a freshly-built one, modulo metadata. Any non-determinism (Map iteration
 order, unsorted collections, clock values leaking in) breaks `--check` for
 every consumer. Rules:
+
 - Sort everything by stable keys; tie-break on source location.
 - Route timestamps through `IClock` and keep them in metadata only.
 - Route revision strings through `IRevisionProvider` (currently git-only).
@@ -53,8 +55,13 @@ output (modulo the `Build duration` cell).
   (e.g. `import { Foo } from "./foo.js"`) even though the source is `.ts`.
   TS compiles to `dist/` and the suffix is required at runtime.
 - **Node 22+** (see `engines.node`). Free to use modern Node APIs.
-- **Biome** is the single formatter + linter. Config: space indent (2),
-  line width 110, double quotes. Don't introduce Prettier or ESLint.
+- **ESLint + Prettier** come from the shared `@cyberash-dev/dev-tooling`
+  flat-config base (wired in `eslint.config.mjs`; Prettier config via the
+  `prettier` key in `package.json`). Prettier owns formatting and uses
+  **tabs**. The base enforces a comment policy (no `//` line comments, no
+  change-narrative, no decorative banners) and hard caps: no `any`, no
+  non-null `!`, no narrowing `as` casts, 80 lines/function, 7 params,
+  10 public methods/properties per class. Don't introduce Biome.
 - **Vitest** for tests. No Jest.
 - **Package manager**: `pnpm` preferred (`pnpm install`, `pnpm build`,
   `pnpm test`). `npm install --legacy-peer-deps` works as fallback.
@@ -62,13 +69,20 @@ output (modulo the `Build duration` cell).
 ## Key commands
 
 ```sh
-pnpm build            # tsc → dist/
+pnpm build            # tsc -p tsconfig.build.json → dist/
 pnpm test             # vitest run
 pnpm test:watch       # vitest (watch)
-pnpm lint             # biome check .
-pnpm lint:fix         # biome check --write .
+pnpm lint             # eslint .
+pnpm lint:fix         # eslint . --fix
+pnpm format           # prettier --write .
+pnpm format:check     # prettier --check .
 pnpm start -- <args>  # run compiled CLI
 ```
+
+Lint is type-aware (`projectService`): `tsconfig.json` is the lint/editor
+program and includes `src`, `tests`, and `vitest.config.ts`, while
+`tsconfig.build.json` compiles only `src` → `dist`. Keep both in sync when
+adding top-level TS entry points.
 
 For local iteration on the CLI itself: `node dist/cli/index.js <cmd>` after
 `pnpm build`. There is no ts-node / tsx runner configured.
@@ -104,6 +118,7 @@ For local iteration on the CLI itself: `node dist/cli/index.js <cmd>` after
 
 The global guide already tells you to prefer LSP / `code-skeleton` / Grep
 over `Read`. For this repo specifically:
+
 - For "what extractor produces field X in the output?" → read
   `features/build/rendering/markdown.ts` first — it's the single place that
   assembles the final document.

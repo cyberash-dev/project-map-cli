@@ -8,15 +8,15 @@ import { PythonEndpointsAdapter } from "./adapters/python.js";
 import { TypeScriptEndpointsAdapter } from "./adapters/typescript.js";
 
 export class EndpointsExtractor extends LanguageDispatchExtractor<Endpoint> {
-  constructor() {
-    const adapters: ILanguageAdapter<Endpoint[]>[] = [
-      new PythonEndpointsAdapter(),
-      new TypeScriptEndpointsAdapter("typescript"),
-      new TypeScriptEndpointsAdapter("javascript"),
-      new GoEndpointsAdapter(),
-      new JavaEndpointsAdapter(),
-      new KotlinEndpointsAdapter(),
-    ];
-    super("endpoints", adapters, []);
-  }
+	constructor() {
+		const adapters: ILanguageAdapter<Endpoint[]>[] = [
+			new PythonEndpointsAdapter(),
+			new TypeScriptEndpointsAdapter("typescript"),
+			new TypeScriptEndpointsAdapter("javascript"),
+			new GoEndpointsAdapter(),
+			new JavaEndpointsAdapter(),
+			new KotlinEndpointsAdapter(),
+		];
+		super("endpoints", adapters, []);
+	}
 }

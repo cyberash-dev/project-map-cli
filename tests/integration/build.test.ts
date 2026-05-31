@@ -3,6 +3,8 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { ALL_LANGUAGES } from "../../src/core/domain/language.js";
+import type { ProjectMap } from "../../src/core/domain/project-map.js";
+import type { ResolvedConfig } from "../../src/core/ports/config.port.js";
 import { BuildProjectMapUseCase } from "../../src/features/build/build.use-case.js";
 import { renderMarkdown } from "../../src/features/build/rendering/markdown.js";
 import { SystemClock } from "../../src/infrastructure/clock/system.js";
@@ -16,230 +18,273 @@ import { GitRevisionProvider } from "../../src/infrastructure/revision/git.js";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.resolve(HERE, "../fixtures/python-aiohttp-minimal");
 const TS_FIXTURE = path.resolve(HERE, "../fixtures/typescript-express-minimal");
-const PROTO_FIXTURE = path.resolve(HERE, "../fixtures/javascript-prototype-minimal");
-const GITIGNORE_FIXTURE = path.resolve(HERE, "../fixtures/javascript-gitignore-minimal");
+const PROTO_FIXTURE = path.resolve(
+	HERE,
+	"../fixtures/javascript-prototype-minimal",
+);
+const GITIGNORE_FIXTURE = path.resolve(
+	HERE,
+	"../fixtures/javascript-gitignore-minimal",
+);
+
+async function buildMap(
+	fixtureDir: string,
+): Promise<{ map: ProjectMap; config: ResolvedConfig }> {
+	const logger = new ConsoleLogger(false);
+	const config = await new CosmiconfigLoader().load(fixtureDir, null);
+	if (!config) {
+		throw new Error(`config missing for ${fixtureDir}`);
+	}
+	const parser = new TreeSitterParserRegistry(ALL_LANGUAGES, logger);
+	const useCase = new BuildProjectMapUseCase({
+		config,
+		walker: new GlobbyWalker(),
+		reader: new NodeFileReader(),
+		parser,
+		clock: new SystemClock(),
+		logger,
+		revision: new GitRevisionProvider(),
+		toolVersion: "test",
+	});
+	const { map } = await useCase.execute(fixtureDir);
+	return { map, config };
+}
 
 describe("python-aiohttp-minimal fixture", () => {
-  it("extracts entities, enums, endpoints, storage, workers, interactions", async () => {
-    const logger = new ConsoleLogger(false);
-    const loader = new CosmiconfigLoader();
-    const config = await loader.load(FIXTURE, null);
-    expect(config).not.toBeNull();
-    if (!config) return;
+	it("extracts entities, enums, endpoints, storage, workers, interactions", async () => {
+		const { map, config } = await buildMap(FIXTURE);
 
-    const parser = new TreeSitterParserRegistry(ALL_LANGUAGES, logger);
+		expect(map.metadata.errors).toEqual([]);
+		expect(map.contexts.map((c) => c.path)).toContain("handlers");
+		expect(map.entities.some((e) => e.name === "Transaction")).toBe(true);
+		expect(map.enums.some((e) => e.name === "TransactionStatus")).toBe(true);
+		const statusEnum = map.enums.find((e) => e.name === "TransactionStatus");
+		expect(statusEnum?.members).toEqual([
+			"NEW",
+			"PENDING",
+			"AUTHORIZED",
+			"CHARGED",
+			"FAILED",
+			"REFUNDED",
+		]);
+		expect(
+			map.endpoints.some(
+				(e) => e.method === "POST" && e.path === "/api/v1/transactions",
+			),
+		).toBe(true);
+		expect(map.storage.tables.some((t) => t.table === "transactions")).toBe(
+			true,
+		);
+		expect(map.storage.migrations.length).toBe(2);
+		expect(
+			map.interactions.some((i) => i.clientClass === "PayTransactionsClient"),
+		).toBe(true);
+		expect(map.workers.some((w) => w.name === "TransactionEventWorker")).toBe(
+			true,
+		);
 
-    const useCase = new BuildProjectMapUseCase({
-      config,
-      walker: new GlobbyWalker(),
-      reader: new NodeFileReader(),
-      parser,
-      clock: new SystemClock(),
-      logger,
-      revision: new GitRevisionProvider(),
-      toolVersion: "test",
-    });
+		const md = renderMarkdown(map, config);
+		expect(md).toContain("## Bounded contexts");
+		expect(md).toContain("## Enums");
+		expect(md).toContain("TransactionStatus");
+	});
 
-    const { map } = await useCase.execute(FIXTURE);
-
-    expect(map.metadata.errors).toEqual([]);
-    expect(map.contexts.map((c) => c.path)).toContain("handlers");
-    expect(map.entities.some((e) => e.name === "Transaction")).toBe(true);
-    expect(map.enums.some((e) => e.name === "TransactionStatus")).toBe(true);
-    const statusEnum = map.enums.find((e) => e.name === "TransactionStatus");
-    expect(statusEnum?.members).toEqual([
-      "NEW",
-      "PENDING",
-      "AUTHORIZED",
-      "CHARGED",
-      "FAILED",
-      "REFUNDED",
-    ]);
-    expect(map.endpoints.some((e) => e.method === "POST" && e.path === "/api/v1/transactions")).toBe(true);
-    expect(map.storage.tables.some((t) => t.table === "transactions")).toBe(true);
-    expect(map.storage.migrations.length).toBe(2);
-    expect(map.interactions.some((i) => i.clientClass === "PayTransactionsClient")).toBe(true);
-    expect(map.workers.some((w) => w.name === "TransactionEventWorker")).toBe(true);
-
-    const md = renderMarkdown(map, config);
-    expect(md).toContain("## Bounded contexts");
-    expect(md).toContain("## Enums");
-    expect(md).toContain("TransactionStatus");
-  });
-
-  it("is deterministic across runs modulo timestamp", async () => {
-    const logger = new ConsoleLogger(false);
-    const loader = new CosmiconfigLoader();
-    const config = await loader.load(FIXTURE, null);
-    if (!config) throw new Error("config missing");
-    const parser = new TreeSitterParserRegistry(ALL_LANGUAGES, logger);
-    const deps = {
-      config,
-      walker: new GlobbyWalker(),
-      reader: new NodeFileReader(),
-      parser,
-      clock: new SystemClock(),
-      logger,
-      revision: new GitRevisionProvider(),
-      toolVersion: "test",
-    };
-    const a = renderMarkdown((await new BuildProjectMapUseCase(deps).execute(FIXTURE)).map, config);
-    const b = renderMarkdown((await new BuildProjectMapUseCase(deps).execute(FIXTURE)).map, config);
-    expect(stripTimestamps(a)).toEqual(stripTimestamps(b));
-  });
+	it("is deterministic across runs modulo timestamp", async () => {
+		const logger = new ConsoleLogger(false);
+		const loader = new CosmiconfigLoader();
+		const config = await loader.load(FIXTURE, null);
+		if (!config) {
+			throw new Error("config missing");
+		}
+		const parser = new TreeSitterParserRegistry(ALL_LANGUAGES, logger);
+		const deps = {
+			config,
+			walker: new GlobbyWalker(),
+			reader: new NodeFileReader(),
+			parser,
+			clock: new SystemClock(),
+			logger,
+			revision: new GitRevisionProvider(),
+			toolVersion: "test",
+		};
+		const a = renderMarkdown(
+			(await new BuildProjectMapUseCase(deps).execute(FIXTURE)).map,
+			config,
+		);
+		const b = renderMarkdown(
+			(await new BuildProjectMapUseCase(deps).execute(FIXTURE)).map,
+			config,
+		);
+		expect(stripTimestamps(a)).toEqual(stripTimestamps(b));
+	});
 });
 
 describe("typescript-express-minimal fixture", () => {
-  it("extracts express router endpoints and rejects non-framework .get/.post calls", async () => {
-    const logger = new ConsoleLogger(false);
-    const loader = new CosmiconfigLoader();
-    const config = await loader.load(TS_FIXTURE, null);
-    expect(config).not.toBeNull();
-    if (!config) return;
+	it("extracts express router endpoints and rejects non-framework .get/.post calls", async () => {
+		const { map } = await buildMap(TS_FIXTURE);
 
-    const parser = new TreeSitterParserRegistry(ALL_LANGUAGES, logger);
-    const useCase = new BuildProjectMapUseCase({
-      config,
-      walker: new GlobbyWalker(),
-      reader: new NodeFileReader(),
-      parser,
-      clock: new SystemClock(),
-      logger,
-      revision: new GitRevisionProvider(),
-      toolVersion: "test",
-    });
+		expect(map.metadata.errors).toEqual([]);
 
-    const { map } = await useCase.execute(TS_FIXTURE);
+		const routerEndpoints = map.endpoints.filter(
+			(e) => e.source.file === "handlers/users.ts",
+		);
+		expect(routerEndpoints).toHaveLength(3);
+		expect(routerEndpoints.find((e) => e.method === "GET")?.path).toBe(
+			"/users",
+		);
+		expect(routerEndpoints.find((e) => e.method === "POST")?.path).toBe(
+			"/users",
+		);
+		expect(routerEndpoints.find((e) => e.method === "DELETE")?.path).toBe(
+			"/users/:id",
+		);
 
-    expect(map.metadata.errors).toEqual([]);
+		const noiseEndpoints = map.endpoints.filter(
+			(e) => e.source.file === "handlers/noise.ts",
+		);
+		expect(noiseEndpoints).toEqual([]);
+	});
 
-    const routerEndpoints = map.endpoints.filter((e) => e.source.file === "handlers/users.ts");
-    expect(routerEndpoints).toHaveLength(3);
-    expect(routerEndpoints.find((e) => e.method === "GET")?.path).toBe("/users");
-    expect(routerEndpoints.find((e) => e.method === "POST")?.path).toBe("/users");
-    expect(routerEndpoints.find((e) => e.method === "DELETE")?.path).toBe("/users/:id");
+	it("extracts interfaces and object-type type aliases as entities", async () => {
+		const logger = new ConsoleLogger(false);
+		const loader = new CosmiconfigLoader();
+		const config = await loader.load(TS_FIXTURE, null);
+		if (!config) {
+			throw new Error("config missing");
+		}
+		const parser = new TreeSitterParserRegistry(ALL_LANGUAGES, logger);
+		const useCase = new BuildProjectMapUseCase({
+			config,
+			walker: new GlobbyWalker(),
+			reader: new NodeFileReader(),
+			parser,
+			clock: new SystemClock(),
+			logger,
+			revision: new GitRevisionProvider(),
+			toolVersion: "test",
+		});
 
-    const noiseEndpoints = map.endpoints.filter((e) => e.source.file === "handlers/noise.ts");
-    expect(noiseEndpoints).toEqual([]);
-  });
+		const { map } = await useCase.execute(TS_FIXTURE);
+		const byName = new Map(map.entities.map((e) => [e.name, e]));
 
-  it("extracts interfaces and object-type type aliases as entities", async () => {
-    const logger = new ConsoleLogger(false);
-    const loader = new CosmiconfigLoader();
-    const config = await loader.load(TS_FIXTURE, null);
-    if (!config) throw new Error("config missing");
-    const parser = new TreeSitterParserRegistry(ALL_LANGUAGES, logger);
-    const useCase = new BuildProjectMapUseCase({
-      config,
-      walker: new GlobbyWalker(),
-      reader: new NodeFileReader(),
-      parser,
-      clock: new SystemClock(),
-      logger,
-      revision: new GitRevisionProvider(),
-      toolVersion: "test",
-    });
+		expect(byName.has("Timestamped")).toBe(true);
+		expect(byName.get("Timestamped")?.fields.map((f) => f.name)).toEqual([
+			"createdAt",
+			"updatedAt",
+		]);
 
-    const { map } = await useCase.execute(TS_FIXTURE);
-    const byName = new Map(map.entities.map((e) => [e.name, e]));
+		expect(byName.has("Auditable")).toBe(true);
+		expect(byName.get("Auditable")?.inherits).toEqual([
+			"Identifiable",
+			"Timestamped",
+		]);
 
-    expect(byName.has("Timestamped")).toBe(true);
-    expect(byName.get("Timestamped")?.fields.map((f) => f.name)).toEqual(["createdAt", "updatedAt"]);
+		expect(byName.has("UserPayload")).toBe(true);
+		expect(byName.get("UserPayload")?.fields.map((f) => f.name)).toEqual([
+			"id",
+			"email",
+			"status",
+		]);
 
-    expect(byName.has("Auditable")).toBe(true);
-    expect(byName.get("Auditable")?.inherits).toEqual(["Identifiable", "Timestamped"]);
-
-    expect(byName.has("UserPayload")).toBe(true);
-    expect(byName.get("UserPayload")?.fields.map((f) => f.name)).toEqual(["id", "email", "status"]);
-
-    // Single-field interface and string-literal union type alias must be skipped
-    expect(byName.has("Identifiable")).toBe(false);
-    expect(byName.has("UserAction")).toBe(false);
-  });
+		/* Single-field interface and string-literal union type alias must be skipped */
+		expect(byName.has("Identifiable")).toBe(false);
+		expect(byName.has("UserAction")).toBe(false);
+	});
 });
 
 describe("javascript-prototype-minimal fixture", () => {
-  it("extracts prototype-based entities and honors contexts.auto.depth", async () => {
-    const logger = new ConsoleLogger(false);
-    const loader = new CosmiconfigLoader();
-    const config = await loader.load(PROTO_FIXTURE, null);
-    expect(config).not.toBeNull();
-    if (!config) return;
+	it("extracts prototype-based entities and honors contexts.auto.depth", async () => {
+		const logger = new ConsoleLogger(false);
+		const loader = new CosmiconfigLoader();
+		const config = await loader.load(PROTO_FIXTURE, null);
+		expect(config).not.toBeNull();
+		if (!config) {
+			return;
+		}
 
-    const parser = new TreeSitterParserRegistry(ALL_LANGUAGES, logger);
-    const useCase = new BuildProjectMapUseCase({
-      config,
-      walker: new GlobbyWalker(),
-      reader: new NodeFileReader(),
-      parser,
-      clock: new SystemClock(),
-      logger,
-      revision: new GitRevisionProvider(),
-      toolVersion: "test",
-    });
+		const parser = new TreeSitterParserRegistry(ALL_LANGUAGES, logger);
+		const useCase = new BuildProjectMapUseCase({
+			config,
+			walker: new GlobbyWalker(),
+			reader: new NodeFileReader(),
+			parser,
+			clock: new SystemClock(),
+			logger,
+			revision: new GitRevisionProvider(),
+			toolVersion: "test",
+		});
 
-    const { map } = await useCase.execute(PROTO_FIXTURE);
+		const { map } = await useCase.execute(PROTO_FIXTURE);
 
-    expect(map.metadata.errors).toEqual([]);
+		expect(map.metadata.errors).toEqual([]);
 
-    const contextPaths = map.contexts.map((c) => c.path).sort();
-    expect(contextPaths).toEqual(["src/domain/models", "src/domain/registries"]);
+		const contextPaths = map.contexts.map((c) => c.path).sort();
+		expect(contextPaths).toEqual([
+			"src/domain/models",
+			"src/domain/registries",
+		]);
 
-    const byName = new Map(map.entities.map((e) => [e.name, e]));
-    expect(byName.has("Animal")).toBe(true);
-    expect(byName.has("Dog")).toBe(true);
-    expect(byName.has("Registry")).toBe(true);
+		const byName = new Map(map.entities.map((e) => [e.name, e]));
+		expect(byName.has("Animal")).toBe(true);
+		expect(byName.has("Dog")).toBe(true);
+		expect(byName.has("Registry")).toBe(true);
 
-    expect(byName.get("Dog")?.inherits).toEqual(["Animal"]);
-    expect(byName.get("Animal")?.methods).toEqual(["speak", "toString"]);
-    expect(byName.get("Registry")?.methods).toEqual(["add", "get", "remove"]);
-  });
+		expect(byName.get("Dog")?.inherits).toEqual(["Animal"]);
+		expect(byName.get("Animal")?.methods).toEqual(["speak", "toString"]);
+		expect(byName.get("Registry")?.methods).toEqual(["add", "get", "remove"]);
+	});
 });
 
 describe("javascript-gitignore-minimal fixture", () => {
-  const ignoredPath = path.join(GITIGNORE_FIXTURE, "src/generated.js");
+	const ignoredPath = path.join(GITIGNORE_FIXTURE, "src/generated.js");
 
-  beforeAll(async () => {
-    await writeFile(ignoredPath, "export function gen() { return 1; }\n", "utf8");
-  });
-  afterAll(async () => {
-    await rm(ignoredPath, { force: true });
-  });
+	beforeAll(async () => {
+		await writeFile(
+			ignoredPath,
+			"export function gen() { return 1; }\n",
+			"utf8",
+		);
+	});
+	afterAll(async () => {
+		await rm(ignoredPath, { force: true });
+	});
 
-  it("skips files matched by .gitignore when respect_gitignore is true", async () => {
-    const logger = new ConsoleLogger(false);
-    const loader = new CosmiconfigLoader();
-    const config = await loader.load(GITIGNORE_FIXTURE, null);
-    expect(config).not.toBeNull();
-    if (!config) return;
-    expect(config.respectGitignore).toBe(true);
+	it("skips files matched by .gitignore when respect_gitignore is true", async () => {
+		const logger = new ConsoleLogger(false);
+		const loader = new CosmiconfigLoader();
+		const config = await loader.load(GITIGNORE_FIXTURE, null);
+		expect(config).not.toBeNull();
+		if (!config) {
+			return;
+		}
+		expect(config.respectGitignore).toBe(true);
 
-    const parser = new TreeSitterParserRegistry(ALL_LANGUAGES, logger);
-    const useCase = new BuildProjectMapUseCase({
-      config,
-      walker: new GlobbyWalker(),
-      reader: new NodeFileReader(),
-      parser,
-      clock: new SystemClock(),
-      logger,
-      revision: new GitRevisionProvider(),
-      toolVersion: "test",
-    });
+		const parser = new TreeSitterParserRegistry(ALL_LANGUAGES, logger);
+		const useCase = new BuildProjectMapUseCase({
+			config,
+			walker: new GlobbyWalker(),
+			reader: new NodeFileReader(),
+			parser,
+			clock: new SystemClock(),
+			logger,
+			revision: new GitRevisionProvider(),
+			toolVersion: "test",
+		});
 
-    const { map } = await useCase.execute(GITIGNORE_FIXTURE);
-    expect(map.metadata.scannedFiles).toBe(1);
-  });
+		const { map } = await useCase.execute(GITIGNORE_FIXTURE);
+		expect(map.metadata.scannedFiles).toBe(1);
+	});
 });
 
 function stripTimestamps(md: string): string {
-  return md
-    .replace(/Generated by project-map v.+$/m, "X")
-    .replace(/Build duration \| \d+ ms/, "Build duration | X")
-    .replace(/from revision [^\s]+/, "");
+	return md
+		.replace(/Generated by project-map v.+$/m, "X")
+		.replace(/Build duration \| \d+ ms/, "Build duration | X")
+		.replace(/from revision [^\s]+/, "");
 }
 
 it.skip("reads artifact", async () => {
-  const p = path.join(FIXTURE, "PROJECT_MAP.md");
-  const s = await readFile(p, "utf8");
-  expect(s.length).toBeGreaterThan(0);
+	const p = path.join(FIXTURE, "PROJECT_MAP.md");
+	const s = await readFile(p, "utf8");
+	expect(s.length).toBeGreaterThan(0);
 });

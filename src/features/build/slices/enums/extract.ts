@@ -8,15 +8,15 @@ import { PythonEnumsAdapter } from "./adapters/python.js";
 import { TypeScriptEnumsAdapter } from "./adapters/typescript.js";
 
 export class EnumsExtractor extends LanguageDispatchExtractor<EnumType> {
-  constructor() {
-    const adapters: ILanguageAdapter<EnumType[]>[] = [
-      new PythonEnumsAdapter(),
-      new TypeScriptEnumsAdapter("typescript"),
-      new TypeScriptEnumsAdapter("javascript"),
-      new GoEnumsAdapter(),
-      new JavaEnumsAdapter(),
-      new KotlinEnumsAdapter(),
-    ];
-    super("enums", adapters, []);
-  }
+	constructor() {
+		const adapters: ILanguageAdapter<EnumType[]>[] = [
+			new PythonEnumsAdapter(),
+			new TypeScriptEnumsAdapter("typescript"),
+			new TypeScriptEnumsAdapter("javascript"),
+			new GoEnumsAdapter(),
+			new JavaEnumsAdapter(),
+			new KotlinEnumsAdapter(),
+		];
+		super("enums", adapters, []);
+	}
 }

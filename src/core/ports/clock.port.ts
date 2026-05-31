@@ -1,4 +1,4 @@
 export interface IClock {
-  nowIso(): string;
-  nowMs(): number;
+	nowIso(): string;
+	nowMs(): number;
 }

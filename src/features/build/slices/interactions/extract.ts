@@ -5,18 +5,20 @@ import { extractPythonInteractions } from "./adapters/python.js";
 import { extractTypeScriptInteractions } from "./adapters/typescript.js";
 
 export class InteractionsExtractor implements IExtractor<Interaction[]> {
-  readonly name = "interactions";
+	readonly name = "interactions";
 
-  async extract(ctx: ExtractionContext): Promise<Interaction[]> {
-    if (!ctx.config.interactions.dir) return [];
-    switch (ctx.language) {
-      case "python":
-        return await extractPythonInteractions(ctx);
-      case "typescript":
-      case "javascript":
-        return await extractTypeScriptInteractions(ctx);
-      default:
-        return [];
-    }
-  }
+	async extract(ctx: ExtractionContext): Promise<Interaction[]> {
+		if (!ctx.config.interactions.dir) {
+			return [];
+		}
+		switch (ctx.language) {
+			case "python":
+				return await extractPythonInteractions(ctx);
+			case "typescript":
+			case "javascript":
+				return await extractTypeScriptInteractions(ctx);
+			default:
+				return [];
+		}
+	}
 }

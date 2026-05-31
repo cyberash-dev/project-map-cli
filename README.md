@@ -12,27 +12,27 @@ question.
 
 ## Supported languages
 
-| Language    | tree-sitter grammar                               |
-| ----------- | ------------------------------------------------- |
-| Python      | `tree-sitter-python`                              |
-| TypeScript  | `tree-sitter-typescript` (includes `.tsx`)        |
-| JavaScript  | `tree-sitter-javascript` (includes `.jsx/.mjs`)   |
-| Go          | `tree-sitter-go`                                  |
-| Java        | `tree-sitter-java`                                |
-| Kotlin      | `@tree-sitter-grammars/tree-sitter-kotlin`        |
+| Language   | tree-sitter grammar                             |
+| ---------- | ----------------------------------------------- |
+| Python     | `tree-sitter-python`                            |
+| TypeScript | `tree-sitter-typescript` (includes `.tsx`)      |
+| JavaScript | `tree-sitter-javascript` (includes `.jsx/.mjs`) |
+| Go         | `tree-sitter-go`                                |
+| Java       | `tree-sitter-java`                              |
+| Kotlin     | `@tree-sitter-grammars/tree-sitter-kotlin`      |
 
 ### Extractor coverage per language (MVP)
 
-| Extractor      | Python | TS/JS          | Go  | Java       | Kotlin |
-| -------------- | ------ | -------------- | --- | ---------- | ------ |
-| contexts       | full   | full           | full| full       | full   |
-| entities       | full   | full           | full| full       | full   |
-| enums          | full   | full           | full| full       | full   |
-| endpoints      | aiohttp, fastapi, flask | express/fastify member calls | gin/chi/echo member calls | Spring `@*Mapping` | — |
-| storage (ORM)  | SQLAlchemy declarative | TypeORM `@Entity` | — | — | — |
-| storage (migr) | Alembic | — | — | — | — |
-| interactions   | `*/*Client` classes | `*/*Client` classes | — | — | — |
-| workers        | `*Worker` classes + `@celery.task/@dramatiq.actor` | `*Worker/Processor/Handler` classes | — | — | — |
+| Extractor      | Python                                             | TS/JS                               | Go                        | Java               | Kotlin |
+| -------------- | -------------------------------------------------- | ----------------------------------- | ------------------------- | ------------------ | ------ |
+| contexts       | full                                               | full                                | full                      | full               | full   |
+| entities       | full                                               | full                                | full                      | full               | full   |
+| enums          | full                                               | full                                | full                      | full               | full   |
+| endpoints      | aiohttp, fastapi, flask                            | express/fastify member calls        | gin/chi/echo member calls | Spring `@*Mapping` | —      |
+| storage (ORM)  | SQLAlchemy declarative                             | TypeORM `@Entity`                   | —                         | —                  | —      |
+| storage (migr) | Alembic                                            | —                                   | —                         | —                  | —      |
+| interactions   | `*/*Client` classes                                | `*/*Client` classes                 | —                         | —                  | —      |
+| workers        | `*Worker` classes + `@celery.task/@dramatiq.actor` | `*Worker/Processor/Handler` classes | —                         | —                  | —      |
 
 Slots that are "—" are implemented as ports — adding a new adapter is a
 drop-in in the relevant slice.
@@ -90,6 +90,7 @@ src/
 ```
 
 **Hexagonal rules this repo enforces:**
+
 - `core/` has no imports from `features/`, `infrastructure/`, or `cli/`.
 - `features/<slice>/*.extract.ts` depends only on `core/` ports and its own
   slice's language adapters. No direct infrastructure imports.
@@ -138,7 +139,7 @@ project-map version
 ```yaml
 project:
   name: my-service
-  language: python                       # python|typescript|javascript|go|java|kotlin
+  language: python # python|typescript|javascript|go|java|kotlin
   frameworks: [aiohttp, sqlalchemy, alembic]
 
 root: .
@@ -158,12 +159,12 @@ sections:
   - metadata
 
 overview:
-  path: .project-map/overview.md         # optional prose preamble
+  path: .project-map/overview.md # optional prose preamble
 
 contexts:
-  custom: []                             # [{path, role}] overrides
+  custom: [] # [{path, role}] overrides
   auto:
-    min_files: 10                        # contexts under this file count are dropped
+    min_files: 10 # contexts under this file count are dropped
     known_roles:
       actions: Business actions / use-cases
       handlers: HTTP handlers
@@ -182,17 +183,17 @@ enums:
   base_classes: [Enum, IntEnum, StrEnum] # Python: recognised enum bases
 
 endpoints:
-  framework: aiohttp                     # aiohttp|fastapi|flask|express|fastify|gin|spring|…
-  routes_module: null                    # aiohttp: best-effort discovery when null
-  app_var: null                          # FastAPI/Express: name of the app instance
+  framework: aiohttp # aiohttp|fastapi|flask|express|fastify|gin|spring|…
+  routes_module: null # aiohttp: best-effort discovery when null
+  app_var: null # FastAPI/Express: name of the app instance
 
 storage:
-  base_class: Base                       # SQLAlchemy declarative base name
+  base_class: Base # SQLAlchemy declarative base name
   migrations_dir: src/storage/migrations # relative to root; null to skip
   last_n: 10
 
 interactions:
-  dir: src/interactions                  # one depth-1 subdir per external service
+  dir: src/interactions # one depth-1 subdir per external service
 
 workers:
   patterns:
@@ -202,7 +203,7 @@ workers:
 
 output:
   markdown: PROJECT_MAP.md
-  json: project-map.json                 # omit or `null` to skip
+  json: project-map.json # omit or `null` to skip
 ```
 
 ## Output determinism
@@ -267,10 +268,10 @@ project-map claude install --no-hook           # skill only
 
 Targets per scope:
 
-| Component | `--scope project`                               | `--scope user`                                   |
-| --------- | ----------------------------------------------- | ------------------------------------------------ |
-| Hook      | `.claude/settings.json`                         | `~/.claude/settings.json`                        |
-| Skill     | `.claude/skills/project-map/SKILL.md`           | `~/.claude/skills/project-map/SKILL.md`          |
+| Component | `--scope project`                     | `--scope user`                          |
+| --------- | ------------------------------------- | --------------------------------------- |
+| Hook      | `.claude/settings.json`               | `~/.claude/settings.json`               |
+| Skill     | `.claude/skills/project-map/SKILL.md` | `~/.claude/skills/project-map/SKILL.md` |
 
 The command **writes directly** into those files, merging with any existing
 hooks and preserving the rest of `settings.json`. Idempotent: a second run

@@ -1,54 +1,59 @@
 import * as path from "node:path";
-import type { IFileReader, IFileWriter } from "../../core/ports/filesystem.port.js";
+import type {
+	IFileReader,
+	IFileWriter,
+} from "../../core/ports/filesystem.port.js";
 import type { ILogger } from "../../core/ports/logger.port.js";
 
 export type GitHookType = "pre-push" | "pre-commit";
 
 export type InstallGitHookArgs = {
-  readonly cwd: string;
-  readonly type: GitHookType;
-  readonly force: boolean;
+	readonly cwd: string;
+	readonly type: GitHookType;
+	readonly force: boolean;
 };
 
 export type InstallGitHookDeps = {
-  readonly reader: IFileReader;
-  readonly writer: IFileWriter;
-  readonly logger: ILogger;
-  readonly chmod: (absPath: string, mode: number) => Promise<void>;
+	readonly reader: IFileReader;
+	readonly writer: IFileWriter;
+	readonly logger: ILogger;
+	readonly chmod: (absPath: string, mode: number) => Promise<void>;
 };
 
 export type InstallGitHookResult = {
-  readonly written: boolean;
-  readonly targetPath: string;
-  readonly installed: boolean;
+	readonly written: boolean;
+	readonly targetPath: string;
+	readonly installed: boolean;
 };
 
 export class InstallGitHookUseCase {
-  constructor(private readonly deps: InstallGitHookDeps) {}
+	constructor(private readonly deps: InstallGitHookDeps) {}
 
-  async execute(args: InstallGitHookArgs): Promise<InstallGitHookResult> {
-    const gitDir = path.resolve(args.cwd, ".git");
-    if (!(await this.deps.reader.exists(gitDir))) {
-      this.deps.logger.error(".git/ not found in cwd — run inside a git working copy");
-      return { written: false, targetPath: "", installed: false };
-    }
+	async execute(args: InstallGitHookArgs): Promise<InstallGitHookResult> {
+		const gitDir = path.resolve(args.cwd, ".git");
+		if (!(await this.deps.reader.exists(gitDir))) {
+			this.deps.logger.error(
+				".git/ not found in cwd — run inside a git working copy",
+			);
+			return { written: false, targetPath: "", installed: false };
+		}
 
-    const hooksDir = path.resolve(args.cwd, ".git/hooks");
-    const targetPath = path.join(hooksDir, args.type);
-    const exists = await this.deps.reader.exists(targetPath);
-    if (exists && !args.force) {
-      this.deps.logger.warn(
-        `${targetPath} already exists; pass --force to overwrite or edit the file manually`,
-      );
-      return { written: false, targetPath, installed: true };
-    }
+		const hooksDir = path.resolve(args.cwd, ".git/hooks");
+		const targetPath = path.join(hooksDir, args.type);
+		const exists = await this.deps.reader.exists(targetPath);
+		if (exists && !args.force) {
+			this.deps.logger.warn(
+				`${targetPath} already exists; pass --force to overwrite or edit the file manually`,
+			);
+			return { written: false, targetPath, installed: true };
+		}
 
-    await this.deps.writer.ensureDir(hooksDir);
-    await this.deps.writer.write(targetPath, HOOK_SCRIPT);
-    await this.deps.chmod(targetPath, 0o755);
-    this.deps.logger.info(`installed git ${args.type} hook at ${targetPath}`);
-    return { written: true, targetPath, installed: true };
-  }
+		await this.deps.writer.ensureDir(hooksDir);
+		await this.deps.writer.write(targetPath, HOOK_SCRIPT);
+		await this.deps.chmod(targetPath, 0o755);
+		this.deps.logger.info(`installed git ${args.type} hook at ${targetPath}`);
+		return { written: true, targetPath, installed: true };
+	}
 }
 
 const HOOK_SCRIPT = `#!/usr/bin/env bash

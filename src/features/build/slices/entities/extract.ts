@@ -9,38 +9,40 @@ import { PythonEntitiesAdapter } from "./adapters/python.js";
 import { TypeScriptEntitiesAdapter } from "./adapters/typescript.js";
 
 export class EntitiesExtractor extends LanguageDispatchExtractor<Entity> {
-  constructor() {
-    const adapters: ILanguageAdapter<Entity[]>[] = [
-      new PythonEntitiesAdapter(),
-      new TypeScriptEntitiesAdapter("typescript"),
-      new TypeScriptEntitiesAdapter("javascript"),
-      new GoEntitiesAdapter(),
-      new JavaEntitiesAdapter(),
-      new KotlinEntitiesAdapter(),
-    ];
-    super("entities", adapters, []);
-  }
+	constructor() {
+		const adapters: ILanguageAdapter<Entity[]>[] = [
+			new PythonEntitiesAdapter(),
+			new TypeScriptEntitiesAdapter("typescript"),
+			new TypeScriptEntitiesAdapter("javascript"),
+			new GoEntitiesAdapter(),
+			new JavaEntitiesAdapter(),
+			new KotlinEntitiesAdapter(),
+		];
+		super("entities", adapters, []);
+	}
 
-  override async extract(ctx: ExtractionContext): Promise<Entity[]> {
-    const raw = await super.extract(ctx);
-    const ranked = rankAndTrim(raw, ctx);
-    return ranked;
-  }
+	override async extract(ctx: ExtractionContext): Promise<Entity[]> {
+		const raw = await super.extract(ctx);
+		const ranked = rankAndTrim(raw, ctx);
+		return ranked;
+	}
 }
 
 function rankAndTrim(entities: Entity[], ctx: ExtractionContext): Entity[] {
-  const weights = ctx.config.entities.importance;
-  const withImportance = entities.map((e) => {
-    const inbound = ctx.symbols.inbound.get(e.name) ?? 0;
-    const importance =
-      weights.methodCount * e.methods.length +
-      weights.fieldCount * e.fields.length +
-      weights.inboundReferences * inbound;
-    return { ...e, referencedFrom: inbound, importance };
-  });
-  withImportance.sort((a, b) => {
-    if (b.importance !== a.importance) return b.importance - a.importance;
-    return a.name.localeCompare(b.name);
-  });
-  return withImportance.slice(0, ctx.config.entities.topN);
+	const weights = ctx.config.entities.importance;
+	const withImportance = entities.map((e) => {
+		const inbound = ctx.symbols.inbound.get(e.name) ?? 0;
+		const importance =
+			weights.methodCount * e.methods.length +
+			weights.fieldCount * e.fields.length +
+			weights.inboundReferences * inbound;
+		return { ...e, referencedFrom: inbound, importance };
+	});
+	withImportance.sort((a, b) => {
+		if (b.importance !== a.importance) {
+			return b.importance - a.importance;
+		}
+		return a.name.localeCompare(b.name);
+	});
+	return withImportance.slice(0, ctx.config.entities.topN);
 }

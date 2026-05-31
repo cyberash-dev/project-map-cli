@@ -5,17 +5,17 @@ import { extractPythonWorkers } from "./adapters/python.js";
 import { extractTypeScriptWorkers } from "./adapters/typescript.js";
 
 export class WorkersExtractor implements IExtractor<Worker[]> {
-  readonly name = "workers";
+	readonly name = "workers";
 
-  async extract(ctx: ExtractionContext): Promise<Worker[]> {
-    switch (ctx.language) {
-      case "python":
-        return await extractPythonWorkers(ctx);
-      case "typescript":
-      case "javascript":
-        return await extractTypeScriptWorkers(ctx);
-      default:
-        return [];
-    }
-  }
+	async extract(ctx: ExtractionContext): Promise<Worker[]> {
+		switch (ctx.language) {
+			case "python":
+				return await extractPythonWorkers(ctx);
+			case "typescript":
+			case "javascript":
+				return await extractTypeScriptWorkers(ctx);
+			default:
+				return [];
+		}
+	}
 }
