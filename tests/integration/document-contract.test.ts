@@ -138,6 +138,7 @@ describe("map document emission", () => {
 	});
 
 	/* @covers project-map:GA-001 */
+	/* @covers project-map:DLT-003 */
 	it("regenerates the document whole, keeping nothing from the previous one", async () => {
 		const mdPath = path.join(workspace.dir, MD);
 		await writeFile(mdPath, "stale marker that must not survive\n", "utf8");
@@ -149,6 +150,7 @@ describe("map document emission", () => {
 	});
 
 	/* @covers project-map:GA-001 */
+	/* @covers project-map:DLT-003 */
 	it("emits an identical document on a second build over an unchanged tree", async () => {
 		const first = await buildDocument(workspace.dir);
 		const second = await buildDocument(workspace.dir);
