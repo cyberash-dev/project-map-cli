@@ -137,7 +137,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: 13dac395a683e8f65079a8bff274e98991fe18d1
+    reference: 502365ae4734c0a8f6f6fe08c3ced1ff8a508a2d
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -149,14 +149,14 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: ac8ab097ecd5969f20564158f3a2fe9f2ff5f7dca0a86d8ded3261b6a1797c06
-baseline_commit_sha: 13dac395a683e8f65079a8bff274e98991fe18d1
+freshness_token: 9042649f75df9c8785318262bb53693427dbe83d17039f80daeeaa97b3e46149
+baseline_commit_sha: 502365ae4734c0a8f6f6fe08c3ced1ff8a508a2d
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from c82417cd to 13dac395. The refresh crosses the footprint
+  Refreshed from c82417cd to 502365ae. The refresh crosses the footprint
   of CTR-001, CTR-002, INV-001 and INV-002; every crossing is authored
   as project-map:DLT-001 or project-map:DLT-002, or is implementation
   work bringing the code to an already approved predicate.
@@ -208,16 +208,22 @@ lifecycle:
     scope: first-time-approval
 partition_id: project-map
 name: project-map/map-document
-version: "0.2.2"
+version: "0.3.0"
 boundary_type: generated_published_artifact
 members:
   - project-map:CTR-003
+  - project-map:GA-001
 consumer_compat_policy: semver_per_surface
 notes: |
   The map document is committed into consumer repositories and read by
   humans, by git hooks running check mode, and by coding agents. Its
   section identifiers, section order, and generation-metadata rows are
   external identifiers under SDD §8.
+  v0.3.0 — additive: project-map:GA-001 joins as a member, naming the
+  emission itself so a structural-breaking diff in the emission carries
+  its own major bump per SDD §11.4-bis. No member was renamed or
+  removed, and CTR-003 is unchanged; see project-map:DLT-003.
+  v0.2.2 — original surface, CTR-003 only.
 ---
 ```
 
@@ -813,7 +819,13 @@ none
 id: project-map:GA-001
 type: GeneratedArtifact
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-27T16:45:38.331Z
+    change_request: Close contract violations found during SDD onboarding
+    scope: first-time-approval
 partition_id: project-map
 title: the map document and its optional JSON companion
 source_ids:
@@ -983,7 +995,13 @@ none
 id: project-map:DLT-001
 type: Delta
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-27T16:45:15.899Z
+    change_request: Close contract violations found during SDD onboarding
+    scope: first-time-approval
 partition_id: project-map
 title: the config hash covers the whole validated document
 target_id: project-map:CTR-002
@@ -1023,7 +1041,13 @@ tests_new_behavior: |
 id: project-map:DLT-002
 type: Delta
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-27T16:43:40.498Z
+    change_request: Close contract violations found during SDD onboarding
+    scope: first-time-approval
 partition_id: project-map
 title: claude install rejects an unrecognized --scope
 target_id: project-map:CTR-001
@@ -1048,6 +1072,47 @@ tests_old_behavior: |
 tests_new_behavior: |
   `claude install --scope typo` exits 1 and leaves the workspace
   unchanged; `--scope project` and `--scope user` keep their effects.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-003
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-27T17:29:59.985Z
+    change_request: Name the emission as a member of the map-document Surface
+    scope: first-time-approval
+partition_id: project-map
+title: the map-document Surface names its own emission as a member
+target_id: project-map:SUR-002
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: ignore
+as_is: |
+  project-map:SUR-002 lists project-map:CTR-003 as its only member. The
+  emission itself carries no member id, so a structural-breaking diff in
+  the emitted bytes has no Surface of its own to bump.
+to_be: |
+  project-map:SUR-002 lists project-map:CTR-003 and project-map:GA-001,
+  and its version moves from 0.2.2 to 0.3.0. The bump is minor because
+  the change is additive: no member is renamed or removed and CTR-003 is
+  untouched.
+migration_note: |
+  No consumer-visible change. The emitted document is byte-identical
+  before and after; only the specification graph gains an edge, which is
+  why compatibility_action is ignore.
+tests_old_behavior: |
+  The old member list carried no acceptance predicate of its own, so no
+  test preserves it; as_is records it.
+tests_new_behavior: |
+  `sdd ready` reports no surface_member_drift for project-map:SUR-002,
+  and project-map:GA-001 is closed by the regeneration and repeat-build
+  obligations in tests/integration/document-contract.test.ts.
 ---
 ```
 
