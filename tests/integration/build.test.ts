@@ -89,6 +89,7 @@ describe("python-aiohttp-minimal fixture", () => {
 		expect(md).toContain("TransactionStatus");
 	});
 
+	/* @covers project-map:INV-001 */
 	it("is deterministic across runs modulo timestamp", async () => {
 		const logger = new ConsoleLogger(false);
 		const loader = new CosmiconfigLoader();
