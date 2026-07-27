@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ALL_LANGUAGES } from "../../src/core/domain/language.js";
@@ -124,6 +124,36 @@ describe("map document contract", () => {
 		} finally {
 			globalThis.fetch = realFetch;
 		}
+	});
+});
+
+describe("map document emission", () => {
+	let workspace: Workspace;
+
+	beforeEach(async () => {
+		workspace = await createWorkspace(FIXTURE);
+	});
+	afterEach(async () => {
+		await workspace.dispose();
+	});
+
+	/* @covers project-map:GA-001 */
+	it("regenerates the document whole, keeping nothing from the previous one", async () => {
+		const mdPath = path.join(workspace.dir, MD);
+		await writeFile(mdPath, "stale marker that must not survive\n", "utf8");
+
+		const regenerated = await buildDocument(workspace.dir);
+
+		expect(regenerated).not.toContain("stale marker");
+		expect(regenerated.startsWith("# Project Map: aiohttp-minimal")).toBe(true);
+	});
+
+	/* @covers project-map:GA-001 */
+	it("emits an identical document on a second build over an unchanged tree", async () => {
+		const first = await buildDocument(workspace.dir);
+		const second = await buildDocument(workspace.dir);
+
+		expect(stripNonReproducible(second)).toBe(stripNonReproducible(first));
 	});
 });
 
