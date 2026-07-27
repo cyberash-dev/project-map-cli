@@ -38,11 +38,21 @@ function rankAndTrim(entities: Entity[], ctx: ExtractionContext): Entity[] {
 			weights.inboundReferences * inbound;
 		return { ...e, referencedFrom: inbound, importance };
 	});
+	/*
+	 * Ties fall through to the source anchor so the order is a declared
+	 * total order (project-map:INV-002) rather than one that holds only
+	 * because the walker happens to emit sorted paths.
+	 */
 	withImportance.sort((a, b) => {
 		if (b.importance !== a.importance) {
 			return b.importance - a.importance;
 		}
-		return a.name.localeCompare(b.name);
+		const byName = a.name.localeCompare(b.name);
+		if (byName !== 0) {
+			return byName;
+		}
+		const byFile = a.source.file.localeCompare(b.source.file);
+		return byFile !== 0 ? byFile : a.source.line - b.source.line;
 	});
 	return withImportance.slice(0, ctx.config.entities.topN);
 }

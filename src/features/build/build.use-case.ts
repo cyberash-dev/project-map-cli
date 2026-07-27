@@ -195,7 +195,11 @@ export class BuildProjectMapUseCase {
 			storage,
 			interactions,
 			workers,
-			errors,
+			/*
+			 * Errors are pushed in promise-completion order, which the
+			 * document must not depend on (project-map:INV-001).
+			 */
+			errors: [...errors].sort((a, b) => a.section.localeCompare(b.section)),
 		};
 	}
 

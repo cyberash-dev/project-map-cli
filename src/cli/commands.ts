@@ -238,7 +238,14 @@ function registerClaudeCommand(program: Command): void {
 
 	install.action(async () => {
 		const opts = install.opts<ClaudeInstallOptions>();
-		const scope = opts.scope === "user" ? "user" : "project";
+		if (opts.scope !== "project" && opts.scope !== "user") {
+			process.stderr.write(
+				`invalid --scope: ${opts.scope}. Expected project or user.\n`,
+			);
+			process.exitCode = 1;
+			return;
+		}
+		const scope = opts.scope;
 		const force = Boolean(opts.force);
 		const installHook = opts.hook !== false;
 		const installSkill = opts.skill !== false;

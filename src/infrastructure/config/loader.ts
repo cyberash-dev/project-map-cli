@@ -17,6 +17,7 @@ import type {
 	StorageConfig,
 	WorkersConfig,
 } from "../../core/ports/config.port.js";
+import { canonicalJson } from "./canonical-json.js";
 import { type ConfigFile, ConfigFileSchema } from "./schema.js";
 import {
 	DEFAULT_KNOWN_ROLES,
@@ -166,6 +167,6 @@ function resolveConfig(
 }
 
 function hashConfig(raw: ConfigFile): string {
-	const canonical = JSON.stringify(raw, Object.keys(raw).sort());
+	const canonical = canonicalJson(raw);
 	return `sha256:${createHash("sha256").update(canonical).digest("hex").slice(0, 16)}`;
 }
