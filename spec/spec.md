@@ -137,7 +137,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: 502365ae4734c0a8f6f6fe08c3ced1ff8a508a2d
+    reference: e36dec175bd4be609b1e89714d8f0df85497b44d
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -149,14 +149,14 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 9042649f75df9c8785318262bb53693427dbe83d17039f80daeeaa97b3e46149
-baseline_commit_sha: 502365ae4734c0a8f6f6fe08c3ced1ff8a508a2d
+freshness_token: 2dfada22f3022bbf71d7a58530caabced0576b2f0017b212ff51fd00912a5ae8
+baseline_commit_sha: e36dec175bd4be609b1e89714d8f0df85497b44d
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from c82417cd to 502365ae. The refresh crosses the footprint
+  Refreshed from c82417cd to e36dec17. The refresh crosses the footprint
   of CTR-001, CTR-002, INV-001 and INV-002; every crossing is authored
   as project-map:DLT-001 or project-map:DLT-002, or is implementation
   work bringing the code to an already approved predicate.
