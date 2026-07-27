@@ -27,13 +27,7 @@ import type {
 } from "../../core/ports/parser.port.js";
 import type { IRevisionProvider } from "../../core/ports/revision.port.js";
 import type { ExtractionContext } from "./extraction-context.js";
-import { ContextsExtractor } from "./slices/contexts/extract.js";
-import { EndpointsExtractor } from "./slices/endpoints/extract.js";
-import { EntitiesExtractor } from "./slices/entities/extract.js";
-import { EnumsExtractor } from "./slices/enums/extract.js";
-import { InteractionsExtractor } from "./slices/interactions/extract.js";
-import { StorageExtractor } from "./slices/storage/extract.js";
-import { WorkersExtractor } from "./slices/workers/extract.js";
+import { defaultExtractors, type ExtractorSet } from "./extractor-set.js";
 import { buildSymbolIndex } from "./symbol-index.js";
 
 export type BuildDeps = {
@@ -45,6 +39,7 @@ export type BuildDeps = {
 	readonly logger: ILogger;
 	readonly revision: IRevisionProvider;
 	readonly toolVersion: string;
+	readonly extractors?: ExtractorSet;
 };
 
 export type BuildResult = {
@@ -142,6 +137,7 @@ export class BuildProjectMapUseCase {
 		ctx: ExtractionContext,
 	): Promise<ExtractorResults> {
 		const errors: ExtractorError[] = [];
+		const extractors = this.deps.extractors ?? defaultExtractors();
 		const safe = async <T>(
 			label: string,
 			fn: () => Promise<T>,
@@ -168,31 +164,27 @@ export class BuildProjectMapUseCase {
 		] = await Promise.all([
 			safe<BoundedContext[]>(
 				"contexts",
-				() => new ContextsExtractor().extract(ctx),
+				() => extractors.contexts.extract(ctx),
 				[],
 			),
-			safe<Entity[]>(
-				"entities",
-				() => new EntitiesExtractor().extract(ctx),
-				[],
-			),
-			safe<EnumType[]>("enums", () => new EnumsExtractor().extract(ctx), []),
+			safe<Entity[]>("entities", () => extractors.entities.extract(ctx), []),
+			safe<EnumType[]>("enums", () => extractors.enums.extract(ctx), []),
 			safe<Endpoint[]>(
 				"endpoints",
-				() => new EndpointsExtractor().extract(ctx),
+				() => extractors.endpoints.extract(ctx),
 				[],
 			),
 			safe<{ tables: Table[]; migrations: Migration[] }>(
 				"storage",
-				() => new StorageExtractor().extract(ctx),
+				() => extractors.storage.extract(ctx),
 				{ tables: [], migrations: [] },
 			),
 			safe<Interaction[]>(
 				"interactions",
-				() => new InteractionsExtractor().extract(ctx),
+				() => extractors.interactions.extract(ctx),
 				[],
 			),
-			safe<Worker[]>("workers", () => new WorkersExtractor().extract(ctx), []),
+			safe<Worker[]>("workers", () => extractors.workers.extract(ctx), []),
 		]);
 
 		return {
