@@ -1830,58 +1830,6 @@ tests_new_behavior: |
 
 ```yaml
 ---
-id: project-map:IMP-006
-type: ImplementationBinding
-lifecycle:
-  status: proposed
-partition_id: project-map
-target_ids:
-  - project-map:CTR-004
-  - project-map:POL-003
-binding:
-  port: src/core/ports/analysis-unit.port.ts
-  materializer: src/infrastructure/analysis-unit/materializer.ts
-  composition_root: src/cli/commands.ts
-  schema: src/infrastructure/config/schema.ts
-authority: code_annotation
-verification_method: |
-  The materializer is the only module that touches the filesystem for
-  detection; the use case receives the materialized map and takes no
-  filesystem port. Integration tests materialize one fixture from two
-  absolute paths and compare the unit digest.
----
-```
-
-```yaml
----
-id: project-map:IMP-007
-type: ImplementationBinding
-lifecycle:
-  status: proposed
-partition_id: project-map
-target_ids:
-  - project-map:CTR-006
-  - project-map:CTR-007
-  - project-map:CTR-008
-  - project-map:INV-003
-binding:
-  fact_schema: src/core/domain/facts/fact.ts
-  value_ir: src/core/domain/facts/value-ir.ts
-  anchors: src/features/detect/index/anchors.ts
-  canonicalizer: src/features/detect/canonical/jcs.ts
-  array_order: src/features/detect/canonical/array-order.ts
-  fact_id: src/features/detect/canonical/fact-id.ts
-  build_digest: scripts/emit-build-digest.mjs
-authority: code_annotation
-verification_method: |
-  Unit tests drive the published RFC 8785 vectors through the
-  canonicalizer, assert the fact id is stable across excluded fields,
-  and round-trip UTF-16 to UTF-8 anchors over a non-ASCII fixture.
----
-```
-
-```yaml
----
 id: project-map:IMP-008
 type: ImplementationBinding
 lifecycle:

@@ -10,13 +10,19 @@ Status of this document: onboarding in progress. The partition's
 observable behavior is not yet claimed by an approved normative ID.
 It shrinks per PR; it does not reach zero in one change.
 
-Accounting for the current value: 74 modules under `src/`, of which 21
+Accounting for the current value: 87 modules under `src/`, of which 35
 appear in the `binding` block of an `Implementation binding` in §16 and
-are therefore claimed by a normative ID. The remaining 53 are the
+are therefore claimed by a normative ID. The remaining 52 are the
 per-slice extraction adapters and the ports they sit behind; their
 observable behavior is lifted in later change sets. The count is derived
 from the §16 footprint rather than assessed by hand, so it moves only
 when a binding gains or loses a path.
+
+The detection rework adds modules and claims every one of them as it
+lands, so the count falls rather than rises: the 13 modules of its first
+phase arrive already bound by project-map:IMP-006 and
+project-map:IMP-007. The normative IDs those bindings target are
+authored in `spec/detection.md` and are not yet approved; see §19.
 
 ---
 
@@ -104,7 +110,7 @@ default_policy_set:
   - project-map:POL-002
 id_namespace: project-map
 unmodeled_budget:
-  current: 53
+  current: 66
   baseline_at: "2026-07-27"
   baseline_value: 72
   trend: monotonic_non_increasing
@@ -137,7 +143,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: e36dec175bd4be609b1e89714d8f0df85497b44d
+    reference: cbd8762925f378295a14a5e00d0e1389d83e6cf9
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -149,17 +155,29 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 2dfada22f3022bbf71d7a58530caabced0576b2f0017b212ff51fd00912a5ae8
-baseline_commit_sha: e36dec175bd4be609b1e89714d8f0df85497b44d
+freshness_token: e5f59f22f8e3835d0142b3938bcc4f094511fbb4f16411e114dab42515625893
+baseline_commit_sha: cbd8762925f378295a14a5e00d0e1389d83e6cf9
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from c82417cd to e36dec17. The refresh crosses the footprint
-  of CTR-001, CTR-002, INV-001 and INV-002; every crossing is authored
-  as project-map:DLT-001 or project-map:DLT-002, or is implementation
-  work bringing the code to an already approved predicate.
+  Refreshed from e36dec17 to cbd8762. The refresh carries the first phase
+  of the detection rework: thirteen new modules, each claimed by
+  project-map:IMP-006 or project-map:IMP-007, and one line in
+  src/cli/commands.ts that threads the new `output.facts` key through the
+  option override.
+  Two crossings are honest debt rather than closed obligations. The IDs
+  those two bindings target are authored in `spec/detection.md` and are
+  still `proposed`, so the code precedes its attestation; the operator
+  directed the work to run ahead of approval, and promoting the records
+  is a single `sdd approve` plus `sdd finalize` away. The commands.ts
+  crossing is authorized by project-map:DLT-004, which is proposed for
+  the same reason.
+  Refreshed from c82417cd to e36dec17 earlier. That refresh crossed the
+  footprint of CTR-001, CTR-002, INV-001 and INV-002; every crossing was
+  authored as project-map:DLT-001 or project-map:DLT-002, or was
+  implementation work bringing the code to an already approved predicate.
 ---
 ```
 
@@ -1238,6 +1256,73 @@ verification_method: |
   Write-set assertions compare the workspace file listing before and
   after each command; the network obligation runs a build with
   globalThis.fetch replaced by a throwing stub.
+---
+```
+
+```yaml
+---
+id: project-map:IMP-006
+type: ImplementationBinding
+lifecycle:
+  status: proposed
+partition_id: project-map
+target_ids:
+  - project-map:CTR-004
+  - project-map:POL-003
+  - project-map:DLT-004
+binding:
+  port: src/core/ports/analysis-unit.port.ts
+  materializer: src/infrastructure/analysis-unit/materializer.ts
+  config_time_error: src/core/domain/config-time-error.ts
+  schema: src/infrastructure/config/schema.ts
+  resolution: src/infrastructure/config/loader.ts
+  config_port: src/core/ports/config.port.ts
+authority: code_annotation
+verification_method: |
+  The materializer is the only module that reads the filesystem for
+  detection, and it hands on a map carrying no absolute path.
+  tests/integration/analysis-unit.test.ts materializes one fixture twice
+  and materializes a copy of it placed at another absolute path, then
+  compares the three digests; it also drives each config-time rejection.
+  tests/integration/detect-config.test.ts drives the schema, including
+  the conditional identity rule of project-map:ASM-002.
+---
+```
+
+```yaml
+---
+id: project-map:IMP-007
+type: ImplementationBinding
+lifecycle:
+  status: proposed
+partition_id: project-map
+target_ids:
+  - project-map:CTR-006
+  - project-map:CTR-007
+  - project-map:CTR-008
+  - project-map:INV-003
+binding:
+  anchor: src/core/domain/facts/anchor.ts
+  value_ir: src/core/domain/facts/value-ir.ts
+  fact_schema: src/core/domain/facts/fact.ts
+  diagnostic_schema: src/core/domain/facts/diagnostic.ts
+  canonicalizer: src/features/detect/canonical/jcs.ts
+  array_order: src/features/detect/canonical/array-order.ts
+  fact_id: src/features/detect/canonical/fact-id.ts
+  semantic_core: src/features/detect/merge/core.ts
+  byte_anchors: src/features/detect/index/anchors.ts
+  build_digest: src/features/detect/registry/build-digest.generated.ts
+  build_digest_generator: scripts/emit-build-digest.mjs
+authority: code_annotation
+verification_method: |
+  tests/unit/jcs.test.ts drives the published RFC 8785 Appendix B vector,
+  checked in as bytes under tests/fixtures/jcs/, plus the UTF-16 key
+  ordering case that a code-point comparator would get wrong.
+  tests/unit/fact-id.test.ts asserts the id is blind to provenance,
+  evidence, resolution and the destination binding, and that two
+  unresolved registrations at distinct anchors stay apart.
+  tests/unit/anchors.test.ts round-trips a non-ASCII source through the
+  code-unit and the byte view.
 ---
 ```
 
