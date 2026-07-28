@@ -143,7 +143,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: 1485bc529eb7f12153a95488681ee90ef50ab366
+    reference: 475eadba3995acad6e02e4aa6c48bfad60c48357
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -155,28 +155,26 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 8dbea7978a596ac85d87654e9d75b501e0c5a4edd81fc6054a3a4374bee2ce82
-baseline_commit_sha: 1485bc529eb7f12153a95488681ee90ef50ab366
+freshness_token: 9eb7fed8df527dd63fa6f4f2f3dabf9d9f8bbc6dfd21446929f7d649672c3682
+baseline_commit_sha: 475eadba3995acad6e02e4aa6c48bfad60c48357
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from e36dec17 to 1485bc52 across the first two phases of the
+  Refreshed from e36dec17 to 475eadba across the first two phases of the
   detection rework: twenty-two new modules, each claimed by
   project-map:IMP-006, project-map:IMP-007 or project-map:IMP-008, plus
   the configuration keys those phases add and one line in
   src/cli/commands.ts that threads `output.facts` through the option
   override.
-  The crossings are honest debt rather than closed obligations. The IDs
-  those three bindings target are authored in `spec/detection.md` and are
-  still `proposed`, so the code precedes its attestation; the operator
-  directed the work to run ahead of approval, and promoting the records
-  is a single `sdd approve` plus `sdd finalize` away. The configuration
-  crossings are authorized by project-map:DLT-004 and
-  project-map:DLT-005, proposed for the same reason.
-  The debt count rises to 74, above the 72 the trend was set against,
-  for exactly that reason. Approving the two phases takes it to 52.
+  Every crossing is closed. The code ran ahead of its attestation while
+  the operator directed the work, and the fourteen IDs those bindings
+  target were approved in one plan afterwards; project-map:DLT-004,
+  project-map:DLT-005 and project-map:DLT-008 authorize the
+  configuration and write-set crossings, and project-map:DLT-009 and
+  project-map:DLT-010 carry the surface versions the widened policy
+  predicate requires. The debt count returns to 52.
   Refreshed from c82417cd to e36dec17 earlier. That refresh crossed the
   footprint of CTR-001, CTR-002, INV-001 and INV-002; every crossing was
   authored as project-map:DLT-001 or project-map:DLT-002, or was

@@ -96,20 +96,14 @@ describe("specification version alignment", () => {
 
 		const cliSurface = normativeRecord(surfaces, "project-map:SUR-001");
 		const mapSurface = normativeRecord(surfaces, "project-map:SUR-002");
-		const configurationDelta = normativeRecord(
-			deltas,
-			"project-map:DLT-004",
-		);
+		const configurationDelta = normativeRecord(deltas, "project-map:DLT-004");
 		const detectionDelta = normativeRecord(deltas, "project-map:DLT-005");
 		const policyDelta = normativeRecord(deltas, "project-map:DLT-009");
 		const configurationCorrection = normativeRecord(
 			deltas,
 			"project-map:DLT-010",
 		);
-		const detectionCorrection = normativeRecord(
-			deltas,
-			"project-map:DLT-011",
-		);
+		const detectionCorrection = normativeRecord(deltas, "project-map:DLT-011");
 
 		expect(cliSurface).toContain('version: "1.0.0"');
 		expect(mapSurface).toContain('version: "1.0.0"');
@@ -118,12 +112,8 @@ describe("specification version alignment", () => {
 		expect(policyDelta).toMatch(
 			/id: project-map:SUR-001\s+intended_version: "1\.0\.0"[\s\S]*id: project-map:SUR-002\s+intended_version: "1\.0\.0"/,
 		);
-		expect(configurationCorrection).toContain(
-			"target_id: project-map:DLT-004",
-		);
-		expect(detectionCorrection).toContain(
-			"target_id: project-map:DLT-005",
-		);
+		expect(configurationCorrection).toContain("target_id: project-map:DLT-004");
+		expect(detectionCorrection).toContain("target_id: project-map:DLT-005");
 	});
 });
 
