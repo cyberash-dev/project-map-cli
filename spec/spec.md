@@ -10,28 +10,19 @@ Status of this document: onboarding in progress. The partition's
 observable behavior is not yet claimed by an approved normative ID.
 It shrinks per PR; it does not reach zero in one change.
 
-Accounting for the current value: 95 modules under `src/`, of which 21
+Accounting for the current value: 95 modules under `src/`, of which 43
 are claimed by an `Implementation binding` in §16 whose `target_ids` are
-approved. The remaining 74 are the per-slice extraction adapters, the
-ports they sit behind, and the detection modules described below; their
-observable behavior is lifted in later change sets. The count is derived
-from the §16 footprint rather than assessed by hand, so it moves only
-when a binding gains or loses a path, or when a target is approved.
+approved. The remaining 52 are the per-slice extraction adapters and the
+ports they sit behind; their observable behavior is lifted in later
+change sets. The count is derived from the §16 footprint rather than
+assessed by hand, so it moves only when a binding gains or loses a path,
+or when a target is approved.
 
-Twenty-two of those 74 are the detection rework. They already appear in
-the `binding` block of project-map:IMP-006, project-map:IMP-007 and
-project-map:IMP-008, so no work is needed to model them: the IDs those
-three bindings target are authored in `spec/detection.md` and are still
-`proposed`. Approving them moves twenty-two modules out of the count in
-one step and takes it to 52. Until then they are counted as debt, which
-is what the definition above requires and what makes the number honest.
-
-That is why the count stands above the 72 the trend was set against.
-The breach is real and is reported rather than smoothed: `sdd ready
---against` flags it until the two phases are approved, and the number
-is derived from the footprint, so writing a smaller one would be a
-false statement about the code rather than a fix. It clears in one
-step, and it clears only that way.
+The first two phases of the detection rework are inside the 43. They
+briefly pushed the count to 74, above the 72 the trend was set against,
+because a module counts as modeled only under an approved target and
+theirs were still `proposed`. The breach was reported rather than
+smoothed, and approving those thirteen IDs cleared it in one step.
 
 ---
 
@@ -119,7 +110,7 @@ default_policy_set:
   - project-map:POL-002
 id_namespace: project-map
 unmodeled_budget:
-  current: 74
+  current: 52
   baseline_at: "2026-07-27"
   baseline_value: 72
   trend: monotonic_non_increasing
@@ -211,11 +202,13 @@ lifecycle:
     scope: first-time-approval
 partition_id: project-map
 name: project-map/cli
-version: "0.2.2"
+version: "0.4.0"
 boundary_type: cli
 members:
   - project-map:CTR-001
   - project-map:CTR-002
+  - project-map:CTR-004
+  - project-map:CTR-005
 consumer_compat_policy: semver_per_surface
 notes: |
   The command set, each command's argv shape, its option names, and its
@@ -924,9 +917,13 @@ applicability:
 predicate: |
   Each command's write set is bounded to the paths listed here, and the
   process opens no other path for writing:
-    build           path.resolve(<project_root>, <config.output.markdown>)
-                    and, when <config.output.json> is a string,
-                    path.resolve(<project_root>, <config.output.json>)
+    build           path.resolve(<project_root>, <config.output.markdown>);
+                    when <config.output.json> is a string,
+                    path.resolve(<project_root>, <config.output.json>);
+                    when <config.output.facts> is a string,
+                    path.resolve(<project_root>, <config.output.facts>) and
+                    its sidecar, which is that path with a trailing
+                    ".json" removed when present and ".meta.json" appended
     build --check   the empty set
     init            the configuration file at the resolved target path
     version         the empty set

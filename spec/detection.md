@@ -1,32 +1,46 @@
-# `project-map-cli` — Detection rework (sandbox)
+# `project-map-cli` — Detection rework
 
-Sandbox specification for the endpoints/interactions detection rework.
+Specification of the endpoints/interactions detection rework.
 Requirements source of truth:
 `~/Projects/intraservice-map/docs/project-map-detection-rework.md` v4.1;
 implementation mapping: `docs/detection-rework-plan.md`.
 
-This file is declared under `partitions["project-map"].sandbox_paths`, so
-every record here stays `proposed` without failing `sdd ready`. A record
-leaves this file for `spec/spec.md` at the moment its phase begins: the
-Red tests carrying `@covers <id>` are written first, then `sdd approve`
-and `sdd finalize` promote the record. Nothing here is implementable
-while it lives in this file.
+This file is declared under `partitions["project-map"].sandbox_paths`.
+That exemption is what lets a record of a phase nobody has started stay
+`proposed` without failing `sdd ready`; it says nothing about the
+records that have since been approved. A record is promoted in place
+rather than moved: its phase writes the Red tests carrying
+`@covers <id>`, then `sdd approve` and `sdd finalize` flip it here.
 
-Phase-to-record mapping:
+Read `lifecycle.status`, not the file name. An approved record in this
+file governs the implementation exactly as one in `spec/spec.md` does.
 
-| Phase                                               | Records promoted                                                                                          |
-| :-------------------------------------------------- | :-------------------------------------------------------------------------------------------------------- |
-| A — determinism core and the analysis-unit boundary | CTR-004, CTR-006, CTR-007, CTR-008, INV-003, POL-003, DLT-004, IMP-006, IMP-007                           |
-| B — OpenAPI inbound and artifact emission           | CTR-005, BEH-005, BEH-006, BEH-007, GA-002, SUR-003, CON-001, DLT-005, DLT-006, DLT-007, DLT-008, IMP-008 |
-| C — indexes and the intraprocedural normalizer      | BEH-008, INV-004                                                                                          |
-| D — router value identity                           | BEH-009, IMP-009                                                                                          |
-| E — declared sinks and the record lattice           | BEH-010, BEH-011, INV-005, IMP-010                                                                        |
-| F — shared-library halves and coverage              | BEH-012, BEH-013, IMP-011                                                                                 |
+Phase-to-record mapping, with the status each phase's records now hold:
+
+| Phase                                               | Records                                                       | Status                                                                                                                   |
+| :-------------------------------------------------- | :------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------- |
+| A — determinism core and the analysis-unit boundary | CTR-004, CTR-006, CTR-007, CTR-008, INV-003, POL-003, DLT-004 | approved, implemented                                                                                                    |
+| B — OpenAPI inbound and artifact emission           | CTR-005, BEH-005, BEH-007, GA-002, SUR-003, DLT-005, DLT-008  | approved, implemented                                                                                                    |
+| B — check mode and the opt-in sections              | BEH-006, DLT-006, DLT-007, CON-001                            | proposed; the artifact is emitted but check mode does not yet compare it, and the three section ids are not yet rendered |
+| C — indexes and the intraprocedural normalizer      | BEH-008, INV-004                                              | proposed                                                                                                                 |
+| D — router value identity                           | BEH-009                                                       | proposed                                                                                                                 |
+| E — declared sinks and the record lattice           | BEH-010, BEH-011, INV-005                                     | proposed                                                                                                                 |
+| F — shared-library halves and coverage              | BEH-012, BEH-013                                              | proposed                                                                                                                 |
+
+The implementation bindings of the approved phases, project-map:IMP-006
+through project-map:IMP-008, live in `spec/spec.md` so that the §16
+footprint claims their modules.
+
+Phase A and the emission half of phase B are approved and implemented.
+Check mode over the artifact, the new exit codes and the three opt-in
+section ids are authored and unapproved, as are phases C through F: no
+code implements them.
 
 A Delta and the edit it authorizes travel together: the amendment to an
 approved record in `spec/spec.md` is made in the commit that finalizes
 its Delta, never earlier. Until then the approved record keeps
-describing the code as it stands.
+describing the code as it stands. `sdd finalize` applies a declared
+`surface_impact` itself, so a Surface bump needs no hand edit.
 
 ---
 
@@ -37,7 +51,13 @@ describing the code as it stands.
 id: project-map:SUR-003
 type: Surface
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-28T10:56:23.553Z
+    change_request: detection rework phases A and B
+    scope: first-time-approval
 partition_id: project-map
 name: project-map/detection-facts
 version: "1.0.0"
@@ -68,7 +88,13 @@ notes: |
 id: project-map:BEH-005
 type: Behavior
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-28T10:56:23.356Z
+    change_request: detection rework phases A and B
+    scope: first-time-approval
 partition_id: project-map
 title: build — emit the detection facts artifact and its sidecar
 given: |
@@ -192,7 +218,13 @@ test_obligation:
 id: project-map:BEH-007
 type: Behavior
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-28T10:56:23.422Z
+    change_request: detection rework phases A and B
+    scope: first-time-approval
 partition_id: project-map
 title: detection — a declared OpenAPI inventory emits facts independent of code
 given: |
@@ -684,7 +716,13 @@ test_obligation:
 id: project-map:CTR-004
 type: Contract
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-28T10:56:22.908Z
+    change_request: detection rework phases A and B
+    scope: first-time-approval
 partition_id: project-map
 title: the analysis unit and the determinism boundary
 surface_ref: project-map:SUR-001
@@ -787,7 +825,13 @@ test_obligation:
 id: project-map:CTR-005
 type: Contract
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-28T10:56:22.968Z
+    change_request: detection rework phases A and B
+    scope: first-time-approval
 partition_id: project-map
 title: the openapi and detect configuration sections
 surface_ref: project-map:SUR-001
@@ -888,7 +932,13 @@ test_obligation:
 id: project-map:CTR-006
 type: Contract
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-28T10:56:23.032Z
+    change_request: detection rework phases A and B
+    scope: first-time-approval
 partition_id: project-map
 title: the detection fact schema, identity, and merge
 surface_ref: project-map:SUR-003
@@ -1008,7 +1058,13 @@ test_obligation:
 id: project-map:CTR-007
 type: Contract
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-28T10:56:23.096Z
+    change_request: detection rework phases A and B
+    scope: first-time-approval
 partition_id: project-map
 title: the value IR, the resolution budget, and the canonical path grammar
 surface_ref: project-map:SUR-003
@@ -1111,7 +1167,13 @@ test_obligation:
 id: project-map:CTR-008
 type: Contract
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-28T10:56:23.161Z
+    change_request: detection rework phases A and B
+    scope: first-time-approval
 partition_id: project-map
 title: canonical serialization, fact identity, and artifact fingerprints
 surface_ref: project-map:SUR-003
@@ -1200,7 +1262,13 @@ test_obligation:
 id: project-map:INV-003
 type: Invariant
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-28T10:56:23.226Z
+    change_request: detection rework phases A and B
+    scope: first-time-approval
 partition_id: project-map
 title: the facts artifact is a pure function of the analysis unit
 always: |
@@ -1368,7 +1436,13 @@ test_obligation:
 id: project-map:GA-002
 type: GeneratedArtifact
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-28T10:56:23.486Z
+    change_request: detection rework phases A and B
+    scope: first-time-approval
 partition_id: project-map
 title: the detection facts artifact and its sidecar
 source_ids:
@@ -1428,7 +1502,13 @@ test_obligation:
 id: project-map:POL-003
 type: Policy
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-28T10:56:23.292Z
+    change_request: detection rework phases A and B
+    scope: first-time-approval
 partition_id: project-map
 title: detection observes only the materialized analysis unit
 policy_kind: io_scope
@@ -1605,7 +1685,13 @@ tests:
 id: project-map:DLT-004
 type: Delta
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-28T10:56:23.618Z
+    change_request: detection rework phases A and B
+    scope: first-time-approval
 partition_id: project-map
 title: the configuration carries an identity, an analysis unit, a facts path
 target_id: project-map:CTR-002
@@ -1614,7 +1700,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "0.3.0"
+    intended_version: "0.4.0"
 as_is: |
   project-map:CTR-002 lists fourteen top-level configuration keys, none
   of which names a repository identity or bounds an analysis unit. The
@@ -1631,10 +1717,13 @@ to_be: |
   The requiredness rule names the detection sections before
   project-map:DLT-005 admits them, so that arm stays unreachable until
   it does and the rule text is written once.
-  project-map:SUR-001 gains project-map:CTR-004 as a member and moves
-  from 0.2.2 to 0.3.0. The bump is minor: every key carries a default
-  that reproduces the prior resolution, and no key is renamed or
-  removed.
+  project-map:SUR-001 gains project-map:CTR-004 as a member. The bump is
+  minor: every key carries a default that reproduces the prior
+  resolution, and no key is renamed or removed.
+  This Delta and project-map:DLT-005 are approved in one plan, so the
+  two minor bumps they carry are applied as one move from 0.2.2 to
+  0.4.0. Both declare that version in `surface_impact` rather than an
+  intermediate one no commit ever holds.
 migration_note: |
   A configuration written before this change validates unchanged and
   resolves to the same source set, because `analysis_unit` defaults to
@@ -1656,7 +1745,13 @@ tests_new_behavior: |
 id: project-map:DLT-005
 type: Delta
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-28T10:56:23.683Z
+    change_request: detection rework phases A and B
+    scope: first-time-approval
 partition_id: project-map
 title: the configuration carries the detection sections
 target_id: project-map:CTR-002
@@ -1676,9 +1771,10 @@ to_be: |
   schema project-map:CTR-005 fixes. Declaring either section now
   requires `repository_identity`, which makes the second arm of the rule
   project-map:DLT-004 wrote reachable without restating it.
-  project-map:SUR-001 gains project-map:CTR-005 as a member and moves
-  from 0.3.0 to 0.4.0. The bump is minor: both sections default to
-  empty, which reproduces the prior behavior.
+  project-map:SUR-001 gains project-map:CTR-005 as a member. The bump is
+  minor: both sections default to empty, which reproduces the prior
+  behavior. Approved in one plan with project-map:DLT-004, the two
+  minor bumps apply as one move from 0.2.2 to 0.4.0.
 migration_note: |
   A configuration written before this change runs the built-in adapters
   alone, because both sections default to empty, and needs no identity,
@@ -1785,7 +1881,13 @@ tests_new_behavior: |
 id: project-map:DLT-008
 type: Delta
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-28T10:55:19.654Z
+    change_request: detection rework phases A and B
+    scope: first-time-approval
 partition_id: project-map
 title: the bounded write set covers the facts artifact and its sidecar
 target_id: project-map:POL-001
