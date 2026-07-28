@@ -1308,5 +1308,27 @@ tests:
 ## 19. Out of scope
 
 - Adoption of this tool inside any consumer repository.
-- The detection rework described in `docs/detection-rework-plan.md`;
-  it is authored against this baseline in a later change set.
+- The detection rework described in `docs/detection-rework-plan.md`.
+  Its normative records are authored against this baseline in
+  `spec/detection.md`, a sandbox file whose records stay `proposed`
+  until the phase that implements them promotes each one into this
+  document. Nothing in that file governs the current implementation.
+- Inside that rework, these items are deferred for want of an oracle in
+  either validation service, and each keeps a reserved name so that
+  adding it later is not a breaking change:
+  - queue producers and consumers, and the topic topology they would
+    carry; the closed `action` enum and the topic-decoy negative
+    fixture ship without any queue fact;
+  - Swagger 2.0 ingest and its `basePath` composition branch, which
+    reports the document unreadable;
+  - `openapi.consumes` and generated-client outbound operations, whose
+    configuration validates and emits no fact;
+  - the per-call-site comment marker, whose `marker_invalid` code and
+    exit-code slot are reserved;
+  - cross-root `$ref` traversal through a `monorepo:` locator, whose
+    tag parses and raises `monorepo_root_unresolved`;
+  - expansion of an optional path segment, which stays a typed hole;
+  - Java, Kotlin, gRPC, and GraphQL detection.
+- The unclassified ratchet, its suppression baseline, the removal of the
+  legacy `endpoints` and `interactions` adapters, and the migration of
+  the remaining extraction slices onto the analysis unit.

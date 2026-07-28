@@ -16,13 +16,14 @@
 	},
 	"mechanism": "git_tree_hash_v1",
 	"lint": {
-		"spec_files": ["spec/spec.md"],
+		"spec_files": ["spec/spec.md", "spec/detection.md"],
 		"approver_blocklist": []
 	},
 	"partitions": {
 		"project-map": {
-			"spec_paths": ["spec/spec.md"],
-			"test_paths": ["tests/**/*.test.ts"]
+			"spec_paths": ["spec/spec.md", "spec/detection.md"],
+			"test_paths": ["tests/**/*.test.ts"],
+			"sandbox_paths": ["spec/detection.md"]
 		}
 	}
 }

@@ -1,0 +1,1975 @@
+# `project-map-cli` — Detection rework (sandbox)
+
+Sandbox specification for the endpoints/interactions detection rework.
+Requirements source of truth:
+`~/Projects/intraservice-map/docs/project-map-detection-rework.md` v4.1;
+implementation mapping: `docs/detection-rework-plan.md`.
+
+This file is declared under `partitions["project-map"].sandbox_paths`, so
+every record here stays `proposed` without failing `sdd ready`. A record
+leaves this file for `spec/spec.md` at the moment its phase begins: the
+Red tests carrying `@covers <id>` are written first, then `sdd approve`
+and `sdd finalize` promote the record. Nothing here is implementable
+while it lives in this file.
+
+Phase-to-record mapping:
+
+| Phase                                               | Records promoted                                                                                          |
+| :-------------------------------------------------- | :-------------------------------------------------------------------------------------------------------- |
+| A — determinism core and the analysis-unit boundary | CTR-004, CTR-006, CTR-007, CTR-008, INV-003, POL-003, DLT-004, IMP-006, IMP-007                           |
+| B — OpenAPI inbound and artifact emission           | CTR-005, BEH-005, BEH-006, BEH-007, GA-002, SUR-003, CON-001, DLT-005, DLT-006, DLT-007, DLT-008, IMP-008 |
+| C — indexes and the intraprocedural normalizer      | BEH-008, INV-004                                                                                          |
+| D — router value identity                           | BEH-009, IMP-009                                                                                          |
+| E — declared sinks and the record lattice           | BEH-010, BEH-011, INV-005, IMP-010                                                                        |
+| F — shared-library halves and coverage              | BEH-012, BEH-013, IMP-011                                                                                 |
+
+A Delta and the edit it authorizes travel together: the amendment to an
+approved record in `spec/spec.md` is made in the commit that finalizes
+its Delta, never earlier. Until then the approved record keeps
+describing the code as it stands.
+
+---
+
+## 5. Surfaces
+
+```yaml
+---
+id: project-map:SUR-003
+type: Surface
+lifecycle:
+  status: proposed
+partition_id: project-map
+name: project-map/detection-facts
+version: "1.0.0"
+boundary_type: generated_published_artifact
+members:
+  - project-map:CTR-006
+  - project-map:CTR-007
+  - project-map:CTR-008
+  - project-map:GA-002
+consumer_compat_policy: semver_per_surface
+notes: |
+  The facts artifact is committed into consumer repositories and read by
+  the linker, a separate tool that joins per-repository facts across
+  services. It is a Surface separate from project-map:SUR-002 because
+  the two artifacts carry opposed comparison contracts: the map document
+  carries a timestamp and compares modulo the normalization of
+  project-map:INV-001, while the facts artifact carries no timestamp and
+  compares byte for byte.
+---
+```
+
+---
+
+## 6. Requirements
+
+```yaml
+---
+id: project-map:BEH-005
+type: Behavior
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: build — emit the detection facts artifact and its sidecar
+given: |
+  - a configuration that validates against project-map:CTR-002 and
+    resolves an analysis unit per project-map:CTR-004
+  - <config.output.facts> is a string
+when: user runs `project-map build` without --check
+then: |
+  process exit code is 0; the tool writes the verifiable facts artifact
+  to path.resolve(<project_root>, <config.output.facts>), and writes the
+  sidecar beside it, at the artifact path with a trailing ".json"
+  removed when present and ".meta.json" appended. The artifact conforms
+  to project-map:CTR-006 and is serialized per project-map:CTR-008.
+  The artifact carries no timestamp and no build duration; both live in
+  the sidecar, which no comparison reads.
+  When <config.output.facts> is null the tool writes neither file, and
+  the map document of project-map:BEH-001 is unaffected either way.
+negative_cases:
+  - <config.output.facts> is null => neither artifact nor sidecar written
+  - detection yields an empty fact set => the artifact is still written,
+    carrying an empty facts array and its fingerprints
+out_of_scope:
+  - the markdown map document, which project-map:BEH-001 governs
+  - the baseline suppression file, which no build path reads
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: wall_clock:unbounded
+data_scope: all_data
+policy_refs:
+  - project-map:POL-001
+  - project-map:POL-002
+  - project-map:POL-003
+test_obligation:
+  predicate: |
+    Running build over a fixture whose configuration sets output.facts
+    writes the artifact and the sidecar at the resolved paths; running
+    build with output.facts null writes neither.
+  test_template: integration
+  boundary_classes:
+    - output.facts null versus set
+    - a fixture yielding facts versus a fixture yielding none
+    - output.json null versus set alongside output.facts
+  failure_scenarios:
+    - a timestamp or duration rendered into the artifact
+    - the sidecar written when output.facts is null
+    - the artifact omitted when the fact set is empty
+---
+```
+
+```yaml
+---
+id: project-map:BEH-006
+type: Behavior
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: build --check — compare the facts artifact byte for byte
+given: |
+  - a configuration whose <config.output.facts> is a string
+  - an artifact committed at the resolved path
+when: user runs `project-map build --check`
+then: |
+  the tool writes no path. It compares the freshly built artifact
+  against the committed bytes with no normalization applied to either
+  side, and the check report names the failure class. Process exit code:
+    0  the committed bytes equal the built bytes
+    1  the two differ in any byte
+    3  the committed artifact's analyzer_build_digest or its adapter
+       registry digest differs from the running build's
+    4  the build raised a mandatory check diagnostic, which is
+       selector_unresolved or marker_invalid
+  Exit code 3 outranks exit code 1: a fingerprint difference accounts
+  for every byte difference downstream of it, so the report names the
+  fingerprint rather than the content.
+  Exit code 4 is independent of the committed bytes and of any baseline.
+  A config-time error exits 5 before any build runs, per
+  project-map:CTR-001.
+  When <config.output.facts> is null, check mode compares the map
+  document alone, exactly as project-map:BEH-002 states.
+negative_cases:
+  - the committed artifact is absent => exit 1, reported as drift
+  - only the sidecar differs => exit 0, because check mode never reads it
+out_of_scope:
+  - the unclassified ratchet, which no command in this specification runs
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-001
+  - project-map:POL-002
+  - project-map:POL-003
+test_obligation:
+  predicate: |
+    For each declared exit code, a fixture that triggers exactly that
+    condition yields that code, and no path under the fixture is opened
+    for writing.
+  test_template: integration
+  boundary_classes:
+    - artifact equal, artifact drifted, artifact absent
+    - fingerprint mismatch coincident with a byte difference
+    - a mandatory check diagnostic over an otherwise equal artifact
+    - output.facts null
+  failure_scenarios:
+    - exit 1 reported where the fingerprint is the cause
+    - a sidecar difference reported as drift
+    - a write performed while --check is set
+---
+```
+
+```yaml
+---
+id: project-map:BEH-007
+type: Behavior
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: detection — a declared OpenAPI inventory emits facts independent of code
+given: |
+  - `openapi.serves` carries at least one entry whose spec locator
+    resolves inside the analysis unit and whose contract_id is declared
+when: detection runs over the analysis unit
+then: |
+  every (path, method) pair of every served specification emits one
+  inbound endpoint fact. Its canonical path is
+  canonicalize(mount + basePath + spec path) per project-map:CTR-007,
+  with each component applied exactly once and no de-duplication of
+  repeated segments. Its contract_refs carries
+  {contract_id, operation_id}, where operation_id is the specification's
+  operationId when that value is present and unique in the document, and
+  otherwise the method joined to the canonical path. Its provenance
+  carries "openapi".
+  The inventory is emitted whether or not a code registration for the
+  same route exists: inventory facts neither suppress nor are suppressed
+  by a registration found in code. Where both exist for one semantic
+  core they merge per project-map:CTR-006.
+  A served route that no code registration reaches carries handler typed
+  unknown and raises the diagnostic openapi_route_not_in_code. The
+  handler value is never fabricated from a member name.
+negative_cases:
+  - a specification version outside OpenAPI 3.0 and 3.1 => the diagnostic
+    openapi_spec_unreadable and no inventory fact from that entry
+  - two different contract_ids on one canonical route => one fact
+    carrying both contract_refs, which is not a conflict
+out_of_scope:
+  - `openapi.consumes` and generated-client outbound operations
+  - Swagger 2.0 ingest and its basePath composition branch
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-002
+  - project-map:POL-003
+test_obligation:
+  predicate: |
+    A fixture serving two specifications emits one fact per declared
+    (path, method) pair with the declared contract_id, and emits them
+    when the fixture contains no route registration at all.
+  test_template: integration
+  boundary_classes:
+    - operationId present, absent, duplicated within one document
+    - mount set versus empty
+    - one route served under two contract_ids
+    - a route present in the specification and absent from code
+  failure_scenarios:
+    - a repeated path prefix collapsed by a de-duplication heuristic
+    - an inventory fact suppressed because code carries no registration
+    - a handler value derived from a member name
+---
+```
+
+```yaml
+---
+id: project-map:BEH-008
+type: Behavior
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: detection — a route is composed from a declared registration form
+given: |
+  - a registration expression whose callee resolves, by import
+    provenance inside the analysis unit, to a built-in router adapter or
+    to a `detect.inbound.routers` entry
+when: detection runs over the analysis unit
+then: |
+  the canonical route is the ordered composition of the declared prefix
+  source, the registration's path argument, and the segments the adapter
+  contributes, folded by the value normalizer of project-map:CTR-007 and
+  canonicalized by its path grammar.
+  The HTTP method is taken from the adapter's declared verb source. When
+  that source is the handler declaration's own members, the members
+  inherited through the class hierarchy proven inside the analysis unit
+  are included, so a handler that declares no verb member and inherits
+  one resolves to the inherited verb.
+  A prefix or path segment the normalizer cannot fold to a value becomes
+  a typed hole, never a guessed literal.
+negative_cases:
+  - a member whose identifier matches a router member but whose callee
+    does not resolve to the adapter's origin => no fact
+  - a locally shadowed same-name symbol that does not originate from the
+    adapter's module => no fact
+  - a registration whose handler declaration lies outside the analysis
+    unit => the fact is emitted with handler typed
+    unknown(cross_boundary)
+out_of_scope:
+  - routers composed by value identity, which project-map:BEH-009 governs
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-002
+  - project-map:POL-003
+test_obligation:
+  predicate: |
+    Every registration in a fixture that mixes a prefixed form, an
+    unprefixed form, an aliased import of the same form, and a spread of
+    a route tuple resolves to its declared route and verb, and the verb
+    of a handler that declares none is the inherited one.
+  test_template: integration
+  boundary_classes:
+    - prefix declared as a class constant versus absent
+    - verb declared on the handler versus inherited
+    - path carrying a framework parameter syntax
+    - an alias import and a re-export of the registration symbol
+  failure_scenarios:
+    - a fact produced by a member name alone
+    - an inherited verb missed because the hierarchy crosses files
+    - a runtime path segment rendered as a literal
+---
+```
+
+```yaml
+---
+id: project-map:BEH-009
+type: Behavior
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: detection — a route is composed by router value identity
+given: |
+  - registrations whose receiver expression resolves, by intraprocedural
+    def-use inside the analysis unit, to a router value constructed by a
+    recognized router constructor
+when: detection runs over the analysis unit
+then: |
+  each registration is attributed to the router VALUE its receiver
+  resolves to, never to the receiver's declared type. Identity
+  propagates through the adapter's built-in identity-preserving members
+  and through every member declared in
+  `detect.inbound.routers[].identity_preserving`, including the binding
+  of the identity into the first parameter of a function literal passed
+  as an argument, which attributes registrations written inside a
+  grouping closure to the outer router.
+  A router value that passes through a helper declared nowhere, and a
+  router selected dynamically, each yield a fact typed unresolved. Their
+  registrations are never merged into the registrations of every other
+  router sharing the same type.
+negative_cases:
+  - the receiver is a field or a property of the router value rather than
+    the router value itself => no fact
+  - the receiver was never bound to a router construction => no fact
+  - a middleware that short-circuits a request without registering a
+    route => no fact
+out_of_scope:
+  - routers composed from a declared registration form, which
+    project-map:BEH-008 governs
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-002
+  - project-map:POL-003
+test_obligation:
+  predicate: |
+    A fixture whose routers are mounted through a declared
+    identity-preserving builder, and whose registrations sit inside a
+    grouping closure that shadows the router identifier, yields exactly
+    the mounted route set; a fixture calling a same-named member on a
+    non-router receiver yields no fact.
+  test_template: integration
+  boundary_classes:
+    - registration on the constructed value directly
+    - registration after a declared identity-preserving member
+    - registration inside a grouping closure that shadows the name
+    - registration on a router reached through an undeclared helper
+    - a same-named member on a receiver that is not a router
+  failure_scenarios:
+    - registrations of two distinct routers merged by shared type
+    - a non-router receiver accepted because the member name matches
+    - a route lost because the router passed through a declared helper
+---
+```
+
+```yaml
+---
+id: project-map:BEH-010
+type: Behavior
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: detection — the outbound classification ladder
+given: a call site inside the candidate universe of project-map:BEH-013
+when: detection runs over the analysis unit
+then: |
+  the first tier whose structural matcher claims the site wins, and the
+  winning tier is recorded as the fact's provenance:
+    1  a call into a declared generated_module          => "generated"
+    2  a call whose callee resolves by import provenance
+       to a built-in transport sending API              => "transport"
+    3  a call to a member of a declared sink, factory,
+       or registry, reached directly or through a
+       subclass of the declared base type               => "declared"
+    4  no tier claims the site                          => a diagnostic
+  A claimed site emits a fact even when extraction leaves fields
+  unresolved, and an unresolved extraction never falls through to a
+  lower tier.
+  Tier 2 anchors the fact at the SENDING call. A request that is
+  constructed and reaches no sending call emits no fact; a construction
+  paired with a reachable send emits exactly one fact, anchored at the
+  send, with the construction contributing method and URL through
+  def-use.
+  Call sites inside the method spans listed in a sink's `call[]`, and
+  inside declared generated-client bodies, emit no separate fact: their
+  transport is the mechanism of the claiming sink, not an operation of
+  its own. A transport call from a different member of the same type is
+  not excluded.
+  Emission happens once per maximal statically resolved root-to-sink
+  proof path, keyed by its source anchor. Shared intermediate wrappers
+  emit nothing.
+negative_cases:
+  - a request builder with no reachable send => no fact
+  - a transitively reachable tracing exporter for another protocol =>
+    no fact of that protocol
+  - a member whose identifier matches a sink member but whose receiver
+    type is not proven => no fact, and a diagnostic within the universe
+out_of_scope:
+  - queue producers and consumers
+  - generated-client operations declared through `openapi.consumes`
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-002
+  - project-map:POL-003
+test_obligation:
+  predicate: |
+    For each tier, a fixture exercising that tier yields a fact carrying
+    that provenance; a construct-without-send fixture yields none; a
+    construct-and-send fixture yields exactly one.
+  test_template: integration
+  boundary_classes:
+    - each ladder tier
+    - construction without send, construction with send
+    - a transport call inside a sink member versus in a sibling member
+    - a wrapper chain of depth three versus depth four
+  failure_scenarios:
+    - two facts emitted for one construct-and-send pair
+    - a sink's internal transport emitted as a second operation
+    - an unresolved claim falling through to a lower tier
+---
+```
+
+```yaml
+---
+id: project-map:BEH-011
+type: Behavior
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: detection — the destination of an HTTP outbound variant
+given: an outbound call site claimed by project-map:BEH-010
+when: the destination of an HTTP variant is resolved
+then: |
+  the destination is resolved by an ordered ladder. The first APPLICABLE
+  step that yields a value wins, and the winning step is recorded in
+  `destination.binding`:
+    instance            the receiver resolves by def-use to a
+                        construction inside the analysis unit; the
+                        declared target selector is applied to that
+                        construction
+    owner_construction  applicable only when the receiver is the
+                        enclosing declaration's own instance; every
+                        construction of the enclosing type inside the
+                        unit is collected and the results are combined
+                        as correlated variants
+    owner_declaration   applicable only when the previous step found no
+                        construction or only unknown ones, and the
+                        declaration anchor of the enclosing type, or of
+                        an ancestor in its locally proven hierarchy, is
+                        inside the unit; the most derived ancestor that
+                        binds the selector wins
+  A step that is inapplicable consumes no traversal budget. Two bindings
+  of the selector in one declaration raise selector_unresolved.
+  When no step yields a value the destination is typed unknown with a
+  reason from the closed enum of project-map:CTR-007: cross_boundary
+  when the enclosing type's declaration lies outside the unit,
+  open_world_dispatch on a dynamically selected receiver, depth_exceeded
+  on budget.
+  `destination.binding` is evidence. It is excluded from the fact-id
+  preimage of project-map:CTR-008 and from the semantic core of
+  project-map:CTR-006, so it never splits a core and never blocks a
+  merge.
+negative_cases:
+  - two instances of one client type constructed with different config
+    keys => two facts carrying different destinations
+  - one accessor returning one of several clients across branches => one
+    fact whose variants differ in destination, resolution "ambiguous",
+    never "conflicting"
+  - a hard-coded absolute URL => destination kind "literal", not unknown
+out_of_scope:
+  - resolving a config key to its per-environment value, which the
+    linker performs
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-002
+  - project-map:POL-003
+test_obligation:
+  predicate: |
+    For each ladder step, a fixture whose only applicable step is that
+    one yields a destination carrying that binding; two instances of one
+    type with different config keys yield two distinct destinations.
+  test_template: integration
+  boundary_classes:
+    - each ladder step, and the exhausted ladder
+    - two instances of one type with different keys
+    - a finite branch set over several clients
+    - a target declared on an ancestor inside the unit versus outside it
+  failure_scenarios:
+    - a finite branch set reported as conflicting
+    - two instances collapsed to one destination
+    - destination.binding included in the fact-id preimage
+---
+```
+
+```yaml
+---
+id: project-map:BEH-012
+type: Behavior
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: detection — the two halves of a shared-library operation
+given: |
+  - a client type carrying a `module_id` declared in
+    `detect.outbound.module_ids`
+when: detection runs over the analysis unit
+then: |
+  the library's own run emits the library half: one outbound operation
+  per operation member of that type, carrying module_id and
+  callee_operation taken from the member declaration, and an HTTP
+  destination typed unknown(operation_in_library_root) where the library
+  binds no concrete target.
+  A consumer's run emits the consumer half for each call whose local
+  type identity carries a module_id: owner_operation is the enclosing
+  consumer operation; the destination follows the ladder of
+  project-map:BEH-011; operation.path is typed
+  unknown(operation_in_library); module_id is set; callee_operation is
+  the statically resolved called member.
+  callee_operation is required when module_id is non-null and null
+  otherwise. A dynamically selected member yields callee_operation typed
+  unknown.
+  A half whose only unresolved required fields carry reason
+  operation_in_library or operation_in_library_root is locally
+  unresolved, and is excluded from the coverage denominator of
+  project-map:BEH-013.
+  Joining the two halves is the linker's work. This tool crosses no
+  repository boundary and reads no operation body outside the analysis
+  unit.
+negative_cases:
+  - a call whose local type identity carries no module_id => an ordinary
+    outbound fact, with no module_id and no callee_operation
+  - a library type whose target declaration is outside the unit => the
+    destination stays unknown(operation_in_library_root)
+out_of_scope:
+  - resolving the join across repositories
+  - extracting the operation bodies of a library that is not in the unit
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-002
+  - project-map:POL-003
+test_obligation:
+  predicate: |
+    A library fixture and a consumer fixture over one declared module_id
+    both emit halves carrying the same (module_id, callee_operation)
+    pair, and the consumer half carries a resolved destination when its
+    target is declared locally.
+  test_template: integration
+  boundary_classes:
+    - library half, consumer half
+    - target declared locally versus only in the library
+    - a statically resolved member versus a dynamically selected one
+  failure_scenarios:
+    - a half missing the join key
+    - callee_operation set where module_id is null
+    - a library operation body read from outside the analysis unit
+---
+```
+
+```yaml
+---
+id: project-map:BEH-013
+type: Behavior
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: detection — the candidate universe, diagnostics, and coverage
+given: a call or registration site inside the analysis unit
+when: detection runs and no classification tier claims the site
+then: |
+  the site is diagnosable only when it occurs inside a transport or
+  router package resolved by import provenance, or when it crosses a
+  declared sink, router, or module boundary. That set is the candidate
+  universe and the coverage denominator.
+  A diagnosable site emits external_call_unclassified or
+  external_registration_unclassified. A site outside the universe emits
+  nothing: an arbitrary member call is not classified and is not
+  counted.
+  Diagnostics merge by the core (code, canonical_callee,
+  canonical_call_shape), where canonical_call_shape is the normalized
+  pair of arity and receiver type. Equal cores union their source
+  anchors, and `count` is the number of DISTINCT source anchors, never
+  the number of traversal visits.
+  Coverage is reported per mechanism against an honest denominator. The
+  inbound denominator is the declared inventory where one exists; where
+  no inventory exists the inbound coverage is reported "unmeasured" and
+  never as a completed fraction.
+  These diagnostics are content of the artifact and depend on no
+  suppression file.
+negative_cases:
+  - a member call outside every transport, router, and declared boundary
+    => no diagnostic and no contribution to the denominator
+  - one unclassified callee reached from three call sites => one
+    diagnostic with count 3
+out_of_scope:
+  - the unclassified ratchet and its suppression baseline
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-002
+  - project-map:POL-003
+test_obligation:
+  predicate: |
+    A fixture with one unclassified callee reached from three anchors
+    emits one diagnostic with count 3; a fixture whose unknown calls sit
+    outside every boundary emits none; a fixture with no served
+    specification reports inbound coverage "unmeasured".
+  test_template: integration
+  boundary_classes:
+    - inside the universe versus outside it
+    - one anchor versus several anchors on one core
+    - inventory present versus absent
+  failure_scenarios:
+    - inbound coverage reported as a full fraction with no inventory
+    - count reporting traversal visits
+    - an arbitrary member call classified as an outbound operation
+---
+```
+
+---
+
+## 7. Data contracts
+
+```yaml
+---
+id: project-map:CTR-004
+type: Contract
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: the analysis unit and the determinism boundary
+surface_ref: project-map:SUR-001
+schema: |
+  The analysis unit is the finite, content-addressed input whose digest
+  fixes detection output. The composition root materializes it at the
+  CLI input boundary; detection is a pure function of it.
+  It contains:
+    sources          a finite map from normalized repository-relative
+                     path to exact UTF-8 bytes, plus the inclusion
+                     manifest that selected them. Selection is
+                     materialized at the boundary and is never
+                     re-derived from a live filesystem glob. Comments
+                     are retained.
+    config sections  the `detect`, `openapi`, and `analysis_unit`
+                     sections of the resolved configuration
+    spec files       every locator referenced by `openapi`, addressed as
+                     `repo:<path>` or `monorepo:<path>`, plus the
+                     transitive closure of their local file `$ref`s,
+                     materialized as a map from normalized locator to
+                     bytes
+    config documents every file the config-key declaration resolver
+                     reads, by normalized repository-relative locator
+                     and bytes
+    registry version the pinned adapter-registry version, whose digest
+                     covers the declarative data adapters and the code
+                     adapters
+  `repo:` anchors to the directory holding the resolved configuration
+  file. `monorepo:` anchors to a monorepo root supplied explicitly to
+  the CLI. Root discovery by parent traversal, sentinel search,
+  environment, or VCS state is forbidden.
+  The `analysis_unit` configuration block carries its own
+  `sources.include`, `sources.exclude`, and `config_declarations` list,
+  independent of the top-level `exclude` that selects sources for the
+  map document. A configuration document enters the unit without
+  entering the scanned source set.
+  Type identity is proven from syntax and import provenance inside the
+  unit alone: explicit annotations, constructor assignments, locally
+  declared return types, and configured factory or registry bindings. A
+  configured fully qualified type is matched against an import symbol
+  without loading that module. Zero proofs and several proofs both yield
+  a typed unknown; member-name similarity is not evidence.
+preconditions: |
+  the configuration validates against project-map:CTR-002 and every
+  declared locator resolves inside its anchored root
+postconditions: |
+  detection observes no absolute path, no live filesystem, no
+  environment variable, no clock, no locale, no network, no type
+  environment, and no VCS state. The unit digest is a function of the
+  materialized bytes alone.
+external_identifiers: |
+  The `analysis_unit` key and its sub-keys; the `repo:` and `monorepo:`
+  locator tags; the config-time error names spec_locator_outside_repo
+  and monorepo_root_unresolved.
+compatibility_rules: |
+  Renaming a locator tag or an `analysis_unit` sub-key is a major bump
+  of project-map:SUR-001. Adding a sub-key with a default that
+  preserves the prior unit is a minor bump. Widening what enters the
+  unit changes the digest of every consumer's artifact and is a major
+  bump.
+error_taxonomy: |
+  A locator resolving outside its anchored root, a locator containing
+  "..", and a symlink that escapes the root are the config-time error
+  spec_locator_outside_repo. A `monorepo:` locator with no explicitly
+  supplied root is the config-time error monorepo_root_unresolved.
+  Both are raised before any build and exit 5; neither is an artifact
+  diagnostic.
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-001
+  - project-map:POL-003
+test_obligation:
+  predicate: |
+    Materializing one fixture twice yields equal unit digests, and
+    materializing a copy of that fixture placed at a different absolute
+    path yields the same digest; a locator escaping its anchored root
+    exits 5 before any build output is produced.
+  test_template: integration
+  boundary_classes:
+    - identical tree at two absolute paths
+    - a source file matching the include pattern but untracked
+    - a locator with "..", a symlink escape, an unanchored monorepo root
+    - a config document inside the unit and outside the scanned sources
+  failure_scenarios:
+    - a digest that changes with the absolute path of the checkout
+    - a file entering detection through a live filesystem glob
+    - a config-time error surfacing as an artifact diagnostic
+---
+```
+
+```yaml
+---
+id: project-map:CTR-005
+type: Contract
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: the openapi and detect configuration sections
+surface_ref: project-map:SUR-001
+schema: |
+  Both sections are optional. With neither present, only the built-in
+  adapters run.
+  `openapi.serves[]` carries `spec` (a tagged locator), `contract_id` (a
+  required explicit logical identity), and an optional `mount` prefix.
+  `openapi.consumes[]` carries `generated_module`, `spec`,
+  `contract_id`, and `target`.
+  `contract_id` names one logical contract and recurs on the server and
+  on every consumer of that contract; the recurrence is the join.
+  Neither info.title with info.version nor a content digest is the join
+  identity.
+  `detect.outbound` carries `sinks[]` (`base_type`, `call[]`,
+  `path_arg`, `method`, `target`), `factories[]`, `registry[]`, and
+  `module_ids[]`. `detect.inbound.routers[]` carries `dsl`, `path_arg`,
+  `prefix_from`, `verb_from`, and `identity_preserving[]`.
+  `detect.queue[]` carries a producer or consumer shape and a `topic`
+  selector.
+  `call[]` entries are objects `{member, path_arg?, method?, target?}`;
+  a per-member key overrides the sink-level binding of the same name for
+  that member alone. A bare string is sugar for `{member: <name>}`.
+  `method` is a selector or `{from: member}`; `{from: member}` takes the
+  matched member's own identifier, uppercased, and is the default when
+  `method` is omitted.
+  `identity_preserving[]` entries are
+  `{member, from: receiver|arg, index?, binds?}`. `from: receiver`
+  propagates the receiver's identity to the call result; `from: arg`
+  propagates argument `index`'s identity to the result;
+  `binds: closure_arg0_param0` additionally propagates the identity into
+  the first parameter of the function literal passed as argument 0.
+  `module_ids[]` maps a client type to a canonical module_id. Within one
+  registry version, one module_id identifies exactly one configured
+  type.
+  A Selector is one SelectorStep or an ordered list of them. Step kinds
+  are the closed set: `arg` (positional index or keyword name), `field`,
+  `class_const`, `receiver`, and dotted `property-path`. In a list, step
+  i+1 applies to the normalized VALUE produced by step i, not to its
+  syntax node. `config_ref` is a value kind, not a step kind.
+preconditions: the configuration document parses and validates
+postconditions: |
+  every declared selector is syntactically valid, every module_id maps
+  to exactly one type, and every declared anchor is available to
+  detection through the analysis unit.
+external_identifiers: |
+  The `openapi` and `detect` key names and every sub-key spelled above;
+  the selector step-kind names; the `from: member`, `from: receiver`,
+  `from: arg`, and `closure_arg0_param0` literals; the `contract_id` and
+  `module_id` key names.
+compatibility_rules: |
+  Renaming a key, a step kind, or a declared literal is a major bump of
+  project-map:SUR-001. Adding a step kind or an optional key with a
+  default that preserves prior resolution is a minor bump.
+error_taxonomy: |
+  A selector carrying "*", "?", or character-class syntax, a
+  `property-path` expressing a positional index, and a `method` bound to
+  `not_applicable` are config-time errors raised before any build,
+  exiting 5.
+  Two module_ids mapping to one type, and one module_id mapping to two
+  types, are config-time errors.
+  A syntactically valid selector that resolves to no node or to several
+  nodes at a claimed site emits the diagnostic selector_unresolved,
+  leaves the artifact reproducible, and fails check mode with exit 4.
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-001
+  - project-map:POL-003
+test_obligation:
+  predicate: |
+    A document declaring every key validates; a glob or name-pattern
+    selector is rejected before any build; a selector chain resolves
+    left to right over normalized values; an omitted `method` defaults
+    to the matched member's uppercased identifier.
+  test_template: integration
+  boundary_classes:
+    - a bare-string call entry versus an object entry with an override
+    - a one-step selector versus a chain
+    - a glob selector, a duplicate module_id
+    - a valid selector matching zero nodes and several nodes
+  failure_scenarios:
+    - a name pattern accepted in a selector
+    - a chain step applied to a syntax node rather than a value
+    - selector_unresolved raised as a config-time error rather than a
+      diagnostic
+---
+```
+
+```yaml
+---
+id: project-map:CTR-006
+type: Contract
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: the detection fact schema, identity, and merge
+surface_ref: project-map:SUR-003
+schema: |
+  The artifact carries two record kinds and a diagnostic list.
+  An endpoint fact carries: kind "endpoint"; mechanism; operation with
+  its correlated variants; handler; contract_refs; provenance;
+  resolution; evidence.
+  An outbound_operation fact carries: kind "outbound_operation";
+  mechanism; operation with its correlated variants; owner_operation;
+  call_site; module_id; callee_operation; contract_ref; provenance;
+  resolution; evidence.
+  An HTTP variant is the correlated tuple (method, path, destination);
+  destination lives inside each variant and its kind is one of
+  config_ref, literal, unknown. Independent per-field alternatives are
+  forbidden: a branch that varies two fields together emits two
+  variants.
+  A source anchor is {path, start_byte, end_byte} over the UTF-8 source
+  bytes of the analysis unit. call_site and the identity of an
+  unresolved fact use this anchor. `line` is display-only evidence,
+  excluded from identity and from ordering.
+  A symbol value is {kind: "symbol", declaration: <anchor>,
+  display_name}. Symbol equality and handler-conflict detection use the
+  declaration anchor, never display_name; an alias and a re-export
+  resolve to the original declaration anchor. A concrete handler whose
+  declaration lies outside the unit is typed unknown(cross_boundary).
+  Identity is the semantic core, excluding provenance and evidence.
+  mechanism belongs to every core. The inbound core is
+  (mechanism, canonical route, method) for HTTP and
+  (mechanism, canonical topic, action) for queue; handler and
+  contract_refs are enrichment. When any inbound identity component is
+  unknown, the source anchor of the registration or the inventory entry
+  is added to the core, so unresolved registrations at distinct anchors
+  do not merge because their unknown values are equal.
+  The outbound core is (mechanism, owner_operation, canonical variant
+  set, call_site anchor). Two call sites of one operation are two facts.
+  Facts with equal cores merge their sorted-unioned evidence and
+  provenance. The inbound merge table, for one core:
+    OpenAPI contract_ref and a router handler       one enriched fact
+    two contract_ids on one canonical route         one fact, both refs
+    one (contract_id, method, path) declared twice  conflicting
+    two distinct concrete handler declarations      conflicting
+    a served route with no code handler             one fact, handler
+                                                    unknown, plus the
+                                                    diagnostic
+  A generated interface symbol is reconciliation evidence, never the
+  handler value; interface evidence together with one router handler is
+  not a conflict.
+  resolution is derived in order: merged incompatible extractions for
+  one core yield "conflicting"; else any unknown in a required field
+  yields "unresolved"; else more than one distinct variant yields
+  "ambiguous"; else "resolved". Required fields are the method and the
+  path or topic, and the destination for HTTP outbound alone. A
+  config_ref, a parameter hole, and a canonical template are themselves
+  resolved.
+  A diagnostic is {code, canonical_callee, canonical_call_shape,
+  evidence[], count}, merged by its core, with count equal to the number
+  of distinct source anchors. The codes are:
+  external_call_unclassified, external_registration_unclassified,
+  recognized_sink_field_unresolved, dynamic_target, marker_invalid,
+  selector_unresolved, openapi_spec_unreadable,
+  openapi_route_not_in_code, generated_operation_unresolved.
+preconditions: detection completed over the analysis unit
+postconditions: |
+  the artifact satisfies project-map:INV-003, project-map:INV-005, and
+  the serialization of project-map:CTR-008.
+external_identifiers: |
+  Every field name spelled above; the record kind values "endpoint" and
+  "outbound_operation"; the mechanism values; the provenance values
+  "openapi", "router", "generated", "transport", "declared"; the
+  resolution values "resolved", "ambiguous", "unresolved",
+  "conflicting"; the queue action values "consume" and "produce"; every
+  diagnostic code.
+compatibility_rules: |
+  Renaming a field, a record kind, a provenance value, a resolution
+  value, or a diagnostic code is a major bump of project-map:SUR-003,
+  because the linker reads them. Adding an optional field, or a
+  diagnostic code, is a minor bump. Changing what belongs to a semantic
+  core is a major bump, because it re-partitions every consumer's facts.
+error_taxonomy: |
+  A true duplicate fact id that is not a legal merge fails the build.
+  Contradictory extractions for one core yield resolution "conflicting"
+  rather than an error.
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-002
+  - project-map:POL-003
+test_obligation:
+  predicate: |
+    Each row of the inbound merge table and each step of the resolution
+    ladder is exercised by a fixture that produces exactly the declared
+    outcome, and a declaration reached through an alias compares equal
+    to the same declaration reached directly.
+  test_template: integration
+  boundary_classes:
+    - each merge-table row
+    - each resolution-ladder step
+    - two unresolved registrations at distinct anchors
+    - an alias, a re-export, and two receiver spellings of one
+      declaration
+  failure_scenarios:
+    - two unresolved registrations merged because their unknowns match
+    - display_name used for handler equality
+    - a finite variant set reported as conflicting
+---
+```
+
+```yaml
+---
+id: project-map:CTR-007
+type: Contract
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: the value IR, the resolution budget, and the canonical path grammar
+surface_ref: project-map:SUR-003
+schema: |
+  A normalized value is one of six IR kinds:
+    literal      a static string
+    config_ref   a config-key locator
+                 {declaration, path_segments[]} with the environment
+                 axis held separate; a segment is itself a parameter, a
+                 choice, or an unknown
+    parameter    a formal parameter {owner_symbol, index}
+    template     ordered parts: literal segments and typed holes
+    choice       a finite set of correlated alternatives
+    unknown      {reason}
+  A normalized value is a scalar IR or a RECORD, a finite map from field
+  to IR. A record is seeded from a composite literal or from a
+  constructor summary. An assignment to a field is a strong update; a
+  write through a field weakens that field alone. When a record escapes
+  to a callee inside the unit within budget, only the fields that callee
+  writes are weakened; an escape to an unmodeled callee sets every field
+  to unknown(alias_mutation). A field never assigned retains the value
+  the constructor summary gave it.
+  Resolution is intraprocedural def-use by default, folding string
+  literals, module constants, class constants, and concatenation.
+  Interprocedural summaries apply to declared sinks alone. The depth
+  bound is per proof path, not a consumable counter: the resolver
+  explores normalized states by minimum interprocedural distance from
+  the emission anchor and de-duplicates states reached by a longer path.
+  Every contributing branch terminates within at most three statically
+  resolved call edges on one proof path. Intraprocedural edges cost
+  zero. At depth three, a contributing edge to a state not already
+  proven within depth three yields unknown(depth_exceeded), whatever the
+  worklist order and even where a shorter branch already resolved.
+  The reason enum is closed: dynamic, recursive, correlation_lost,
+  depth_exceeded, alias_mutation, cross_boundary, open_world_dispatch,
+  loop_carried, non_finite_branch, operation_in_library,
+  operation_in_library_root, operation_mapping_unresolved.
+  The canonical path grammar:
+    join segments with exactly one "/", collapse duplicates, start at "/"
+    strip one trailing "/" except at the root
+    remove the query string and the fragment
+    percent-decode unreserved characters alone, and normalize the hex
+      digits of every retained escape to upper case
+    reduce a path parameter of any syntax to a positional hole, holding
+      its name and type as metadata
+    reduce a wildcard to a distinct wildcard hole
+    expand a known optional segment into both concrete variants, and
+      reduce an unknown one to a typed hole
+    contribute no segment for an empty mount or an empty base
+preconditions: the value originates inside the analysis unit
+postconditions: |
+  every emitted value is one of the six kinds, and every unknown carries
+  a reason from the closed enum.
+external_identifiers: |
+  The six IR kind names and their field names; the twelve reason codes;
+  the positional hole and wildcard hole spellings in a canonical path.
+compatibility_rules: |
+  Renaming an IR kind, a reason code, or a hole spelling is a major bump
+  of project-map:SUR-003. Adding a reason code is a minor bump, because
+  a consumer reading an unrecognized reason treats the value as
+  unresolved. Changing a path-grammar rule re-writes canonical routes
+  and is a major bump.
+error_taxonomy: |
+  A value the normalizer cannot fold is emitted as unknown with the
+  matching reason. No stop condition raises a process error.
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-002
+  - project-map:POL-003
+test_obligation:
+  predicate: |
+    Each stop condition of the closed enum is reached by a fixture that
+    triggers exactly it; a proof graph carrying a short branch and a
+    depth-four contributing branch yields unknown(depth_exceeded)
+    whatever the traversal order; each of the eight path-grammar rules
+    is exercised by a case whose canonical form is asserted.
+  test_template: unit
+  boundary_classes:
+    - each of the twelve reason codes
+    - a diamond proof graph, a recursive call, a loop-carried value
+    - each path-grammar rule, including mixed-case percent escapes
+    - a record field written through an escape versus never written
+  failure_scenarios:
+    - a depth-four branch resolved because a shorter branch resolved
+      first
+    - a constructor default lost through a field-writing escape
+    - two canonical routes differing only in escape letter case
+---
+```
+
+```yaml
+---
+id: project-map:CTR-008
+type: Contract
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: canonical serialization, fact identity, and artifact fingerprints
+surface_ref: project-map:SUR-003
+schema: |
+  Arrays are ordered by role before serialization. Sequence-valued
+  arrays preserve their semantic order: template parts, config_ref path
+  segments, and every ordered IR. Set-valued arrays are sorted by their
+  declared key: contract_refs by (contract_id, operation_id); evidence
+  by (path, start_byte, end_byte, role); provenance, variants, facts,
+  and diagnostics by their canonical bytes.
+  The whole artifact and every fact-id preimage are then serialized with
+  RFC 8785 JSON Canonicalization Scheme, which fixes string escaping,
+  number form, object-key order, and whitespace. Every numeric field is
+  a non-negative integer inside the interoperable safe-integer range.
+  Evidence is {path, start_byte, end_byte, role} with a
+  repository-relative path using "/". An absolute path, a "..", and a
+  symlink escape are forbidden in a path.
+  The fact id is computed AFTER merge:
+    id = "sha256:" + lowercase_hex(SHA-256(JCS([schema_version,
+         repository_identity, kind, semantic_core])))
+  The id field, provenance, evidence, resolution, destination.binding,
+  and every enrichment field are excluded from the preimage. Total
+  output order is by id.
+  The artifact embeds schema_version, repository_identity, an
+  analyzer_build_digest covering the detector source, the tree-sitter
+  runtime and every language grammar, the specification and YAML
+  parsers, and the canonicalizer, and the adapter-registry digest as a
+  separate value.
+  repository_identity is an explicit logical string. It is never
+  inferred from a directory name, a VCS remote, package-manager state,
+  or an absolute path. Its uniqueness across the link universe is the
+  linker's concern.
+preconditions: the fact set is merged per project-map:CTR-006
+postconditions: |
+  the serialized bytes are a function of the fact set alone, so two
+  runs over one analysis unit with equal fingerprints emit equal bytes.
+external_identifiers: |
+  The `id` prefix "sha256:"; the field names schema_version,
+  repository_identity, analyzer_build_digest, and the registry digest;
+  the declared sort keys of every set-valued array.
+compatibility_rules: |
+  Changing the fact-id preimage, a sort key, or the canonicalization
+  scheme re-writes every id and every byte, and is a major bump of
+  project-map:SUR-003. Adding a field outside the preimage is a minor
+  bump.
+error_taxonomy: |
+  A duplicate id that is not a legal merge fails the build fast. A
+  non-finite number and a negative integer in a numeric field fail
+  serialization rather than being coerced.
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-002
+  - project-map:POL-003
+test_obligation:
+  predicate: |
+    The published RFC 8785 test vectors serialize to their expected
+    bytes; a fact whose provenance, evidence, resolution, and
+    destination.binding differ carries an unchanged id; a sequence-valued
+    array keeps its order while a set-valued array is sorted.
+  test_template: unit
+  boundary_classes:
+    - each published JCS test vector
+    - a fact differing only in excluded fields
+    - a fact differing in one core component
+    - a sequence array and a set array in one document
+  failure_scenarios:
+    - an id that changes with provenance or evidence
+    - template parts reordered by the set-array rule
+    - a number serialized in a form other than the JCS form
+---
+```
+
+---
+
+## 8. Invariants
+
+```yaml
+---
+id: project-map:INV-003
+type: Invariant
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: the facts artifact is a pure function of the analysis unit
+always: |
+  Two builds over one analysis unit, with equal analyzer_build_digest
+  and equal adapter-registry digest, produce byte-identical facts
+  artifacts with no normalization applied to either side. Equality holds
+  across two runs in one directory, across a copy of that directory at a
+  different absolute path, and across two machines.
+  The artifact carries no timestamp, no build duration, no absolute
+  path, no locale-dependent value, and no content derived from a
+  suppression baseline. Every value in it is a function of the
+  materialized bytes and the resolved configuration alone.
+scope: the facts artifact produced by build (project-map:CTR-006)
+evidence: public_api
+stability: contractual
+data_scope: all_data
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+negative_cases:
+  - the analyzer_build_digest is embedded in the compared bytes, so a
+    detector release changes them; project-map:BEH-006 reports that as
+    exit 3 rather than as drift
+out_of_scope:
+  - the sidecar, which carries the timestamp and the duration and which
+    check mode never reads
+  - the map document, which project-map:INV-001 governs
+test_obligation:
+  predicate: |
+    Building one fixture twice, and building a copy of it placed at a
+    different absolute path, yields three byte-identical artifacts.
+  test_template: integration
+  boundary_classes:
+    - a fixture with a resolvable revision and one without
+    - a fixture whose sources carry non-ASCII bytes
+    - a copy at a longer absolute path
+  failure_scenarios:
+    - a collection emitted in filesystem or hash-map iteration order
+    - an absolute path leaking into an evidence entry
+    - a clock or duration value reaching the artifact
+---
+```
+
+```yaml
+---
+id: project-map:INV-004
+type: Invariant
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: detection is structural, never nominal
+always: |
+  No fact is produced by the spelling of a class, method, function, or
+  variable name, and no fact is produced by a name prefix or suffix.
+  Every emitted fact terminates its proof path at one of three anchors:
+  a symbol resolved through import provenance inside the analysis unit,
+  an anchor declared in the `detect` or `openapi` configuration, or a
+  binding to a declared generated module.
+  The checkable form is rename-invariance: renaming every user-defined
+  identifier that is not itself a declared anchor, consistently across
+  the analysis unit, leaves the fact set unchanged except for source
+  anchors and display_name values.
+scope: every fact emitted by detection
+evidence: public_api
+stability: contractual
+data_scope: all_data
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+negative_cases:
+  - a member call whose identifier matches a router or sink member but
+    whose receiver was never bound to the corresponding value
+  - a locally declared decorator sharing a name with a framework
+    decorator and originating elsewhere
+  - a member returning a metrics label rather than a wire topic
+out_of_scope:
+  - the legacy `endpoints` and `interactions` sections, which
+    project-map:CON-001 keeps bound to the prior extractors
+test_obligation:
+  predicate: |
+    A fixture and its consistently renamed twin yield equal fact sets
+    modulo anchors and display names; each named decoy fixture yields no
+    fact.
+  test_template: integration
+  boundary_classes:
+    - a renamed twin of each adapter fixture
+    - a header or query accessor sharing a router member name
+    - a shadowed same-name decorator from another module
+    - a member named for a topic that returns a label
+  failure_scenarios:
+    - a fact that disappears when an identifier is renamed
+    - a decoy accessor emitted as an endpoint
+    - a tracing exporter emitted as a protocol fact
+---
+```
+
+```yaml
+---
+id: project-map:INV-005
+type: Invariant
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: an unproven value is typed, never guessed and never dropped
+always: |
+  For every emitted fact, each required field either holds a value the
+  normalizer proved from the analysis unit or holds unknown carrying a
+  reason from the closed enum of project-map:CTR-007. No required field
+  is absent, and no unproven field is filled by inference from a name, a
+  neighbouring value, or a default that the sources do not carry.
+  A site claimed by a classification tier is emitted even when its
+  extraction is unresolved; it is never silently discarded, and it never
+  falls through to a lower tier.
+  resolution is derived by the ladder of project-map:CTR-006 evaluated
+  in order, so "conflicting" is a property of a merge and never of a
+  single value's IR kind.
+scope: every required field of every emitted fact
+evidence: public_api
+stability: contractual
+data_scope: all_data
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+negative_cases:
+  - a finite runtime set of destinations yields "ambiguous"; reporting
+    it as "conflicting" violates the ladder order
+out_of_scope:
+  - sites outside the candidate universe, which emit neither a fact nor
+    a diagnostic
+test_obligation:
+  predicate: |
+    For each stop condition, the fact carrying it is emitted with the
+    field typed unknown and the matching reason, and the fact count is
+    unchanged against the same fixture with the stop condition removed.
+  test_template: integration
+  boundary_classes:
+    - each required field unresolved in turn
+    - a claimed site whose extraction fails entirely
+    - a finite variant set versus contradictory extractions
+  failure_scenarios:
+    - a claimed site dropped because extraction failed
+    - a required field absent rather than typed unknown
+    - a default value invented for an unproven method
+---
+```
+
+---
+
+## 10. Generated artifacts
+
+```yaml
+---
+id: project-map:GA-002
+type: GeneratedArtifact
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: the detection facts artifact and its sidecar
+source_ids:
+  - project-map:CTR-006
+  - project-map:CTR-007
+  - project-map:CTR-008
+version: 1
+generator: project-map-cli
+generator_version: "0.3.0"
+command: project-map build
+output_paths:
+  - <config.output.facts> resolved against <project_root>, when non-null
+  - the artifact path with a trailing ".json" removed when present and
+    ".meta.json" appended
+regeneration_mode: clean
+published_surface: yes
+surface_ref: project-map:SUR-003
+applicability:
+  invariant_to_all_axes: true
+notes: |
+  The artifact is regenerated whole on every build; no patch is applied
+  to a previously written file, so `clean` is exact.
+  The sidecar carries the generation timestamp and the build duration.
+  Check mode reads the artifact and ignores the sidecar, which is why
+  the two are separate files rather than two sections of one.
+  A structural-breaking diff in the emission, which is a renamed field,
+  a renamed record kind, a changed semantic core, or a changed fact-id
+  preimage, is a major bump of project-map:SUR-003 whatever the bump on
+  the source contracts.
+  `generator_version` names the release that first emits this artifact.
+  It is pinned to the released `package.json` version at the moment this
+  record is promoted, not before.
+test_obligation:
+  predicate: |
+    Two consecutive builds over one unchanged tree emit an identical
+    artifact, the emission preserves no content from a previously
+    written file, and the sidecar carries the timestamp that the
+    artifact omits.
+  test_template: integration
+  boundary_classes:
+    - a previously written artifact present versus absent
+    - a previously written artifact carrying stale facts
+    - the sidecar present versus absent
+  failure_scenarios:
+    - the emission merging content from a previous artifact
+    - a timestamp present in the artifact
+    - the sidecar written to a path outside the declared set
+---
+```
+
+---
+
+## 12. Policies
+
+```yaml
+---
+id: project-map:POL-003
+type: Policy
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: detection observes only the materialized analysis unit
+policy_kind: io_scope
+applicability:
+  applies_to: |
+    project-map:BEH-005, project-map:BEH-006, project-map:BEH-007,
+    project-map:BEH-008, project-map:BEH-009, project-map:BEH-010,
+    project-map:BEH-011, project-map:BEH-012, project-map:BEH-013
+predicate: |
+  Detection reads the materialized analysis unit of project-map:CTR-004
+  and nothing else. It opens no path for reading outside that unit,
+  resolves no path by filesystem search, and observes no absolute path,
+  no environment variable, no clock, no locale, and no VCS state.
+  The build path invokes no compiler, type checker, language server,
+  package loader, reflection facility, bytecode inspector, or
+  dependency-source lookup. Type identity is proven from syntax and
+  import provenance inside the unit alone.
+  This policy narrows project-map:POL-002, which forbids network access
+  and model inference across the whole build path.
+negative_test_obligations:
+  - run detection with the process working directory changed after
+    materialization and assert the artifact is unchanged
+  - assert the dependency closure of the detection path contains no type
+    checker and no language-server client
+  - place a file matching the include pattern outside the materialized
+    map and assert it contributes no fact
+test_obligation:
+  predicate: |
+    A build whose analysis unit is materialized from one fixture
+    produces one artifact whatever the process working directory,
+    environment, and locale are at the moment detection runs.
+  test_template: integration
+  boundary_classes:
+    - working directory changed between materialization and detection
+    - a locale-sensitive environment variable set to two values
+    - a file present on disk and absent from the materialized map
+  failure_scenarios:
+    - a fact derived from a file outside the materialized map
+    - an artifact that varies with the process locale
+    - a type resolved by loading a dependency's sources
+---
+```
+
+---
+
+## 13. Constraints
+
+```yaml
+---
+id: project-map:CON-001
+type: Constraint
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: the legacy detection sections stay bound to the legacy extractors
+rule: |
+  For the current major version of project-map:SUR-002, the section ids
+  `endpoints` and `interactions` render the output of the prior
+  extractors, unchanged. The reworked detection renders under the
+  section ids `inbound_endpoints`, `outbound_operations`, and
+  `detection_coverage`, and a repository opts into them by listing them
+  in `sections`.
+  The accepted SectionId set and the default `sections` list are
+  distinct: the three new ids belong to the accepted set and to no
+  default, so a repository that does not name them sees the document it
+  saw before.
+  Rebinding the legacy ids to the reworked detectors, and deleting the
+  legacy adapters, is a later major version.
+rationale: |
+  Consumers disabled `endpoints` and `interactions` because the prior
+  extractors emit false positives. Keeping both outputs available on one
+  repository is what lets a consumer compare them on its own sources
+  before switching, which is the acceptance evidence the rollout needs.
+  Silently rebinding the ids would replace one unverified output with
+  another inside a document that check mode compares byte for byte.
+scope: the section ids of project-map:CTR-003 and their renderers
+applicability:
+  invariant_to_all_axes: true
+data_scope: all_data
+policy_refs:
+  - project-map:POL-001
+test_obligation:
+  predicate: |
+    A configuration that names no section renders the legacy nine
+    sections and none of the three new ones; a configuration naming a
+    new id renders it alongside the legacy output.
+  test_template: integration
+  boundary_classes:
+    - no `sections` key
+    - `sections` naming a new id
+    - `sections` naming both a legacy id and its reworked counterpart
+  failure_scenarios:
+    - a new section appearing in a document whose configuration is
+      unchanged
+    - a legacy id rendering the reworked output
+---
+```
+
+---
+
+## 17. Open questions
+
+```yaml
+---
+id: project-map:OQ-002
+type: Open-Q
+partition_id: project-map
+question: |
+  The requirements source makes `repository_identity` a required
+  configuration key unconditionally. Applied unconditionally it
+  invalidates this repository's own `.project-map.yaml` and all four
+  fixtures under `tests/fixtures/` on the day the key lands, although
+  none of them emits a facts artifact and none participates in a
+  cross-repository join. Is the key required for every configuration, or
+  for the configurations that emit facts?
+options:
+  - option: require the key unconditionally
+    consequence: |
+      Every existing configuration becomes invalid until it gains the
+      key, including configurations that never emit a facts artifact.
+      The rule is one line and carries no conditional branch.
+  - option: require the key when facts are emitted or detection is
+      configured
+    consequence: |
+      A configuration that emits no artifact keeps validating unchanged.
+      The requiredness rule becomes conditional on `output.facts` being
+      non-null or on the presence of an `openapi` or `detect` section,
+      which is a branch the schema and its tests carry.
+blocking: no
+owner: cyberash
+default_if_unresolved: |
+  require the key when facts are emitted or detection is configured
+notes: |
+  Raised while mapping the requirements source onto this repository, not
+  from a reported defect. The identity is meaningless for a
+  configuration that emits no facts, since only the artifact and the
+  linker read it.
+---
+```
+
+---
+
+## 18. Assumptions
+
+```yaml
+---
+id: project-map:ASM-002
+type: ASSUMPTION
+partition_id: project-map
+assumption: |
+  `repository_identity` is required exactly when `output.facts` is
+  non-null or an `openapi` or `detect` section is present, and is
+  optional otherwise. Configurations that emit no facts artifact keep
+  validating without the key.
+source_open_q: project-map:OQ-002
+blocking: no
+review_by: "2026-12-31"
+default_if_unresolved: |
+  require the key when facts are emitted or detection is configured
+tests:
+  - the configuration obligation of project-map:CTR-002 exercises a
+    document with no `repository_identity` and no `output.facts`, which
+    validates, and a document with `output.facts` and no
+    `repository_identity`, which is rejected
+---
+```
+
+---
+
+## 15. Deltas
+
+```yaml
+---
+id: project-map:DLT-004
+type: Delta
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: the configuration carries a repository identity and an analysis unit
+target_id: project-map:CTR-002
+kind: extend
+baseline_version: project-map:BL-001
+compatibility_action: ignore
+surface_impact:
+  - id: project-map:SUR-001
+    intended_version: "0.3.0"
+as_is: |
+  project-map:CTR-002 lists fourteen top-level configuration keys, none
+  of which names a repository identity or bounds an analysis unit. The
+  source selection that reaches extraction is the one the top-level
+  `exclude` key produces, and it is derived from a live filesystem walk.
+to_be: |
+  project-map:CTR-002 additionally accepts `repository_identity` and
+  `analysis_unit`. `repository_identity` is a logical string, required
+  exactly when a facts artifact is emitted or a detection section is
+  present, per project-map:ASM-002. `analysis_unit` carries
+  `sources.include`, `sources.exclude`, and `config_declarations`, whose
+  semantics project-map:CTR-004 fixes.
+  project-map:SUR-001 gains project-map:CTR-004 as a member and moves
+  from 0.2.2 to 0.3.0. The bump is minor: both keys carry defaults that
+  reproduce the prior resolution, and no key is renamed or removed.
+migration_note: |
+  A configuration written before this change validates unchanged and
+  resolves to the same source set, because `analysis_unit` defaults to
+  the selection the top-level keys already produce and no facts artifact
+  is emitted without `output.facts`.
+tests_old_behavior: |
+  The existing obligation of project-map:CTR-002 keeps a minimal
+  document valid and keeps an unknown top-level key rejected; a document
+  carrying neither new key still resolves to its prior source set.
+tests_new_behavior: |
+  A document carrying `analysis_unit` resolves the declared unit, a
+  document that emits facts without `repository_identity` is rejected,
+  and a document that emits none without it validates.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-005
+type: Delta
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: the configuration carries the detection sections and a facts output
+target_id: project-map:CTR-002
+kind: extend
+baseline_version: project-map:BL-001
+compatibility_action: ignore
+surface_impact:
+  - id: project-map:SUR-001
+    intended_version: "0.4.0"
+as_is: |
+  project-map:CTR-002 accepts no `openapi` and no `detect` section, and
+  `output` carries `markdown` and `json` alone. Detection anchors cannot
+  be declared, so an in-house wrapper is invisible to extraction.
+to_be: |
+  project-map:CTR-002 additionally accepts `openapi` and `detect`, whose
+  schema project-map:CTR-005 fixes, and `output.facts`, a path that
+  defaults to null. project-map:SUR-001 gains project-map:CTR-005 as a
+  member and moves from 0.3.0 to 0.4.0. The bump is minor: all three
+  keys default to a value that reproduces the prior behavior.
+migration_note: |
+  A configuration written before this change emits no facts artifact,
+  because `output.facts` defaults to null, and runs the built-in
+  adapters alone, because both detection sections default to empty.
+tests_old_behavior: |
+  A document carrying neither detection section validates and produces
+  the document it produced before.
+tests_new_behavior: |
+  A document declaring both sections validates, an invalid selector is
+  rejected before any build, and `output.facts` set to a path emits the
+  artifact per project-map:BEH-005.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-006
+type: Delta
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: the command surface gains facts exit codes and a digest command
+target_id: project-map:CTR-001
+kind: extend
+baseline_version: project-map:BL-001
+compatibility_action: ignore
+surface_impact:
+  - id: project-map:SUR-001
+    intended_version: "0.4.0"
+as_is: |
+  project-map:CTR-001 declares exit code 0 for success, 1 for a check
+  drift, and 2 for no discoverable configuration. A configuration error
+  inside a detection section, a fingerprint mismatch, and a mandatory
+  check diagnostic have no code of their own, so a consumer's CI cannot
+  tell an analyzer release from a change in its own sources.
+to_be: |
+  project-map:CTR-001 additionally declares exit code 3 for a
+  fingerprint mismatch, 4 for a mandatory check diagnostic, and 5 for a
+  config-time error raised before any build, with the precedence
+  project-map:BEH-006 states. It additionally declares the command
+  `project-map facts --unit-digest`, which prints the analysis-unit
+  digest and writes no path.
+  project-map:SUR-001 moves from 0.3.0 to 0.4.0. The bump is minor: no
+  existing code is reassigned and no option is renamed.
+migration_note: |
+  A consumer that treats any non-zero code as failure keeps working. A
+  consumer that branches on code 1 keeps seeing 1 for a content drift,
+  because the new codes cover conditions that previously exited 0 or
+  raised an unclassified error.
+tests_old_behavior: |
+  The existing obligation of project-map:CTR-001 keeps 0, 1, and 2
+  bound to their conditions.
+tests_new_behavior: |
+  Each new code is produced by a fixture triggering exactly its
+  condition, 3 outranks 1 where both apply, and `facts --unit-digest`
+  writes no path.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-007
+type: Delta
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: the map document accepts three opt-in detection sections
+target_id: project-map:CTR-003
+kind: extend
+baseline_version: project-map:BL-001
+compatibility_action: ignore
+surface_impact:
+  - id: project-map:SUR-002
+    intended_version: "0.4.0"
+as_is: |
+  project-map:CTR-003 fixes the SectionId set at nine values, and the
+  configuration defaults `sections` to that whole set. Accepted set and
+  default list are one list, so any added id renders in every
+  consumer's document without a configuration change.
+to_be: |
+  project-map:CTR-003 accepts twelve SectionId values: the nine it
+  already names plus `inbound_endpoints`, `outbound_operations`, and
+  `detection_coverage`. The accepted set and the default `sections`
+  list become distinct; the default stays the original nine.
+  project-map:SUR-002 moves from 0.3.0 to 0.4.0. The bump is minor:
+  adding a SectionId is minor under the compatibility rules
+  project-map:CTR-003 already declares, and no heading, no row label,
+  and no existing id changes.
+migration_note: |
+  A consumer whose configuration names no `sections` key renders the
+  same nine sections and the same bytes as before, so no committed
+  document goes out of date. A consumer opts in by naming a new id.
+tests_old_behavior: |
+  A configuration with no `sections` key renders the nine legacy
+  sections in their declared order and none of the new ones.
+tests_new_behavior: |
+  A configuration naming a new id renders that section, and the
+  accepted-set check rejects an id outside the twelve.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-008
+type: Delta
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: the bounded write set covers the facts artifact and its sidecar
+target_id: project-map:POL-001
+kind: extend
+baseline_version: project-map:BL-001
+compatibility_action: ignore
+as_is: |
+  project-map:POL-001 bounds the write set of `build` to the resolved
+  markdown path and, when configured, the resolved JSON path. A facts
+  artifact written under that policy would be a write outside the
+  declared set.
+to_be: |
+  project-map:POL-001 additionally admits, for `build`,
+  path.resolve(<project_root>, <config.output.facts>) when that value is
+  a string, and the sidecar path derived from it by removing a trailing
+  ".json" when present and appending ".meta.json". The write set of
+  `build --check` stays empty.
+  The predicate change reaches project-map:CTR-001, project-map:CTR-002,
+  and project-map:CTR-003 through their policy_refs, so it cascades to
+  project-map:SUR-001 and project-map:SUR-002 as a content change. Both
+  Surfaces take the minor bump that project-map:DLT-005,
+  project-map:DLT-006, and project-map:DLT-007 already carry; this Delta
+  adds no further bump of its own.
+migration_note: |
+  A configuration leaving `output.facts` null writes exactly the paths
+  it wrote before, because the two added paths are admitted only when
+  that key is a string.
+tests_old_behavior: |
+  The existing write-set obligation of project-map:POL-001 keeps every
+  other command's declared set unchanged, and keeps the check-mode set
+  empty.
+tests_new_behavior: |
+  A build with `output.facts` set opens exactly four paths for writing
+  at most, and a build with it null opens neither of the two added
+  paths.
+---
+```
+
+---
+
+## 16. Implementation bindings
+
+```yaml
+---
+id: project-map:IMP-006
+type: ImplementationBinding
+lifecycle:
+  status: proposed
+partition_id: project-map
+target_ids:
+  - project-map:CTR-004
+  - project-map:POL-003
+binding:
+  port: src/core/ports/analysis-unit.port.ts
+  materializer: src/infrastructure/analysis-unit/materializer.ts
+  composition_root: src/cli/commands.ts
+  schema: src/infrastructure/config/schema.ts
+authority: code_annotation
+verification_method: |
+  The materializer is the only module that touches the filesystem for
+  detection; the use case receives the materialized map and takes no
+  filesystem port. Integration tests materialize one fixture from two
+  absolute paths and compare the unit digest.
+---
+```
+
+```yaml
+---
+id: project-map:IMP-007
+type: ImplementationBinding
+lifecycle:
+  status: proposed
+partition_id: project-map
+target_ids:
+  - project-map:CTR-006
+  - project-map:CTR-007
+  - project-map:CTR-008
+  - project-map:INV-003
+binding:
+  fact_schema: src/core/domain/facts/fact.ts
+  value_ir: src/core/domain/facts/value-ir.ts
+  anchors: src/features/detect/index/anchors.ts
+  canonicalizer: src/features/detect/canonical/jcs.ts
+  array_order: src/features/detect/canonical/array-order.ts
+  fact_id: src/features/detect/canonical/fact-id.ts
+  build_digest: scripts/emit-build-digest.mjs
+authority: code_annotation
+verification_method: |
+  Unit tests drive the published RFC 8785 vectors through the
+  canonicalizer, assert the fact id is stable across excluded fields,
+  and round-trip UTF-16 to UTF-8 anchors over a non-ASCII fixture.
+---
+```
+
+```yaml
+---
+id: project-map:IMP-008
+type: ImplementationBinding
+lifecycle:
+  status: proposed
+partition_id: project-map
+target_ids:
+  - project-map:BEH-005
+  - project-map:BEH-006
+  - project-map:BEH-007
+  - project-map:GA-002
+  - project-map:CON-001
+binding:
+  openapi_reader: src/infrastructure/openapi/yaml-openapi-reader.ts
+  ingest: src/features/detect/openapi/ingest.ts
+  merge: src/features/detect/merge/core.ts
+  artifact: src/features/detect/render/artifact.ts
+  sidecar: src/features/detect/render/sidecar.ts
+  section_ids: src/core/domain/project-map.ts
+  command_surface: src/cli/commands.ts
+authority: code_annotation
+verification_method: |
+  Integration tests drive the real command tree through createProgram()
+  and assert the write set, each declared exit code, and the byte
+  equality of two consecutive builds.
+---
+```
+
+```yaml
+---
+id: project-map:IMP-009
+type: ImplementationBinding
+lifecycle:
+  status: proposed
+partition_id: project-map
+target_ids:
+  - project-map:BEH-008
+  - project-map:BEH-009
+  - project-map:INV-004
+binding:
+  import_index: src/features/detect/index/import-index.ts
+  declaration_index: src/features/detect/index/declaration-index.ts
+  hierarchy: src/features/detect/index/hierarchy.ts
+  value_engine: src/features/detect/value/engine.ts
+  budget: src/features/detect/value/budget.ts
+  inbound_ladder: src/features/detect/inbound/ladder.ts
+authority: code_annotation
+verification_method: |
+  Golden fixtures pair each adapter fixture with a consistently renamed
+  twin and assert equal fact sets modulo anchors; decoy fixtures assert
+  an empty fact set.
+---
+```
+
+```yaml
+---
+id: project-map:IMP-010
+type: ImplementationBinding
+lifecycle:
+  status: proposed
+partition_id: project-map
+target_ids:
+  - project-map:BEH-010
+  - project-map:BEH-011
+  - project-map:INV-005
+binding:
+  outbound_ladder: src/features/detect/outbound/ladder.ts
+  sinks: src/features/detect/outbound/sinks.ts
+  target_binding: src/features/detect/outbound/target-binding.ts
+  record_lattice: src/features/detect/value/record.ts
+  config_keys_port: src/core/ports/config-keys.port.ts
+authority: code_annotation
+verification_method: |
+  Golden fixtures cover each ladder step, each stop condition, and the
+  finite-branch case whose expected resolution is ambiguous.
+---
+```
+
+```yaml
+---
+id: project-map:IMP-011
+type: ImplementationBinding
+lifecycle:
+  status: proposed
+partition_id: project-map
+target_ids:
+  - project-map:BEH-012
+  - project-map:BEH-013
+binding:
+  registry: src/features/detect/registry/adapters.ts
+  registry_digest: src/features/detect/registry/registry-digest.ts
+  diagnostics: src/features/detect/merge/diagnostics.ts
+  sections: src/features/detect/render/markdown-sections.ts
+authority: code_annotation
+verification_method: |
+  Oracle fixtures checked in under tests/oracles/ carry the expected
+  fact and diagnostic sets of the two validation services; coverage
+  denominators are asserted against them.
+---
+```
