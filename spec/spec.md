@@ -26,6 +26,13 @@ three bindings target are authored in `spec/detection.md` and are still
 one step and takes it to 52. Until then they are counted as debt, which
 is what the definition above requires and what makes the number honest.
 
+That is why the count stands above the 72 the trend was set against.
+The breach is real and is reported rather than smoothed: `sdd ready
+--against` flags it until the two phases are approved, and the number
+is derived from the footprint, so writing a smaller one would be a
+false statement about the code rather than a fix. It clears in one
+step, and it clears only that way.
+
 ---
 
 ## 1. Context
@@ -112,7 +119,7 @@ default_policy_set:
   - project-map:POL-002
 id_namespace: project-map
 unmodeled_budget:
-  current: 66
+  current: 74
   baseline_at: "2026-07-27"
   baseline_value: 72
   trend: monotonic_non_increasing
