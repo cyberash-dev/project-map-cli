@@ -25,6 +25,7 @@ import {
 import type { DraftEndpointFact } from "../merge/merge-table.js";
 import { deriveResolution } from "../merge/resolution.js";
 import { canonicalPath } from "../openapi/path-grammar.js";
+import { argumentFor, keywordArguments } from "./argument-selector.js";
 import { verbsOfHandler } from "./handler-verbs.js";
 
 export type PythonDslRequest = {
@@ -165,8 +166,9 @@ function draftsFor(request: DraftRequest): DraftEndpointFact[] {
 	const positional = args.namedChildren.filter(
 		(node) => node.type !== "keyword_argument",
 	);
-	const pathNode = positional[0];
-	if (pathNode === undefined) {
+	const keywords = keywordArguments(args);
+	const pathNode = argumentFor(request.router.pathArg, positional, keywords);
+	if (pathNode === null) {
 		return [];
 	}
 	const literal = pythonStringLiteral(pathNode);
@@ -176,7 +178,7 @@ function draftsFor(request: DraftRequest): DraftEndpointFact[] {
 	const path = canonicalPath([prefixOf(request), literal]);
 	const anchor = anchorOf(request.call, request.view);
 	const verbs = verbsOfHandler({
-		handlerNode: positional[1] ?? null,
+		handlerNode: handlerNodeFor(request, positional, keywords),
 		view: request.view,
 		modules: request.modules,
 		sourcePaths: [...request.modules.keys()],
@@ -202,6 +204,17 @@ function draftsFor(request: DraftRequest): DraftEndpointFact[] {
 			anchor,
 		}),
 	);
+}
+
+function handlerNodeFor(
+	request: DraftRequest,
+	positional: readonly SyntaxNode[],
+	keywords: ReadonlyMap<string, SyntaxNode>,
+): SyntaxNode | null {
+	if (request.router.verbFrom === null) {
+		return null;
+	}
+	return argumentFor(request.router.verbFrom.handler, positional, keywords);
 }
 
 function prefixOf(request: DraftRequest): string {

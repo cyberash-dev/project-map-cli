@@ -133,6 +133,6 @@ describe("python declaration-DSL routes", () => {
 	it("emits exactly the routes the fixture declares", async () => {
 		await runCli(workspace.dir, ["build"]);
 
-		expect(await routesOf(workspace.dir)).toHaveLength(3);
+		expect(await routesOf(workspace.dir)).toHaveLength(4);
 	});
 });
