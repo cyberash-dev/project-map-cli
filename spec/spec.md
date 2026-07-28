@@ -146,7 +146,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: c6f307b77905452c8a9931ed923b42413801bc2c
+    reference: 8a9ff71b3b82ff8c162ccfb539d89de938bb9725
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -158,26 +158,31 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: e0cb5b6cf5895673f92d8601a49cfd4a87d33eb970e6fee71f50b98cf2c3a2fe
-baseline_commit_sha: c6f307b77905452c8a9931ed923b42413801bc2c
+freshness_token: cbd33a9df0691dc173e758c10c62f3aa43f66b2a34f981a3d6470cb825cb4a45
+baseline_commit_sha: 8a9ff71b3b82ff8c162ccfb539d89de938bb9725
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from e36dec17 to c6f307b7 across the first two phases of the
-  detection rework: twenty-two new modules, each claimed by
-  project-map:IMP-006, project-map:IMP-007 or project-map:IMP-008, plus
+  Refreshed from e36dec17 to 8a9ff71b across the first three phases of the
+  detection rework. The first two phases added twenty-two modules, each
+  claimed by project-map:IMP-006, project-map:IMP-007 or
+  project-map:IMP-008, plus
   the configuration keys those phases add and one line in
   src/cli/commands.ts that threads `output.facts` through the option
   override.
-  Every crossing is closed. The code ran ahead of its attestation while
-  the operator directed the work, and the fourteen IDs those bindings
-  target were approved in one plan afterwards; project-map:DLT-004,
-  project-map:DLT-005 and project-map:DLT-008 authorize the
-  configuration and write-set crossings, and project-map:DLT-009 and
-  project-map:DLT-010 carry the surface versions the widened policy
-  predicate requires. The debt count returns to 52.
+  Every crossing in those two phases is closed. The code ran ahead of its
+  attestation while the operator directed the work, and the fourteen IDs
+  those bindings target were approved in one plan afterwards;
+  project-map:DLT-004, project-map:DLT-005 and project-map:DLT-008
+  authorize the configuration and write-set crossings, and
+  project-map:DLT-009 and project-map:DLT-010 carry the surface versions
+  the widened policy predicate requires. The debt count fell to 52.
+  The third phase added six modules claimed by project-map:IMP-009, but
+  its targets project-map:BEH-008 and project-map:INV-004 remain
+  proposed. Those modules are not modeled yet, so the current debt count
+  is 58.
   Refreshed from c82417cd to e36dec17 earlier. That refresh crossed the
   footprint of CTR-001, CTR-002, INV-001 and INV-002; every crossing was
   authored as project-map:DLT-001 or project-map:DLT-002, or was
