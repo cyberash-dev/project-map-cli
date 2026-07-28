@@ -10,22 +10,20 @@ Status of this document: onboarding in progress. The partition's
 observable behavior is not yet claimed by an approved normative ID.
 It shrinks per PR; it does not reach zero in one change.
 
-Accounting for the current value: 101 modules under `src/`, of which 43
+Accounting for the current value: 101 modules under `src/`, of which 49
 are claimed by an `Implementation binding` in §16 whose `target_ids` are
-approved. The remaining 58 are the per-slice extraction adapters, the
-ports they sit behind, and the six modules of the third detection phase;
-their observable behavior is lifted in later change sets. The count is
-derived from the §16 footprint rather than assessed by hand, so it moves
-only when a binding gains or loses a path, or when a target is approved.
+approved. The remaining 52 are the per-slice extraction adapters and the
+ports they sit behind; their observable behavior is lifted in later
+change sets. The count is derived from the §16 footprint rather than
+assessed by hand, so it moves only when a binding gains or loses a path,
+or when a target is approved.
 
-The first two phases of the rework are inside the 43. They briefly
-pushed the count to 74, above the 72 the trend was set against, because
-a module counts as modeled only under an approved target and theirs were
-still `proposed`; approving those thirteen IDs cleared it in one step.
-The third phase repeats the shape: project-map:IMP-009 already names its
-modules, and project-map:BEH-008 and project-map:INV-004 are still
-`proposed`, so the count sits at 58 until they are approved and falls to
-52 when they are.
+The three implemented phases of the detection rework are inside the 49.
+Each one briefly raised the count while its records were still
+`proposed`, because a module counts as modeled only under an approved
+target, and each approval brought it back down. The first two took it to
+74, above the 72 the trend was set against; that breach was reported
+rather than smoothed and cleared in one step.
 
 ---
 
@@ -113,7 +111,7 @@ default_policy_set:
   - project-map:POL-002
 id_namespace: project-map
 unmodeled_budget:
-  current: 58
+  current: 52
   baseline_at: "2026-07-27"
   baseline_value: 72
   trend: monotonic_non_increasing
@@ -178,10 +176,10 @@ notes: |
   authorize the configuration and write-set crossings, and
   project-map:DLT-009 and project-map:DLT-010 carry the surface versions
   the widened policy predicate requires. The debt count fell to 52.
-  The third phase added six modules claimed by project-map:IMP-009, but
-  its targets project-map:BEH-008 and project-map:INV-004 remain
-  proposed. Those modules are not modeled yet, so the current debt count
-  is 58.
+  The third phase added six modules claimed by project-map:IMP-009, and
+  its targets project-map:BEH-008 and project-map:INV-004 were approved
+  in their own plan. Every crossing this baseline carries is closed and
+  the debt count is 52.
   Refreshed from c82417cd to e36dec17 earlier. That refresh crossed the
   footprint of CTR-001, CTR-002, INV-001 and INV-002; every crossing was
   authored as project-map:DLT-001 or project-map:DLT-002, or was

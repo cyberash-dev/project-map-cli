@@ -290,7 +290,13 @@ test_obligation:
 id: project-map:BEH-008
 type: Behavior
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-28T15:15:57.726Z
+    change_request: detection rework phase C
+    scope: first-time-approval
 partition_id: project-map
 title: detection — a route is composed from a declared registration form
 given: |
@@ -1321,7 +1327,13 @@ test_obligation:
 id: project-map:INV-004
 type: Invariant
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-28T15:15:57.795Z
+    change_request: detection rework phase C
+    scope: first-time-approval
 partition_id: project-map
 title: detection is structural, never nominal
 always: |

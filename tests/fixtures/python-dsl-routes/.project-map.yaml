@@ -25,6 +25,11 @@ detect:
         verb_from:
           kind: handler_methods
           handler: { kind: arg, selector: 1 }
+      - dsl: "sendr_aiohttp.ShiftedUrl"
+        path_arg: { kind: arg, selector: 1 }
+        verb_from:
+          kind: handler_methods
+          handler: { kind: arg, selector: 2 }
 
 output:
   markdown: PROJECT_MAP.md

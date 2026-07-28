@@ -122,6 +122,14 @@ describe("python declaration-DSL routes", () => {
 	});
 
 	/* @covers project-map:BEH-008 */
+	it("applies configured selectors to non-default argument positions", async () => {
+		await runCli(workspace.dir, ["build"]);
+
+		const routes = await routesOf(workspace.dir);
+		expect(routes).toContainEqual({ method: "GET", path: "/shifted" });
+	});
+
+	/* @covers project-map:BEH-008 */
 	it("emits exactly the routes the fixture declares", async () => {
 		await runCli(workspace.dir, ["build"]);
 
