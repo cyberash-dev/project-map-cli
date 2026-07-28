@@ -24,7 +24,7 @@ Phase-to-record mapping, with the status each phase's records now hold:
 | B — check mode and the opt-in sections              | BEH-006, DLT-006, DLT-007, CON-001                            | proposed; the artifact is emitted but check mode does not yet compare it, and the three section ids are not yet rendered |
 | C — indexes and the intraprocedural normalizer      | BEH-008, INV-004                                              | approved, implemented                                                                                                    |
 | D — router value identity                           | BEH-009                                                       | approved, implemented                                                                                                    |
-| E — declared sinks and the record lattice           | BEH-010, BEH-011, INV-005                                     | proposed                                                                                                                 |
+| E — declared sinks and the record lattice           | BEH-010, BEH-011, INV-005, DLT-012                            | proposed; the configuration surface cannot yet express the path form both validation services use                        |
 | F — shared-library halves and coverage              | BEH-012, BEH-013                                              | proposed                                                                                                                 |
 
 The implementation bindings of the approved phases, project-map:IMP-006
@@ -1667,6 +1667,65 @@ notes: |
 ---
 ```
 
+```yaml
+---
+id: project-map:OQ-003
+type: Open-Q
+partition_id: project-map
+question: |
+  Both validation services route the path of an outbound call through a
+  helper the sink's base type declares, rather than passing it to the
+  sending member directly. In `yandex_pay_plus` seventeen of the
+  nineteen call sites in its own interactions tree read
+  `url=self.endpoint_url('/webapi/Order')`, where `endpoint_url` joins
+  the class constant the sink already declares as its target with its
+  own argument. The base type is declared in a shared library outside
+  the analysis unit, so the helper is not a statically resolved call
+  edge and the value it returns is unknown(cross_boundary).
+  A Selector cannot reach the literal: project-map:CTR-005 fixes that
+  step i+1 of a chain applies to the normalized VALUE of step i, and the
+  normalized value of a call to an unmodeled callee carries no
+  arguments. Should the sink schema gain a way to declare such a helper,
+  or should those seventeen paths stay typed holes?
+options:
+  - option: declare the helper on the sink
+    consequence: |
+      `detect.outbound.sinks[]` gains a key naming a path-composing
+      member and the argument that carries the path, which is a content
+      change to project-map:CTR-005 and a minor bump of
+      project-map:SUR-001. Seventeen of the nineteen paths fold to
+      literals and become joinable.
+  - option: leave the paths as typed holes
+    consequence: |
+      The configuration surface stays as approved. Every call site is
+      still emitted, its path typed unknown(cross_boundary) under
+      project-map:INV-005, so the facts carry a destination and a method
+      but no route the linker can join on.
+  - option: widen the chain semantics instead
+    consequence: |
+      A chain step would navigate the syntax of an unresolved call
+      rather than a normalized value, which contradicts the sentence
+      project-map:CTR-005 states about chains and would reach every
+      selector in the configuration, not this one form.
+blocking: no
+owner: cyberash
+default_if_unresolved: |
+  declare the helper on the sink
+notes: |
+  It does not block the spec: only the pay_plus half of the outbound
+  ladder depends on the answer, and the phase proceeds on the default
+  under project-map:ASM-003.
+  Raised from reading the two validation services before implementing
+  the outbound ladder, not from a reported defect. The form is not
+  peculiar to one service: a base type that owns both the target and the
+  path join is the ordinary shape of a hand-written HTTP client.
+  `midas` does not hit it. Its sending members take a record whose
+  fields the caller assigns, which the chain
+  `[{arg: 0}, {field: APIMethod}]` already expresses against the record
+  lattice of project-map:CTR-007.
+---
+```
+
 ---
 
 ## 18. Assumptions
@@ -1691,6 +1750,34 @@ tests:
     document with no `repository_identity` and no `output.facts`, which
     validates, and a document with `output.facts` and no
     `repository_identity`, which is rejected
+---
+```
+
+```yaml
+---
+id: project-map:ASM-003
+type: ASSUMPTION
+partition_id: project-map
+assumption: |
+  A `detect.outbound.sinks[]` entry may declare a member of its base type
+  whose argument supplies the path. Before the value selected by
+  `path_arg` is normalized, detection examines the selected AST node.
+  When that node is a call to the declared member whose receiver is the
+  sink's own instance, the declared argument carries only the path; the
+  sink's own `target` remains the separate destination of the HTTP
+  variant. Where no such member is declared, or the selector reaches
+  something else, the path stays typed under project-map:INV-005.
+source_open_q: project-map:OQ-003
+blocking: no
+review_by: "2026-12-31"
+default_if_unresolved: |
+  declare the helper on the sink
+tests:
+  - the configuration obligation of project-map:CTR-005 exercises a
+    sink declaring the member, whose selected AST call folds the
+    declared argument to a literal path while keeping `target` as the
+    destination, and one omitting it, whose call site keeps a typed hole
+    while still emitting the fact
 ---
 ```
 
@@ -2097,6 +2184,63 @@ tests_old_behavior: |
   own, so no test preserves it; as_is records it.
 tests_new_behavior: |
   `sdd ready` reports no surface_member_drift for project-map:SUR-001.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-012
+type: Delta
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: a sink may declare the member that composes its path
+target_id: project-map:CTR-005
+kind: extend
+baseline_version: project-map:BL-001
+compatibility_action: ignore
+surface_impact:
+  - id: project-map:SUR-001
+    intended_version: "1.2.0"
+as_is: |
+  project-map:CTR-005 declares `detect.outbound.sinks[]` with
+  `base_type`, `call[]`, `path_arg`, `method`, and `target`, and fixes
+  that step i+1 of a Selector chain applies to the normalized VALUE of
+  step i. A base type that owns both the target and the join of the path
+  onto it is therefore inexpressible: the value the `path_arg` selector
+  reaches is a call to a member declared outside the analysis unit, so
+  it normalizes to unknown(cross_boundary) and carries no argument a
+  further step could name.
+to_be: |
+  A `detect.outbound.sinks[]` entry additionally carries an optional
+  `path_via` of the shape `{member, arg}`. Before the selected value is
+  normalized, detection examines the AST node a `path_arg` selector
+  reaches. When that node is a call whose member name equals
+  `path_via.member` and whose receiver is the sink's own instance, the
+  path is the value of argument `path_via.arg` of that call, canonicalized
+  by the path grammar of project-map:CTR-007. The sink's `target` remains
+  the separate destination and is not included in path canonicalization.
+  The key defaults to absent, and an absent key resolves exactly as before.
+  `path_via` and the literal `member` and `arg` key names join the
+  external identifiers of project-map:CTR-005. project-map:SUR-001 takes
+  its own minor bump from the 1.1.0 that project-map:DLT-006 establishes
+  to 1.2.0.
+migration_note: |
+  Every configuration written before this key keeps resolving to the
+  same values, because the key is optional and is consulted only where
+  the selector reaches a call to the named member.
+tests_old_behavior: |
+  The existing configuration obligation of project-map:CTR-005 keeps a
+  document declaring every other key validating, and keeps a glob
+  selector a config-time error.
+tests_new_behavior: |
+  A sink declaring `path_via` inspects the selected AST call before
+  normalization and folds that member's declared argument to the literal
+  path `/webapi/Register`, while preserving a config_ref `target` as the
+  separate destination; the same fixture with the key removed emits the
+  same fact count with the path typed unknown(cross_boundary); a call to
+  the named member on a receiver that is not the sink's instance is not
+  folded.
 ---
 ```
 
