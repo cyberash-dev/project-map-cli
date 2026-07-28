@@ -53,6 +53,20 @@ export type OverviewConfig = {
 export type OutputConfig = {
 	readonly markdown: string;
 	readonly json: string | null;
+	readonly facts: string | null;
+};
+
+/**
+ * Bounds the content whose digest fixes detection output. Deliberately
+ * decoupled from the top-level `exclude`, which is tuned for the map document
+ * and routinely hides the declarations detection needs to prove a type.
+ */
+export type AnalysisUnitConfig = {
+	readonly sources: {
+		readonly include: readonly string[];
+		readonly exclude: readonly string[];
+	};
+	readonly configDeclarations: readonly string[];
 };
 
 export type ResolvedConfig = {
@@ -74,6 +88,8 @@ export type ResolvedConfig = {
 	readonly interactions: InteractionsConfig;
 	readonly workers: WorkersConfig;
 	readonly output: OutputConfig;
+	readonly repositoryIdentity: string | null;
+	readonly analysisUnit: AnalysisUnitConfig;
 	readonly configHash: string;
 	readonly sourcePath: string | null;
 };

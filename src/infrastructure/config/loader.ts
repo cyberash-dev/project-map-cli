@@ -5,6 +5,7 @@ import { cosmiconfig } from "cosmiconfig";
 import * as yaml from "yaml";
 import type { Framework, Language } from "../../core/domain/language.js";
 import type {
+	AnalysisUnitConfig,
 	ContextsConfig,
 	EndpointsConfig,
 	EntitiesConfig,
@@ -138,7 +139,9 @@ function resolveConfig(
 	const output: OutputConfig = {
 		markdown: raw.output.markdown,
 		json: raw.output.json,
+		facts: raw.output.facts,
 	};
+	const analysisUnit = resolveAnalysisUnit(raw);
 
 	const configHash = hashConfig(raw);
 
@@ -161,8 +164,20 @@ function resolveConfig(
 		interactions,
 		workers,
 		output,
+		repositoryIdentity: raw.repository_identity,
+		analysisUnit,
 		configHash,
 		sourcePath,
+	};
+}
+
+function resolveAnalysisUnit(raw: ConfigFile): AnalysisUnitConfig {
+	return {
+		sources: {
+			include: raw.analysis_unit.sources.include,
+			exclude: raw.analysis_unit.sources.exclude,
+		},
+		configDeclarations: raw.analysis_unit.config_declarations,
 	};
 }
 

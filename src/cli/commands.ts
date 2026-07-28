@@ -311,7 +311,7 @@ function applyOutputOverrides(
 	} else if (typeof jsonArg === "string") {
 		json = jsonArg;
 	}
-	return { ...cfg, output: { markdown, json } };
+	return { ...cfg, output: { markdown, json, facts: cfg.output.facts } };
 }
 
 function applyOnly<T extends { sections: readonly SectionId[] }>(

@@ -112,9 +112,52 @@ export const ConfigFileSchema = z
 			.object({
 				markdown: z.string().default("PROJECT_MAP.md"),
 				json: z.string().nullable().default(null),
+				facts: z.string().nullable().default(null),
 			})
-			.default({ markdown: "PROJECT_MAP.md", json: null }),
+			.default({ markdown: "PROJECT_MAP.md", json: null, facts: null }),
+		repository_identity: z.string().min(1).nullable().default(null),
+		analysis_unit: z
+			.object({
+				sources: z
+					.object({
+						include: z.array(z.string()).default([]),
+						exclude: z.array(z.string()).default([]),
+					})
+					.default({ include: [], exclude: [] }),
+				config_declarations: z.array(z.string()).default([]),
+			})
+			.default({
+				sources: { include: [], exclude: [] },
+				config_declarations: [],
+			}),
 	})
-	.strict();
+	.strict()
+	.superRefine(requireIdentityWhereFactsAreEmitted);
+
+/**
+ * The identity is meaningless for a configuration that emits no facts: only
+ * the artifact and the linker read it. Requiring it unconditionally would
+ * invalidate every configuration written before detection existed.
+ */
+function requireIdentityWhereFactsAreEmitted(
+	document: {
+		output: { facts: string | null };
+		repository_identity: string | null;
+	},
+	ctx: z.RefinementCtx,
+): void {
+	if (document.repository_identity !== null) {
+		return;
+	}
+	if (document.output.facts === null) {
+		return;
+	}
+	ctx.addIssue({
+		code: "custom",
+		path: ["repository_identity"],
+		message:
+			"repository_identity is required when output.facts names a path, because the emitted artifact carries it",
+	});
+}
 
 export type ConfigFile = z.infer<typeof ConfigFileSchema>;

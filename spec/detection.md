@@ -1607,7 +1607,7 @@ type: Delta
 lifecycle:
   status: proposed
 partition_id: project-map
-title: the configuration carries a repository identity and an analysis unit
+title: the configuration carries an identity, an analysis unit, a facts path
 target_id: project-map:CTR-002
 kind: extend
 baseline_version: project-map:BL-001
@@ -1621,15 +1621,20 @@ as_is: |
   source selection that reaches extraction is the one the top-level
   `exclude` key produces, and it is derived from a live filesystem walk.
 to_be: |
-  project-map:CTR-002 additionally accepts `repository_identity` and
-  `analysis_unit`. `repository_identity` is a logical string, required
-  exactly when a facts artifact is emitted or a detection section is
-  present, per project-map:ASM-002. `analysis_unit` carries
-  `sources.include`, `sources.exclude`, and `config_declarations`, whose
-  semantics project-map:CTR-004 fixes.
+  project-map:CTR-002 additionally accepts `repository_identity`,
+  `analysis_unit`, and `output.facts`. `repository_identity` is a
+  logical string, required exactly when a facts artifact is emitted or a
+  detection section is present, per project-map:ASM-002. `analysis_unit`
+  carries `sources.include`, `sources.exclude`, and
+  `config_declarations`, whose semantics project-map:CTR-004 fixes.
+  `output.facts` is a path defaulting to null.
+  The requiredness rule names the detection sections before
+  project-map:DLT-005 admits them, so that arm stays unreachable until
+  it does and the rule text is written once.
   project-map:SUR-001 gains project-map:CTR-004 as a member and moves
-  from 0.2.2 to 0.3.0. The bump is minor: both keys carry defaults that
-  reproduce the prior resolution, and no key is renamed or removed.
+  from 0.2.2 to 0.3.0. The bump is minor: every key carries a default
+  that reproduces the prior resolution, and no key is renamed or
+  removed.
 migration_note: |
   A configuration written before this change validates unchanged and
   resolves to the same source set, because `analysis_unit` defaults to
@@ -1653,7 +1658,7 @@ type: Delta
 lifecycle:
   status: proposed
 partition_id: project-map
-title: the configuration carries the detection sections and a facts output
+title: the configuration carries the detection sections
 target_id: project-map:CTR-002
 kind: extend
 baseline_version: project-map:BL-001
@@ -1662,26 +1667,29 @@ surface_impact:
   - id: project-map:SUR-001
     intended_version: "0.4.0"
 as_is: |
-  project-map:CTR-002 accepts no `openapi` and no `detect` section, and
-  `output` carries `markdown` and `json` alone. Detection anchors cannot
-  be declared, so an in-house wrapper is invisible to extraction.
+  project-map:CTR-002 accepts no `openapi` and no `detect` section.
+  Detection anchors cannot be declared, so an in-house wrapper is
+  invisible to extraction and the identity requiredness rule that
+  project-map:DLT-004 wrote has an arm no document can reach.
 to_be: |
   project-map:CTR-002 additionally accepts `openapi` and `detect`, whose
-  schema project-map:CTR-005 fixes, and `output.facts`, a path that
-  defaults to null. project-map:SUR-001 gains project-map:CTR-005 as a
-  member and moves from 0.3.0 to 0.4.0. The bump is minor: all three
-  keys default to a value that reproduces the prior behavior.
+  schema project-map:CTR-005 fixes. Declaring either section now
+  requires `repository_identity`, which makes the second arm of the rule
+  project-map:DLT-004 wrote reachable without restating it.
+  project-map:SUR-001 gains project-map:CTR-005 as a member and moves
+  from 0.3.0 to 0.4.0. The bump is minor: both sections default to
+  empty, which reproduces the prior behavior.
 migration_note: |
-  A configuration written before this change emits no facts artifact,
-  because `output.facts` defaults to null, and runs the built-in
-  adapters alone, because both detection sections default to empty.
+  A configuration written before this change runs the built-in adapters
+  alone, because both sections default to empty, and needs no identity,
+  because declaring neither section leaves the rule's arm unreached.
 tests_old_behavior: |
   A document carrying neither detection section validates and produces
-  the document it produced before.
+  the document it produced before, with no identity declared.
 tests_new_behavior: |
   A document declaring both sections validates, an invalid selector is
-  rejected before any build, and `output.facts` set to a path emits the
-  artifact per project-map:BEH-005.
+  rejected before any build, and a document declaring a section without
+  `repository_identity` is rejected.
 ---
 ```
 
