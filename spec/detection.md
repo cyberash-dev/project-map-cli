@@ -23,20 +23,18 @@ Phase-to-record mapping, with the status each phase's records now hold:
 | B — OpenAPI inbound and artifact emission           | CTR-005, BEH-005, BEH-007, GA-002, SUR-003, DLT-005, DLT-008  | approved, implemented                                                                                                    |
 | B — check mode and the opt-in sections              | BEH-006, DLT-006, DLT-007, CON-001                            | proposed; the artifact is emitted but check mode does not yet compare it, and the three section ids are not yet rendered |
 | C — indexes and the intraprocedural normalizer      | BEH-008, INV-004                                              | approved, implemented                                                                                                    |
-| D — router value identity                           | BEH-009                                                       | implemented, awaiting approval                                                                                           |
+| D — router value identity                           | BEH-009                                                       | approved, implemented                                                                                                    |
 | E — declared sinks and the record lattice           | BEH-010, BEH-011, INV-005                                     | proposed                                                                                                                 |
 | F — shared-library halves and coverage              | BEH-012, BEH-013                                              | proposed                                                                                                                 |
 
 The implementation bindings of the approved phases, project-map:IMP-006
-through project-map:IMP-009, live in `spec/spec.md` so that the §16
-footprint claims their modules. project-map:IMP-012 stays here until
-project-map:BEH-009 is approved.
+through project-map:IMP-009 and project-map:IMP-012, live in
+`spec/spec.md` so that the §16 footprint claims their modules.
 
-Phase A, the emission half of phase B and phase C are approved and
-implemented. Phase D is implemented and awaits approval, so its modules
-count as debt. Check mode over the artifact, the new exit codes and the
-three opt-in section ids are authored and unapproved, as are phases E
-and F: no code implements them.
+Phase A, the emission half of phase B, phase C and phase D are approved
+and implemented. Check mode over the artifact, the new exit codes and
+the three opt-in section ids are authored and unapproved, as are phases
+E and F: no code implements them.
 
 A Delta and the edit it authorizes travel together: the amendment to an
 approved record in `spec/spec.md` is made in the commit that finalizes
@@ -363,7 +361,13 @@ test_obligation:
 id: project-map:BEH-009
 type: Behavior
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-28T16:37:52.995Z
+    change_request: detection rework phase D
+    scope: first-time-approval
 partition_id: project-map
 title: detection — a route is composed by router value identity
 given: |
@@ -2144,40 +2148,5 @@ verification_method: |
   Oracle fixtures checked in under tests/oracles/ carry the expected
   fact and diagnostic sets of the two validation services; coverage
   denominators are asserted against them.
----
-```
-
-```yaml
----
-id: project-map:IMP-012
-type: ImplementationBinding
-lifecycle:
-  status: proposed
-partition_id: project-map
-target_ids:
-  - project-map:BEH-009
-binding:
-  import_index: src/features/detect/index/go/imports.ts
-  value_folding: src/features/detect/value/go-value.ts
-  template_assembly: src/features/detect/value/template.ts
-  path_grammar: src/features/detect/openapi/path-grammar.ts
-  argument_selector: src/features/detect/inbound/argument-selector.ts
-  router_scope: src/features/detect/inbound/go/router-scope.ts
-  chi_adapter: src/features/detect/inbound/go/chi.ts
-  config_schema: src/infrastructure/config/schema.ts
-  use_case: src/features/detect/detect.use-case.ts
-authority: code_annotation
-verification_method: |
-  tests/integration/go-chi-routes.test.ts drives the real command tree over
-  a fixture carrying each boundary class the behavior names: a registration
-  on the constructed value, one after a declared identity-preserving member,
-  one inside a grouping closure that shadows the router identifier, one on a
-  router derived by the built-in routing member, one on a router reached
-  through an undeclared helper, and a same-named member on a receiver that
-  is not a router.
-  tests/unit/go-imports.test.ts covers the qualifier a Go import binds,
-  including the major-version segment that is never a package name, and the
-  whole-segment origin match. tests/unit/canonical-path-ir.test.ts covers
-  the path grammar over components that did not all fold to a value.
 ---
 ```

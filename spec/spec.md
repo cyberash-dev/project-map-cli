@@ -10,26 +10,21 @@ Status of this document: onboarding in progress. The partition's
 observable behavior is not yet claimed by an approved normative ID.
 It shrinks per PR; it does not reach zero in one change.
 
-Accounting for the current value: 107 modules under `src/`, of which 50
+Accounting for the current value: 107 modules under `src/`, of which 55
 are claimed by an `Implementation binding` in §16 whose `target_ids` are
-approved. The remaining 57 are the per-slice extraction adapters, the
-ports they sit behind, and the five modules phase D adds; their
-observable behavior is lifted in later change sets. The count is derived
-from the §16 footprint rather than assessed by hand, so it moves only
-when a binding gains or loses a path, or when a target is approved.
+approved. The remaining 52 are the per-slice extraction adapters and the
+ports they sit behind; their observable behavior is lifted in later
+change sets. The count is derived from the §16 footprint rather than
+assessed by hand, so it moves only when a binding gains or loses a path,
+or when a target is approved.
 
-The three approved phases of the detection rework are inside the 50.
+The four approved phases of the detection rework are inside the 55.
 Each one briefly raised the count while its records were still
 `proposed`, because a module counts as modeled only under an approved
 target, and each approval brought it back down. The first two took it to
 74, above the 72 the trend was set against; that breach was reported
-rather than smoothed and cleared in one step.
-
-Phase D raises it the same way, from 52 to 57. Five of those six modules
-are its own and fall out on approval; the sixth is
-`inbound/argument-selector.ts`, which phase C added after its debt was
-closed and left unclaimed. It is claimed here, which is why the rise is
-five and not six.
+rather than smoothed and cleared in one step. Phase D took it to 57 and
+its approval returned it to 52.
 
 ---
 
@@ -117,7 +112,7 @@ default_policy_set:
   - project-map:POL-002
 id_namespace: project-map
 unmodeled_budget:
-  current: 57
+  current: 52
   baseline_at: "2026-07-27"
   baseline_value: 72
   trend: monotonic_non_increasing
@@ -188,9 +183,9 @@ notes: |
   src/features/detect/inbound/argument-selector.ts, landed after the
   closing commit and stayed unclaimed until now; the derived count was
   therefore 53, not 52.
-  The fourth phase adds five modules claimed by project-map:IMP-012,
-  whose target project-map:BEH-009 is still proposed, so the debt count
-  is 57 and falls to 52 on approval. Its crossings outside those five
+  The fourth phase added five modules claimed by project-map:IMP-012,
+  and its target project-map:BEH-009 was approved in its own plan, which
+  took the debt count back to 52. Its crossings outside those five
   modules need no Delta: project-map:CTR-005 already declares the
   identity_preserving key the configuration surface now carries, and the
   resolution ladder of project-map:CTR-006 already calls any unknown in
@@ -1421,6 +1416,41 @@ verification_method: |
   form of the same type, and a decoy class sharing the name while
   originating elsewhere. It also covers a verb inherited across two
   modules and a verb declared under a decorator.
+---
+```
+
+```yaml
+---
+id: project-map:IMP-012
+type: ImplementationBinding
+lifecycle:
+  status: proposed
+partition_id: project-map
+target_ids:
+  - project-map:BEH-009
+binding:
+  import_index: src/features/detect/index/go/imports.ts
+  value_folding: src/features/detect/value/go-value.ts
+  template_assembly: src/features/detect/value/template.ts
+  path_grammar: src/features/detect/openapi/path-grammar.ts
+  argument_selector: src/features/detect/inbound/argument-selector.ts
+  router_scope: src/features/detect/inbound/go/router-scope.ts
+  chi_adapter: src/features/detect/inbound/go/chi.ts
+  config_schema: src/infrastructure/config/schema.ts
+  use_case: src/features/detect/detect.use-case.ts
+authority: code_annotation
+verification_method: |
+  tests/integration/go-chi-routes.test.ts drives the real command tree over
+  a fixture carrying each boundary class the behavior names: a registration
+  on the constructed value, one after a declared identity-preserving member,
+  one inside a grouping closure that shadows the router identifier, one on a
+  router derived by the built-in routing member, one on a router reached
+  through an undeclared helper, and a same-named member on a receiver that
+  is not a router.
+  tests/unit/go-imports.test.ts covers the qualifier a Go import binds,
+  including the major-version segment that is never a package name, and the
+  whole-segment origin match. tests/unit/canonical-path-ir.test.ts covers
+  the path grammar over components that did not all fold to a value.
 ---
 ```
 
