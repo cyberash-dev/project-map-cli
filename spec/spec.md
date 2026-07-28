@@ -10,19 +10,21 @@ Status of this document: onboarding in progress. The partition's
 observable behavior is not yet claimed by an approved normative ID.
 It shrinks per PR; it does not reach zero in one change.
 
-Accounting for the current value: 87 modules under `src/`, of which 35
-appear in the `binding` block of an `Implementation binding` in §16 and
-are therefore claimed by a normative ID. The remaining 52 are the
-per-slice extraction adapters and the ports they sit behind; their
+Accounting for the current value: 87 modules under `src/`, of which 21
+are claimed by an `Implementation binding` in §16 whose `target_ids` are
+approved. The remaining 66 are the per-slice extraction adapters, the
+ports they sit behind, and the detection modules described below; their
 observable behavior is lifted in later change sets. The count is derived
 from the §16 footprint rather than assessed by hand, so it moves only
-when a binding gains or loses a path.
+when a binding gains or loses a path, or when a target is approved.
 
-The detection rework adds modules and claims every one of them as it
-lands, so the count falls rather than rises: the 13 modules of its first
-phase arrive already bound by project-map:IMP-006 and
-project-map:IMP-007. The normative IDs those bindings target are
-authored in `spec/detection.md` and are not yet approved; see §19.
+Fourteen of those 66 are the first phase of the detection rework. They
+already appear in the `binding` block of project-map:IMP-006 and
+project-map:IMP-007, so no work is needed to model them: the IDs those
+two bindings target are authored in `spec/detection.md` and are still
+`proposed`. Approving them moves fourteen modules out of the count in
+one step and takes it to 52. Until then they are counted as debt, which
+is what the definition above requires and what makes the number honest.
 
 ---
 
