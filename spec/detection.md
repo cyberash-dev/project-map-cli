@@ -196,7 +196,7 @@ lifecycle:
 partition_id: project-map
 title: detection — a declared OpenAPI inventory emits facts independent of code
 given: |
-  - `openapi.serves` carries at least one entry whose spec locator
+  - the `openapi.serves` list carries at least one entry whose spec locator
     resolves inside the analysis unit and whose contract_id is declared
 when: detection runs over the analysis unit
 then: |
@@ -222,7 +222,7 @@ negative_cases:
   - two different contract_ids on one canonical route => one fact
     carrying both contract_refs, which is not a conflict
 out_of_scope:
-  - `openapi.consumes` and generated-client outbound operations
+  - the `openapi.consumes` entries and generated-client outbound operations
   - Swagger 2.0 ingest and its basePath composition branch
 applicability:
   invariant_to_all_axes: true
@@ -1518,8 +1518,8 @@ test_obligation:
   test_template: integration
   boundary_classes:
     - no `sections` key
-    - `sections` naming a new id
-    - `sections` naming both a legacy id and its reworked counterpart
+    - a `sections` list naming a new id
+    - a `sections` list naming both a legacy id and its reworked counterpart
   failure_scenarios:
     - a new section appearing in a document whose configuration is
       unchanged
@@ -1827,35 +1827,6 @@ tests_new_behavior: |
 ---
 
 ## 16. Implementation bindings
-
-```yaml
----
-id: project-map:IMP-008
-type: ImplementationBinding
-lifecycle:
-  status: proposed
-partition_id: project-map
-target_ids:
-  - project-map:BEH-005
-  - project-map:BEH-006
-  - project-map:BEH-007
-  - project-map:GA-002
-  - project-map:CON-001
-binding:
-  openapi_reader: src/infrastructure/openapi/yaml-openapi-reader.ts
-  ingest: src/features/detect/openapi/ingest.ts
-  merge: src/features/detect/merge/core.ts
-  artifact: src/features/detect/render/artifact.ts
-  sidecar: src/features/detect/render/sidecar.ts
-  section_ids: src/core/domain/project-map.ts
-  command_surface: src/cli/commands.ts
-authority: code_annotation
-verification_method: |
-  Integration tests drive the real command tree through createProgram()
-  and assert the write set, each declared exit code, and the byte
-  equality of two consecutive builds.
----
-```
 
 ```yaml
 ---

@@ -10,19 +10,19 @@ Status of this document: onboarding in progress. The partition's
 observable behavior is not yet claimed by an approved normative ID.
 It shrinks per PR; it does not reach zero in one change.
 
-Accounting for the current value: 87 modules under `src/`, of which 21
+Accounting for the current value: 95 modules under `src/`, of which 21
 are claimed by an `Implementation binding` in §16 whose `target_ids` are
-approved. The remaining 66 are the per-slice extraction adapters, the
+approved. The remaining 74 are the per-slice extraction adapters, the
 ports they sit behind, and the detection modules described below; their
 observable behavior is lifted in later change sets. The count is derived
 from the §16 footprint rather than assessed by hand, so it moves only
 when a binding gains or loses a path, or when a target is approved.
 
-Fourteen of those 66 are the first phase of the detection rework. They
-already appear in the `binding` block of project-map:IMP-006 and
-project-map:IMP-007, so no work is needed to model them: the IDs those
-two bindings target are authored in `spec/detection.md` and are still
-`proposed`. Approving them moves fourteen modules out of the count in
+Twenty-two of those 74 are the detection rework. They already appear in
+the `binding` block of project-map:IMP-006, project-map:IMP-007 and
+project-map:IMP-008, so no work is needed to model them: the IDs those
+three bindings target are authored in `spec/detection.md` and are still
+`proposed`. Approving them moves twenty-two modules out of the count in
 one step and takes it to 52. Until then they are counted as debt, which
 is what the definition above requires and what makes the number honest.
 
@@ -145,7 +145,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: cbd8762925f378295a14a5e00d0e1389d83e6cf9
+    reference: 1485bc529eb7f12153a95488681ee90ef50ab366
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -157,25 +157,28 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: e5f59f22f8e3835d0142b3938bcc4f094511fbb4f16411e114dab42515625893
-baseline_commit_sha: cbd8762925f378295a14a5e00d0e1389d83e6cf9
+freshness_token: 8dbea7978a596ac85d87654e9d75b501e0c5a4edd81fc6054a3a4374bee2ce82
+baseline_commit_sha: 1485bc529eb7f12153a95488681ee90ef50ab366
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from e36dec17 to cbd8762. The refresh carries the first phase
-  of the detection rework: thirteen new modules, each claimed by
-  project-map:IMP-006 or project-map:IMP-007, and one line in
-  src/cli/commands.ts that threads the new `output.facts` key through the
-  option override.
-  Two crossings are honest debt rather than closed obligations. The IDs
-  those two bindings target are authored in `spec/detection.md` and are
+  Refreshed from e36dec17 to 1485bc52 across the first two phases of the
+  detection rework: twenty-two new modules, each claimed by
+  project-map:IMP-006, project-map:IMP-007 or project-map:IMP-008, plus
+  the configuration keys those phases add and one line in
+  src/cli/commands.ts that threads `output.facts` through the option
+  override.
+  The crossings are honest debt rather than closed obligations. The IDs
+  those three bindings target are authored in `spec/detection.md` and are
   still `proposed`, so the code precedes its attestation; the operator
   directed the work to run ahead of approval, and promoting the records
-  is a single `sdd approve` plus `sdd finalize` away. The commands.ts
-  crossing is authorized by project-map:DLT-004, which is proposed for
-  the same reason.
+  is a single `sdd approve` plus `sdd finalize` away. The configuration
+  crossings are authorized by project-map:DLT-004 and
+  project-map:DLT-005, proposed for the same reason.
+  The debt count rises to 74, above the 72 the trend was set against,
+  for exactly that reason. Approving the two phases takes it to 52.
   Refreshed from c82417cd to e36dec17 earlier. That refresh crossed the
   footprint of CTR-001, CTR-002, INV-001 and INV-002; every crossing was
   authored as project-map:DLT-001 or project-map:DLT-002, or was
@@ -1325,6 +1328,42 @@ verification_method: |
   unresolved registrations at distinct anchors stay apart.
   tests/unit/anchors.test.ts round-trips a non-ASCII source through the
   code-unit and the byte view.
+---
+```
+
+```yaml
+---
+id: project-map:IMP-008
+type: ImplementationBinding
+lifecycle:
+  status: proposed
+partition_id: project-map
+target_ids:
+  - project-map:BEH-005
+  - project-map:BEH-007
+  - project-map:GA-002
+  - project-map:CTR-005
+  - project-map:DLT-005
+binding:
+  openapi_port: src/core/ports/openapi.port.ts
+  openapi_reader: src/infrastructure/openapi/yaml-openapi-reader.ts
+  path_grammar: src/features/detect/openapi/path-grammar.ts
+  ingest: src/features/detect/openapi/ingest.ts
+  merge_table: src/features/detect/merge/merge-table.ts
+  resolution: src/features/detect/merge/resolution.ts
+  use_case: src/features/detect/detect.use-case.ts
+  artifact: src/features/detect/render/artifact.ts
+  composition_root: src/cli/container.ts
+  command_surface: src/cli/commands.ts
+authority: code_annotation
+verification_method: |
+  tests/integration/facts-artifact.test.ts drives the real command tree
+  and asserts the write set, the byte equality of two consecutive builds,
+  the byte equality of a copy placed at another absolute path, and that
+  the timestamp lives in the sidecar rather than in the compared bytes.
+  tests/unit/openapi-ingest.test.ts covers the inventory itself, the two
+  merge-table rows this phase can reach, and the identity ordering;
+  tests/unit/path-grammar.test.ts covers each rule of the grammar.
 ---
 ```
 
