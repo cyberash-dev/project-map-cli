@@ -2088,32 +2088,6 @@ tests_new_behavior: |
 
 ```yaml
 ---
-id: project-map:IMP-009
-type: ImplementationBinding
-lifecycle:
-  status: proposed
-partition_id: project-map
-target_ids:
-  - project-map:BEH-008
-  - project-map:BEH-009
-  - project-map:INV-004
-binding:
-  import_index: src/features/detect/index/import-index.ts
-  declaration_index: src/features/detect/index/declaration-index.ts
-  hierarchy: src/features/detect/index/hierarchy.ts
-  value_engine: src/features/detect/value/engine.ts
-  budget: src/features/detect/value/budget.ts
-  inbound_ladder: src/features/detect/inbound/ladder.ts
-authority: code_annotation
-verification_method: |
-  Golden fixtures pair each adapter fixture with a consistently renamed
-  twin and assert equal fact sets modulo anchors; decoy fixtures assert
-  an empty fact set.
----
-```
-
-```yaml
----
 id: project-map:IMP-010
 type: ImplementationBinding
 lifecycle:

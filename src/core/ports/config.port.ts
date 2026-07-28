@@ -87,6 +87,38 @@ export type OpenApiConfig = {
 	readonly consumes: readonly ConsumedContract[];
 };
 
+export type SelectorStep =
+	| { readonly kind: "arg"; readonly selector: number | string }
+	| { readonly kind: "field"; readonly selector: string }
+	| { readonly kind: "class_const"; readonly selector: string }
+	| { readonly kind: "receiver" }
+	| { readonly kind: "property-path"; readonly selector: string };
+
+/** An ordered chain; step i+1 applies to the normalized value of step i. */
+export type Selector = readonly SelectorStep[];
+
+/**
+ * The verb of a route registered through a declaration DSL comes from the
+ * handler's own members. The handler itself is addressed by a selector, so the
+ * adapter never has to assume which argument carries it.
+ */
+export type VerbSource = {
+	readonly kind: "handler_methods";
+	readonly handler: Selector;
+};
+
+export type DeclaredRouter = {
+	readonly dsl: string;
+	readonly pathArg: Selector;
+	readonly prefixFrom: Selector | null;
+	readonly verbFrom: VerbSource | null;
+};
+
+export type DetectConfig = {
+	readonly inbound: { readonly routers: readonly DeclaredRouter[] };
+	readonly outbound: { readonly sinks: readonly unknown[] };
+};
+
 export type ResolvedConfig = {
 	readonly project: {
 		readonly name: string;
@@ -109,6 +141,7 @@ export type ResolvedConfig = {
 	readonly repositoryIdentity: string | null;
 	readonly analysisUnit: AnalysisUnitConfig;
 	readonly openapi: OpenApiConfig;
+	readonly detect: DetectConfig;
 	readonly configHash: string;
 	readonly sourcePath: string | null;
 };

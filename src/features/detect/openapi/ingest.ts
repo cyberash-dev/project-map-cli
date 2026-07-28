@@ -25,6 +25,7 @@ export type IngestRequest = {
 };
 
 export type IngestResult = {
+	readonly drafts: readonly DraftEndpointFact[];
 	readonly facts: readonly EndpointFact[];
 	readonly diagnostics: readonly Diagnostic[];
 };
@@ -69,6 +70,7 @@ export function ingestServedContracts(request: IngestRequest): IngestResult {
 		repositoryIdentity: request.unit.repositoryIdentity,
 	});
 	return {
+		drafts,
 		facts,
 		diagnostics: [...diagnostics, ...notInCodeDiagnostics(facts)],
 	};

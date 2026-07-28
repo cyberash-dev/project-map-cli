@@ -4,6 +4,7 @@ import {
 	FRAMEWORKS_BY_LANGUAGE,
 } from "../../core/domain/language.js";
 import { SECTION_IDS } from "../../core/domain/project-map.js";
+import { SelectorSchema } from "./selector-schema.js";
 
 const FRAMEWORK_VALUES = Array.from(
 	new Set(Object.values(FRAMEWORKS_BY_LANGUAGE).flat()),
@@ -138,6 +139,33 @@ export const ConfigFileSchema = z
 					.default([]),
 			})
 			.default({ serves: [], consumes: [] }),
+		detect: z
+			.object({
+				inbound: z
+					.object({
+						routers: z
+							.array(
+								z.object({
+									dsl: z.string().min(1),
+									path_arg: SelectorSchema,
+									prefix_from: SelectorSchema.nullable().default(null),
+									verb_from: z
+										.object({
+											kind: z.literal("handler_methods"),
+											handler: SelectorSchema,
+										})
+										.nullable()
+										.default(null),
+								}),
+							)
+							.default([]),
+					})
+					.default({ routers: [] }),
+				outbound: z
+					.object({ sinks: z.array(z.unknown()).default([]) })
+					.default({ sinks: [] }),
+			})
+			.default({ inbound: { routers: [] }, outbound: { sinks: [] } }),
 		analysis_unit: z
 			.object({
 				sources: z

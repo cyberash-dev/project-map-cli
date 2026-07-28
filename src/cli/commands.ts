@@ -203,7 +203,11 @@ async function emitFacts(
 		specLocators: config.openapi.serves.map((entry) => entry.spec),
 		registryVersion: DETECTOR_SOURCE_DIGEST,
 	});
-	const factSet = detectUseCase().execute({ unit, openapi: config.openapi });
+	const factSet = detectUseCase(container.parser).execute({
+		unit,
+		openapi: config.openapi,
+		detect: config.detect,
+	});
 
 	const factsPath = path.resolve(projectRoot, config.output.facts);
 	await container.writer.write(

@@ -7,6 +7,7 @@ import type { Framework, Language } from "../../core/domain/language.js";
 import type {
 	AnalysisUnitConfig,
 	ContextsConfig,
+	DetectConfig,
 	EndpointsConfig,
 	EntitiesConfig,
 	EnumsConfig,
@@ -137,14 +138,7 @@ function resolveConfig(
 	const workers: WorkersConfig = { patterns: raw.workers.patterns };
 
 	const overview: OverviewConfig = { path: raw.overview.path };
-	const output: OutputConfig = {
-		markdown: raw.output.markdown,
-		json: raw.output.json,
-		facts: raw.output.facts,
-	};
-	const analysisUnit = resolveAnalysisUnit(raw);
-	const openapi = resolveOpenApi(raw);
-
+	const output = resolveOutput(raw);
 	const configHash = hashConfig(raw);
 
 	return {
@@ -167,10 +161,19 @@ function resolveConfig(
 		workers,
 		output,
 		repositoryIdentity: raw.repository_identity,
-		analysisUnit,
-		openapi,
+		analysisUnit: resolveAnalysisUnit(raw),
+		openapi: resolveOpenApi(raw),
+		detect: resolveDetect(raw),
 		configHash,
 		sourcePath,
+	};
+}
+
+function resolveOutput(raw: ConfigFile): OutputConfig {
+	return {
+		markdown: raw.output.markdown,
+		json: raw.output.json,
+		facts: raw.output.facts,
 	};
 }
 
@@ -196,6 +199,20 @@ function resolveOpenApi(raw: ConfigFile): OpenApiConfig {
 			spec: entry.spec,
 			contractId: entry.contract_id,
 		})),
+	};
+}
+
+function resolveDetect(raw: ConfigFile): DetectConfig {
+	return {
+		inbound: {
+			routers: raw.detect.inbound.routers.map((entry) => ({
+				dsl: entry.dsl,
+				pathArg: entry.path_arg,
+				prefixFrom: entry.prefix_from,
+				verbFrom: entry.verb_from,
+			})),
+		},
+		outbound: { sinks: raw.detect.outbound.sinks },
 	};
 }
 

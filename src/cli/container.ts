@@ -63,8 +63,10 @@ export function analysisUnitMaterializer(
 	});
 }
 
-export function detectUseCase(): DetectFactsUseCase {
-	return new DetectFactsUseCase(new YamlOpenApiReader());
+export function detectUseCase(
+	parser: TreeSitterParserRegistry,
+): DetectFactsUseCase {
+	return new DetectFactsUseCase(new YamlOpenApiReader(), parser);
 }
 
 export function buildUseCase(

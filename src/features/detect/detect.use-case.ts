@@ -3,6 +3,10 @@ import type { DetectionFact } from "../../core/domain/facts/fact.js";
 import type { AnalysisUnit } from "../../core/ports/analysis-unit.port.js";
 import type { OpenApiConfig } from "../../core/ports/config.port.js";
 import type { IOpenApiReader } from "../../core/ports/openapi.port.js";
+import type { ISourceParser } from "../../core/ports/parser.port.js";
+import type { DetectConfig } from "../../core/ports/config.port.js";
+import { detectPythonDslRoutes } from "./inbound/python-dsl.js";
+import { finalizeEndpointFacts } from "./merge/merge-table.js";
 import { ingestServedContracts } from "./openapi/ingest.js";
 import { FACTS_SCHEMA_VERSION } from "./render/artifact.js";
 
@@ -15,6 +19,7 @@ export type FactSet = {
 export type DetectRequest = {
 	readonly unit: AnalysisUnit;
 	readonly openapi: OpenApiConfig;
+	readonly detect: DetectConfig;
 };
 
 /**
@@ -22,7 +27,10 @@ export type DetectRequest = {
  * composition root materializes the unit and this use case never widens it.
  */
 export class DetectFactsUseCase {
-	constructor(private readonly reader: IOpenApiReader) {}
+	constructor(
+		private readonly reader: IOpenApiReader,
+		private readonly parser: ISourceParser,
+	) {}
 
 	execute(request: DetectRequest): FactSet {
 		const inventory = ingestServedContracts({
@@ -32,10 +40,26 @@ export class DetectFactsUseCase {
 			schemaVersion: FACTS_SCHEMA_VERSION,
 		});
 
+		const routed = detectPythonDslRoutes({
+			unit: request.unit,
+			parser: this.parser,
+			routers: request.detect.inbound.routers,
+		});
+		/*
+		 * Stage three: the inventory and the code registrations are reconciled
+		 * by semantic core rather than raced, so a route declared in both
+		 * carries one fact with both provenances.
+		 */
+		const facts = finalizeEndpointFacts({
+			drafts: [...inventory.drafts, ...routed],
+			schemaVersion: FACTS_SCHEMA_VERSION,
+			repositoryIdentity: request.unit.repositoryIdentity,
+		});
+
 		return {
-			facts: inventory.facts,
+			facts,
 			diagnostics: inventory.diagnostics,
-			coverage: coverageOf(request, inventory.facts.length),
+			coverage: coverageOf(request, facts.length),
 		};
 	}
 }

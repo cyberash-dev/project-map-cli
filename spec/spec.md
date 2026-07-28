@@ -10,19 +10,22 @@ Status of this document: onboarding in progress. The partition's
 observable behavior is not yet claimed by an approved normative ID.
 It shrinks per PR; it does not reach zero in one change.
 
-Accounting for the current value: 95 modules under `src/`, of which 43
+Accounting for the current value: 101 modules under `src/`, of which 43
 are claimed by an `Implementation binding` in §16 whose `target_ids` are
-approved. The remaining 52 are the per-slice extraction adapters and the
-ports they sit behind; their observable behavior is lifted in later
-change sets. The count is derived from the §16 footprint rather than
-assessed by hand, so it moves only when a binding gains or loses a path,
-or when a target is approved.
+approved. The remaining 58 are the per-slice extraction adapters, the
+ports they sit behind, and the six modules of the third detection phase;
+their observable behavior is lifted in later change sets. The count is
+derived from the §16 footprint rather than assessed by hand, so it moves
+only when a binding gains or loses a path, or when a target is approved.
 
-The first two phases of the detection rework are inside the 43. They
-briefly pushed the count to 74, above the 72 the trend was set against,
-because a module counts as modeled only under an approved target and
-theirs were still `proposed`. The breach was reported rather than
-smoothed, and approving those thirteen IDs cleared it in one step.
+The first two phases of the rework are inside the 43. They briefly
+pushed the count to 74, above the 72 the trend was set against, because
+a module counts as modeled only under an approved target and theirs were
+still `proposed`; approving those thirteen IDs cleared it in one step.
+The third phase repeats the shape: project-map:IMP-009 already names its
+modules, and project-map:BEH-008 and project-map:INV-004 are still
+`proposed`, so the count sits at 58 until they are approved and falls to
+52 when they are.
 
 ---
 
@@ -110,7 +113,7 @@ default_policy_set:
   - project-map:POL-002
 id_namespace: project-map
 unmodeled_budget:
-  current: 52
+  current: 58
   baseline_at: "2026-07-27"
   baseline_value: 72
   trend: monotonic_non_increasing
@@ -1366,6 +1369,38 @@ verification_method: |
   tests/unit/openapi-ingest.test.ts covers the inventory itself, the two
   merge-table rows this phase can reach, and the identity ordering;
   tests/unit/path-grammar.test.ts covers each rule of the grammar.
+---
+```
+
+```yaml
+---
+id: project-map:IMP-009
+type: ImplementationBinding
+lifecycle:
+  status: proposed
+partition_id: project-map
+target_ids:
+  - project-map:BEH-008
+  - project-map:INV-004
+binding:
+  selector_schema: src/infrastructure/config/selector-schema.ts
+  import_index: src/features/detect/index/python/imports.ts
+  declaration_index: src/features/detect/index/python/declarations.ts
+  module_resolver: src/features/detect/index/module-resolver.ts
+  handler_verbs: src/features/detect/inbound/handler-verbs.ts
+  dsl_adapter: src/features/detect/inbound/python-dsl.ts
+  use_case: src/features/detect/detect.use-case.ts
+authority: code_annotation
+verification_method: |
+  tests/unit/python-imports.test.ts and
+  tests/unit/python-declarations.test.ts drive the two indexes, including
+  the aliased import and the name a local definition shadows.
+  tests/integration/python-dsl-routes.test.ts drives the real command tree
+  over a fixture carrying all three registration forms the validation
+  service uses: a local subclass supplying the prefix, the unprefixed
+  form of the same type, and a decoy class sharing the name while
+  originating elsewhere. It also covers a verb inherited across two
+  modules and a verb declared under a decorator.
 ---
 ```
 
