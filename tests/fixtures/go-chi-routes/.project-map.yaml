@@ -1,0 +1,24 @@
+project:
+  name: routed-go
+  language: go
+
+repository_identity: sample/routed-go
+
+sections:
+  - metadata
+
+analysis_unit:
+  sources:
+    include: ["**/*.go"]
+
+detect:
+  inbound:
+    routers:
+      - dsl: "github.com/go-chi/chi/v5"
+        path_arg: { kind: arg, selector: 0 }
+        identity_preserving:
+          - { member: withStats, from: arg, index: 0 }
+
+output:
+  markdown: PROJECT_MAP.md
+  facts: .project-map/facts.json

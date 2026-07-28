@@ -5,6 +5,7 @@ import type { OpenApiConfig } from "../../core/ports/config.port.js";
 import type { IOpenApiReader } from "../../core/ports/openapi.port.js";
 import type { ISourceParser } from "../../core/ports/parser.port.js";
 import type { DetectConfig } from "../../core/ports/config.port.js";
+import { detectGoRouterRoutes } from "./inbound/go/chi.js";
 import { detectPythonDslRoutes } from "./inbound/python-dsl.js";
 import { finalizeEndpointFacts } from "./merge/merge-table.js";
 import { ingestServedContracts } from "./openapi/ingest.js";
@@ -40,11 +41,15 @@ export class DetectFactsUseCase {
 			schemaVersion: FACTS_SCHEMA_VERSION,
 		});
 
-		const routed = detectPythonDslRoutes({
+		const inbound = {
 			unit: request.unit,
 			parser: this.parser,
 			routers: request.detect.inbound.routers,
-		});
+		};
+		const routed = [
+			...detectPythonDslRoutes(inbound),
+			...detectGoRouterRoutes(inbound),
+		];
 		/*
 		 * Stage three: the inventory and the code registrations are reconciled
 		 * by semantic core rather than raced, so a route declared in both

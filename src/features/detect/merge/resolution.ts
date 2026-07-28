@@ -4,6 +4,7 @@ import type {
 	OperationVariant,
 	Resolution,
 } from "../../../core/domain/facts/fact.js";
+import { containsUnknown } from "../../../core/domain/facts/value-ir.js";
 import { orderByCanonicalBytes } from "../canonical/array-order.js";
 
 export type ResolutionRequest = {
@@ -29,10 +30,10 @@ function hasUnknownRequired(
 	request: ResolutionRequest,
 ): boolean {
 	if (!isHttpVariant(variant)) {
-		return variant.queue.topic.kind === "unknown";
+		return containsUnknown(variant.queue.topic);
 	}
 	const { method, path, destination } = variant.http;
-	if (method.kind === "unknown" || path.kind === "unknown") {
+	if (containsUnknown(method) || containsUnknown(path)) {
 		return true;
 	}
 	if (!request.requiresDestination) {

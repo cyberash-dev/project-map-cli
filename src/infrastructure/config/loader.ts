@@ -210,6 +210,7 @@ function resolveDetect(raw: ConfigFile): DetectConfig {
 				pathArg: entry.path_arg,
 				prefixFrom: entry.prefix_from,
 				verbFrom: entry.verb_from,
+				identityPreserving: entry.identity_preserving,
 			})),
 		},
 		outbound: { sinks: raw.detect.outbound.sinks },

@@ -1,62 +1,10 @@
-import { readFile } from "node:fs/promises";
-import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { routesOf } from "../support/facts.js";
 import {
 	createWorkspace,
 	runCli,
 	type Workspace,
 } from "../support/workspace.js";
-
-type Route = { readonly method: string; readonly path: string };
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function stringAt(value: unknown, key: string): string {
-	if (!isRecord(value)) {
-		throw new Error(`expected a record carrying ${key}`);
-	}
-	const found = value[key];
-	if (typeof found !== "string") {
-		throw new Error(`expected a string at ${key}`);
-	}
-	return found;
-}
-
-function memberAt(value: unknown, key: string): unknown {
-	if (!isRecord(value)) {
-		throw new Error(`expected a record carrying ${key}`);
-	}
-	return value[key];
-}
-
-function routeOf(fact: unknown): Route {
-	const variants = memberAt(memberAt(fact, "operation"), "variants");
-	if (!Array.isArray(variants)) {
-		throw new Error("expected a variants array");
-	}
-	const http = memberAt(variants[0], "http");
-	const method = memberAt(http, "method");
-	return {
-		method:
-			stringAt(method, "kind") === "literal"
-				? stringAt(method, "value")
-				: `unknown(${stringAt(method, "reason")})`,
-		path: stringAt(memberAt(http, "path"), "value"),
-	};
-}
-
-async function routesOf(dir: string): Promise<Route[]> {
-	const artifact: unknown = JSON.parse(
-		await readFile(path.join(dir, ".project-map/facts.json"), "utf8"),
-	);
-	const facts = memberAt(artifact, "facts");
-	if (!Array.isArray(facts)) {
-		throw new Error("artifact carries no facts array");
-	}
-	return facts.map(routeOf);
-}
 
 describe("python declaration-DSL routes", () => {
 	let workspace: Workspace;
@@ -82,18 +30,21 @@ describe("python declaration-DSL routes", () => {
 	it("registers a route through the unprefixed form of the same DSL", async () => {
 		await runCli(workspace.dir, ["build"]);
 
-		const routes = await routesOf(workspace.dir);
-		expect(routes).toContainEqual({ method: "GET", path: "/ping" });
+		expect(await routesOf(workspace.dir)).toContainEqual({
+			method: "GET",
+			path: "/ping",
+			resolution: "resolved",
+		});
 	});
 
 	/* @covers project-map:BEH-008 */
 	it("takes the verb a handler inherits across two modules", async () => {
 		await runCli(workspace.dir, ["build"]);
 
-		const routes = await routesOf(workspace.dir);
-		expect(routes).toContainEqual({
+		expect(await routesOf(workspace.dir)).toContainEqual({
 			method: "POST",
 			path: "/api/merchant/v1/orders/{}",
+			resolution: "resolved",
 		});
 	});
 
@@ -117,16 +68,22 @@ describe("python declaration-DSL routes", () => {
 	it("takes the verb of a decorated member", async () => {
 		await runCli(workspace.dir, ["build"]);
 
-		const routes = await routesOf(workspace.dir);
-		expect(routes).toContainEqual({ method: "DELETE", path: "/decorated" });
+		expect(await routesOf(workspace.dir)).toContainEqual({
+			method: "DELETE",
+			path: "/decorated",
+			resolution: "resolved",
+		});
 	});
 
 	/* @covers project-map:BEH-008 */
 	it("applies configured selectors to non-default argument positions", async () => {
 		await runCli(workspace.dir, ["build"]);
 
-		const routes = await routesOf(workspace.dir);
-		expect(routes).toContainEqual({ method: "GET", path: "/shifted" });
+		expect(await routesOf(workspace.dir)).toContainEqual({
+			method: "GET",
+			path: "/shifted",
+			resolution: "resolved",
+		});
 	});
 
 	/* @covers project-map:BEH-008 */

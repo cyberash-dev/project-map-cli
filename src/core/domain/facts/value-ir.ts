@@ -85,3 +85,22 @@ export function isUnknownIr(value: ValueIr): value is UnknownIr {
 export function isTemplateIr(value: ValueIr): value is TemplateIr {
 	return value.kind === "template";
 }
+
+/**
+ * Whether any part of a value stayed unproven. A canonical template and a
+ * parameter hole are themselves resolved, so only a nested `unknown` counts.
+ */
+export function containsUnknown(value: ValueIr): boolean {
+	if (value.kind === "unknown") {
+		return true;
+	}
+	if (value.kind === "template") {
+		return value.parts.some(
+			(part) => typeof part !== "string" && containsUnknown(part),
+		);
+	}
+	if (value.kind === "choice") {
+		return value.alternatives.some(containsUnknown);
+	}
+	return false;
+}

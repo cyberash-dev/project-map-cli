@@ -8,6 +8,7 @@ import type {
 	OutboundOperationFact,
 } from "../../../core/domain/facts/fact.js";
 import { isEndpointFact } from "../../../core/domain/facts/fact.js";
+import { containsUnknown } from "../../../core/domain/facts/value-ir.js";
 import {
 	orderByCanonicalBytes,
 	orderEvidence,
@@ -82,11 +83,10 @@ function identityDestination(destination: Destination): unknown {
 function hasUnknownIdentity(variant: OperationVariant): boolean {
 	if (isHttpVariant(variant)) {
 		return (
-			variant.http.method.kind === "unknown" ||
-			variant.http.path.kind === "unknown"
+			containsUnknown(variant.http.method) || containsUnknown(variant.http.path)
 		);
 	}
-	return variant.queue.topic.kind === "unknown";
+	return containsUnknown(variant.queue.topic);
 }
 
 function sourceAnchorOf(fact: EndpointFact): SourceAnchor | null {

@@ -1,7 +1,15 @@
 import {
 	POSITIONAL_HOLE,
+	type TemplatePart,
+	type ValueIr,
 	WILDCARD_HOLE,
 } from "../../../core/domain/facts/value-ir.js";
+import { partsOf, templateOf } from "../value/template.js";
+
+/* NUL cannot appear in a path, so canonicalization carries a marker through
+ * untouched: it is neither a separator, an escape, nor a parameter syntax. */
+const MARKER_CHAR = String.fromCharCode(0);
+const MARKER = new RegExp(`${MARKER_CHAR}([0-9]+)${MARKER_CHAR}`, "g");
 
 const UNRESERVED = /^[A-Za-z0-9\-._~]$/;
 const PERCENT_ESCAPE = /%([0-9A-Fa-f]{2})/g;
@@ -23,6 +31,43 @@ export function canonicalPath(components: readonly string[]): string {
 		.filter((segment) => segment.length > 0)
 		.map(canonicalSegment);
 	return segments.length === 0 ? "/" : `/${segments.join("/")}`;
+}
+
+/**
+ * The same grammar over components that did not all fold to a value. Each
+ * unproven part is carried through canonicalization as an opaque marker, so a
+ * hole neither splits a segment nor picks up the escaping rules of one.
+ */
+export function canonicalPathIr(components: readonly ValueIr[]): ValueIr {
+	const holes: ValueIr[] = [];
+	const shape = components
+		.flatMap(partsOf)
+		.map((part) => (typeof part === "string" ? part : markerFor(part, holes)))
+		.join("");
+	return templateOf(splitOnMarkers(canonicalPath([shape]), holes));
+}
+
+function markerFor(hole: ValueIr, holes: ValueIr[]): string {
+	holes.push(hole);
+	return `${MARKER_CHAR}${holes.length - 1}${MARKER_CHAR}`;
+}
+
+function splitOnMarkers(
+	canonical: string,
+	holes: readonly ValueIr[],
+): readonly TemplatePart[] {
+	const parts: TemplatePart[] = [];
+	let read = 0;
+	for (const match of canonical.matchAll(MARKER)) {
+		const hole = holes[Number(match[1])];
+		if (hole === undefined) {
+			continue;
+		}
+		parts.push(canonical.slice(read, match.index), hole);
+		read = match.index + match[0].length;
+	}
+	parts.push(canonical.slice(read));
+	return parts.filter((part) => part !== "");
 }
 
 function stripQueryAndFragment(component: string): string {

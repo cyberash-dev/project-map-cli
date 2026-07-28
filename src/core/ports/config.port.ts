@@ -107,11 +107,25 @@ export type VerbSource = {
 	readonly handler: Selector;
 };
 
+/**
+ * A member that hands its router identity on. `binds` additionally carries the
+ * identity into the first parameter of the function literal passed as argument
+ * zero, which is how a grouping closure keeps registering against its outer
+ * router even where it shadows the name.
+ */
+export type IdentityPreserving = {
+	readonly member: string;
+	readonly from: "receiver" | "arg";
+	readonly index: number | null;
+	readonly binds: "closure_arg0_param0" | null;
+};
+
 export type DeclaredRouter = {
 	readonly dsl: string;
 	readonly pathArg: Selector;
 	readonly prefixFrom: Selector | null;
 	readonly verbFrom: VerbSource | null;
+	readonly identityPreserving: readonly IdentityPreserving[];
 };
 
 export type DetectConfig = {

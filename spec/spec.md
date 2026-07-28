@@ -10,20 +10,26 @@ Status of this document: onboarding in progress. The partition's
 observable behavior is not yet claimed by an approved normative ID.
 It shrinks per PR; it does not reach zero in one change.
 
-Accounting for the current value: 101 modules under `src/`, of which 49
+Accounting for the current value: 107 modules under `src/`, of which 50
 are claimed by an `Implementation binding` in §16 whose `target_ids` are
-approved. The remaining 52 are the per-slice extraction adapters and the
-ports they sit behind; their observable behavior is lifted in later
-change sets. The count is derived from the §16 footprint rather than
-assessed by hand, so it moves only when a binding gains or loses a path,
-or when a target is approved.
+approved. The remaining 57 are the per-slice extraction adapters, the
+ports they sit behind, and the five modules phase D adds; their
+observable behavior is lifted in later change sets. The count is derived
+from the §16 footprint rather than assessed by hand, so it moves only
+when a binding gains or loses a path, or when a target is approved.
 
-The three implemented phases of the detection rework are inside the 49.
+The three approved phases of the detection rework are inside the 50.
 Each one briefly raised the count while its records were still
 `proposed`, because a module counts as modeled only under an approved
 target, and each approval brought it back down. The first two took it to
 74, above the 72 the trend was set against; that breach was reported
 rather than smoothed and cleared in one step.
+
+Phase D raises it the same way, from 52 to 57. Five of those six modules
+are its own and fall out on approval; the sixth is
+`inbound/argument-selector.ts`, which phase C added after its debt was
+closed and left unclaimed. It is claimed here, which is why the rise is
+five and not six.
 
 ---
 
@@ -111,7 +117,7 @@ default_policy_set:
   - project-map:POL-002
 id_namespace: project-map
 unmodeled_budget:
-  current: 52
+  current: 57
   baseline_at: "2026-07-27"
   baseline_value: 72
   trend: monotonic_non_increasing
@@ -1386,6 +1392,7 @@ target_ids:
   - project-map:INV-004
 binding:
   selector_schema: src/infrastructure/config/selector-schema.ts
+  argument_selector: src/features/detect/inbound/argument-selector.ts
   import_index: src/features/detect/index/python/imports.ts
   declaration_index: src/features/detect/index/python/declarations.ts
   module_resolver: src/features/detect/index/module-resolver.ts

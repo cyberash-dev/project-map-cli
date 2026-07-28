@@ -14,6 +14,21 @@ const LANGUAGE_VALUES = [...ALL_LANGUAGES];
 
 const SECTION_VALUES = [...SECTION_IDS];
 
+/**
+ * `from: arg` without an index names no argument, so it would silently preserve
+ * nothing. Refusing it at configuration time keeps the failure visible.
+ */
+const IdentityPreservingSchema = z
+	.object({
+		member: z.string().min(1),
+		from: z.enum(["receiver", "arg"]),
+		index: z.number().int().min(0).nullable().default(null),
+		binds: z.literal("closure_arg0_param0").nullable().default(null),
+	})
+	.refine((entry) => entry.from !== "arg" || entry.index !== null, {
+		message: "an identity_preserving entry with `from: arg` requires `index`",
+	});
+
 export const ConfigFileSchema = z
 	.object({
 		project: z.object({
@@ -156,6 +171,9 @@ export const ConfigFileSchema = z
 										})
 										.nullable()
 										.default(null),
+									identity_preserving: z
+										.array(IdentityPreservingSchema)
+										.default([]),
 								}),
 							)
 							.default([]),
