@@ -1926,6 +1926,59 @@ tests_new_behavior: |
 ---
 ```
 
+```yaml
+---
+id: project-map:DLT-009
+type: Delta
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: the widened write set is a major bump of both surfaces
+target_id: project-map:POL-001
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: ignore
+surface_impact:
+  - id: project-map:SUR-001
+    intended_version: "1.0.0"
+  - id: project-map:SUR-002
+    intended_version: "1.0.0"
+as_is: |
+  project-map:DLT-008 widened the predicate of project-map:POL-001 to
+  admit the facts artifact and its sidecar, and declared that the
+  cascade adds no bump of its own because project-map:SUR-001 and
+  project-map:SUR-002 were already moving for other reasons. That is
+  wrong. SDD §11 makes a predicate change on a Policy a major bump of
+  every referencing Surface, and both Surfaces reference
+  project-map:POL-001 through their member Contracts. The declared
+  moves were minor: 0.2.2 to 0.4.0 and 0.3.0 unchanged.
+to_be: |
+  project-map:SUR-001 moves to 1.0.0 and project-map:SUR-002 moves to
+  1.0.0. Neither predicate of the two Surfaces changed; the bump records
+  that a guarantee their consumers hold has been weakened.
+  The weakened guarantee is specific. Before, `build` provably opened at
+  most two paths for writing. It can now open four. A consumer that
+  bounds the process write set, in a sandbox profile or a CI policy,
+  fails against the new binary unless it admits the two added paths.
+  Nothing else changes: the paths are admitted only when
+  <config.output.facts> is a string, which defaults to null, so a
+  configuration written before this change writes exactly what it wrote.
+migration_note: |
+  A consumer that does not bound the tool's write set needs no action. A
+  consumer that does adds path.resolve(<project_root>,
+  <config.output.facts>) and its sidecar to the permitted set, or leaves
+  <config.output.facts> null and is unaffected.
+tests_old_behavior: |
+  The write-set obligation of project-map:POL-001 keeps the two-path
+  bound for a configuration whose <config.output.facts> is null, which
+  is every configuration written before this change.
+tests_new_behavior: |
+  tests/integration/facts-artifact.test.ts asserts the four-path bound
+  where the key names a path and the two-path bound where it does not;
+  the version of each Surface equals the value declared here.
+---
+```
+
 ---
 
 ## 16. Implementation bindings
