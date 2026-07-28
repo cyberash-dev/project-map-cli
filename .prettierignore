@@ -4,3 +4,4 @@ package-lock.json
 pnpm-lock.yaml
 PROJECT_MAP.md
 tests/fixtures
+src/features/detect/registry/build-digest.generated.ts
