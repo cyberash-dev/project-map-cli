@@ -15,4 +15,5 @@ openapi:
 
 output:
   markdown: PROJECT_MAP.md
+  json: project-map.json
   facts: .project-map/facts.json

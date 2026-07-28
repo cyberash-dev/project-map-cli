@@ -1700,7 +1700,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "0.4.0"
+    intended_version: "1.0.0"
 as_is: |
   project-map:CTR-002 lists fourteen top-level configuration keys, none
   of which names a repository identity or bounds an analysis unit. The
@@ -1721,9 +1721,10 @@ to_be: |
   minor: every key carries a default that reproduces the prior
   resolution, and no key is renamed or removed.
   This Delta and project-map:DLT-005 are approved in one plan, so the
-  two minor bumps they carry are applied as one move from 0.2.2 to
-  0.4.0. Both declare that version in `surface_impact` rather than an
-  intermediate one no commit ever holds.
+  two minor bumps they carry are applied as one move. Per
+  project-map:DLT-010 both declare 1.0.0, the version the Surface holds
+  once project-map:DLT-009 adds the major bump the widened policy
+  predicate requires.
 migration_note: |
   A configuration written before this change validates unchanged and
   resolves to the same source set, because `analysis_unit` defaults to
@@ -1760,7 +1761,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "0.4.0"
+    intended_version: "1.0.0"
 as_is: |
   project-map:CTR-002 accepts no `openapi` and no `detect` section.
   Detection anchors cannot be declared, so an in-house wrapper is
@@ -1771,10 +1772,11 @@ to_be: |
   schema project-map:CTR-005 fixes. Declaring either section now
   requires `repository_identity`, which makes the second arm of the rule
   project-map:DLT-004 wrote reachable without restating it.
-  project-map:SUR-001 gains project-map:CTR-005 as a member. The bump is
-  minor: both sections default to empty, which reproduces the prior
-  behavior. Approved in one plan with project-map:DLT-004, the two
-  minor bumps apply as one move from 0.2.2 to 0.4.0.
+  project-map:SUR-001 gains project-map:CTR-005 as a member. The bump
+  this Delta contributes is minor: both sections default to empty, which
+  reproduces the prior behavior. Per project-map:DLT-011 it declares
+  1.0.0, the version the Surface holds once project-map:DLT-009 adds the
+  major bump the widened policy predicate requires.
 migration_note: |
   A configuration written before this change runs the built-in adapters
   alone, because both sections default to empty, and needs no identity,
@@ -1803,7 +1805,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "0.4.0"
+    intended_version: "1.1.0"
 as_is: |
   project-map:CTR-001 declares exit code 0 for success, 1 for a check
   drift, and 2 for no discoverable configuration. A configuration error
@@ -1817,8 +1819,9 @@ to_be: |
   project-map:BEH-006 states. It additionally declares the command
   `project-map facts --unit-digest`, which prints the analysis-unit
   digest and writes no path.
-  project-map:SUR-001 moves from 0.3.0 to 0.4.0. The bump is minor: no
-  existing code is reassigned and no option is renamed.
+  project-map:SUR-001 takes a minor bump above the 1.0.0 that
+  project-map:DLT-009 established. No existing code is reassigned and no
+  option is renamed.
 migration_note: |
   A consumer that treats any non-zero code as failure keeps working. A
   consumer that branches on code 1 keeps seeing 1 for a content drift,
@@ -1848,7 +1851,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-002
-    intended_version: "0.4.0"
+    intended_version: "1.1.0"
 as_is: |
   project-map:CTR-003 fixes the SectionId set at nine values, and the
   configuration defaults `sections` to that whole set. Accepted set and
@@ -1859,10 +1862,10 @@ to_be: |
   already names plus `inbound_endpoints`, `outbound_operations`, and
   `detection_coverage`. The accepted set and the default `sections`
   list become distinct; the default stays the original nine.
-  project-map:SUR-002 moves from 0.3.0 to 0.4.0. The bump is minor:
-  adding a SectionId is minor under the compatibility rules
-  project-map:CTR-003 already declares, and no heading, no row label,
-  and no existing id changes.
+  project-map:SUR-002 takes a minor bump above the 1.0.0 that
+  project-map:DLT-009 established. Adding a SectionId is minor under the
+  compatibility rules project-map:CTR-003 already declares, and no
+  heading, no row label, and no existing id changes.
 migration_note: |
   A consumer whose configuration names no `sections` key renders the
   same nine sections and the same bytes as before, so no committed
@@ -1931,7 +1934,13 @@ tests_new_behavior: |
 id: project-map:DLT-009
 type: Delta
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-28T11:25:18.422Z
+    change_request: detection rework phases A and B
+    scope: corrective-bump
 partition_id: project-map
 title: the widened write set is a major bump of both surfaces
 target_id: project-map:POL-001
@@ -1976,6 +1985,100 @@ tests_new_behavior: |
   tests/integration/facts-artifact.test.ts asserts the four-path bound
   where the key names a path and the two-path bound where it does not;
   the version of each Surface equals the value declared here.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-010
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-28T11:28:53.627Z
+    change_request: detection rework phases A and B
+    scope: corrective-bump
+partition_id: project-map
+title: an earlier delta names a surface version that was superseded
+target_id: project-map:DLT-004
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: ignore
+surface_impact:
+  - id: project-map:SUR-001
+    intended_version: "1.0.0"
+as_is: |
+  project-map:DLT-004 declares `surface_impact`
+  project-map:SUR-001@0.4.0. It was approved and its bump was applied,
+  and project-map:DLT-009 then carried the same Surface to 1.0.0 within
+  the same unreleased change set. The declaration now names a version
+  the Surface passed through rather than the one it holds, and
+  `sdd ready` reads that as a bump still waiting to be applied.
+to_be: |
+  The declaration names 1.0.0, the version project-map:SUR-001 reaches
+  in this change set. No consumer saw 0.4.0: it existed between two
+  commits on one branch and was never released, so recording the
+  intermediate step buys nothing and misstates the outcome.
+migration_note: |
+  No consumer-visible change. The emitted artifacts and the code are
+  untouched; only one declaration in the specification graph moves to
+  the version its Surface actually holds.
+  The churn is worth naming: it exists because the Surface was bumped
+  twice inside one change set, once for the added members and once for
+  the widened policy predicate. Folding the second into the first would
+  have avoided it, and a later change set that touches a Policy
+  predicate should declare the major bump from the start.
+tests_old_behavior: |
+  The intermediate declaration carried no acceptance predicate of its
+  own, so no test preserves it; as_is records it.
+tests_new_behavior: |
+  `sdd ready` reports no surface_member_drift for project-map:SUR-001.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-011
+type: Delta
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: another earlier delta names a surface version that was superseded
+target_id: project-map:DLT-005
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: ignore
+surface_impact:
+  - id: project-map:SUR-001
+    intended_version: "1.0.0"
+as_is: |
+  project-map:DLT-005 declares `surface_impact`
+  project-map:SUR-001@0.4.0. It was approved and its bump was applied,
+  and project-map:DLT-009 then carried the same Surface to 1.0.0 within
+  the same unreleased change set. The declaration now names a version
+  the Surface passed through rather than the one it holds, and
+  `sdd ready` reads that as a bump still waiting to be applied.
+to_be: |
+  The declaration names 1.0.0, the version project-map:SUR-001 reaches
+  in this change set. No consumer saw 0.4.0: it existed between two
+  commits on one branch and was never released, so recording the
+  intermediate step buys nothing and misstates the outcome.
+migration_note: |
+  No consumer-visible change. The emitted artifacts and the code are
+  untouched; only one declaration in the specification graph moves to
+  the version its Surface actually holds.
+  The churn is worth naming: it exists because the Surface was bumped
+  twice inside one change set, once for the added members and once for
+  the widened policy predicate. Folding the second into the first would
+  have avoided it, and a later change set that touches a Policy
+  predicate should declare the major bump from the start.
+tests_old_behavior: |
+  The intermediate declaration carried no acceptance predicate of its
+  own, so no test preserves it; as_is records it.
+tests_new_behavior: |
+  `sdd ready` reports no surface_member_drift for project-map:SUR-001.
 ---
 ```
 

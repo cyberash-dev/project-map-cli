@@ -9,10 +9,23 @@ import {
 } from "../support/workspace.js";
 
 const FACTS = ".project-map/facts.json";
+const JSON_DOCUMENT = "project-map.json";
 const SIDECAR = ".project-map/facts.meta.json";
 
 async function artifactOf(dir: string): Promise<string> {
 	return readFile(path.join(dir, FACTS), "utf8");
+}
+
+function normativeRecord(document: string, recordId: string): string {
+	const recordStart = document.indexOf(`id: ${recordId}\n`);
+	if (recordStart === -1) {
+		throw new Error(`Normative record not found: ${recordId}`);
+	}
+	const recordEnd = document.indexOf("\n---", recordStart);
+	if (recordEnd === -1) {
+		throw new Error(`Normative record is not terminated: ${recordId}`);
+	}
+	return document.slice(recordStart, recordEnd);
 }
 
 describe("facts artifact emission", () => {
@@ -36,6 +49,21 @@ describe("facts artifact emission", () => {
 		expect(written).toContain(SIDECAR);
 	});
 
+	/* @covers project-map:POL-001 */
+	/* @covers project-map:DLT-008 */
+	it("bounds the write set to four paths where a facts path is configured", async () => {
+		const before = await listFiles(workspace.dir);
+
+		await runCli(workspace.dir, ["build"]);
+
+		const added = (await listFiles(workspace.dir)).filter(
+			(entry) => !before.includes(entry),
+		);
+		expect(added.sort()).toEqual(
+			[FACTS, JSON_DOCUMENT, SIDECAR, "PROJECT_MAP.md"].sort(),
+		);
+	});
+
 	/* @covers project-map:BEH-005 */
 	/* @covers project-map:POL-001 */
 	/* @covers project-map:DLT-008 */
@@ -49,6 +77,64 @@ describe("facts artifact emission", () => {
 		const written = await listFiles(workspace.dir);
 		expect(written).not.toContain(FACTS);
 		expect(written).not.toContain(SIDECAR);
+	});
+});
+
+describe("specification version alignment", () => {
+	/* @covers project-map:DLT-009 */
+	/* @covers project-map:DLT-010 */
+	/* @covers project-map:DLT-011 */
+	it("pins corrected versions without surface_member_drift", async () => {
+		const surfaces = await readFile(
+			new URL("../../spec/spec.md", import.meta.url),
+			"utf8",
+		);
+		const deltas = await readFile(
+			new URL("../../spec/detection.md", import.meta.url),
+			"utf8",
+		);
+
+		const cliSurface = normativeRecord(surfaces, "project-map:SUR-001");
+		const mapSurface = normativeRecord(surfaces, "project-map:SUR-002");
+		const configurationDelta = normativeRecord(
+			deltas,
+			"project-map:DLT-004",
+		);
+		const detectionDelta = normativeRecord(deltas, "project-map:DLT-005");
+		const policyDelta = normativeRecord(deltas, "project-map:DLT-009");
+		const configurationCorrection = normativeRecord(
+			deltas,
+			"project-map:DLT-010",
+		);
+		const detectionCorrection = normativeRecord(
+			deltas,
+			"project-map:DLT-011",
+		);
+
+		expect(cliSurface).toContain('version: "1.0.0"');
+		expect(mapSurface).toContain('version: "1.0.0"');
+		expect(configurationDelta).toContain('intended_version: "1.0.0"');
+		expect(detectionDelta).toContain('intended_version: "1.0.0"');
+		expect(policyDelta).toMatch(
+			/id: project-map:SUR-001\s+intended_version: "1\.0\.0"[\s\S]*id: project-map:SUR-002\s+intended_version: "1\.0\.0"/,
+		);
+		expect(configurationCorrection).toContain(
+			"target_id: project-map:DLT-004",
+		);
+		expect(detectionCorrection).toContain(
+			"target_id: project-map:DLT-005",
+		);
+	});
+});
+
+describe("facts artifact content and stability", () => {
+	let workspace: Workspace;
+
+	beforeEach(async () => {
+		workspace = await createWorkspace("openapi-serves-minimal");
+	});
+	afterEach(async () => {
+		await workspace.dispose();
 	});
 
 	/* @covers project-map:BEH-005 */

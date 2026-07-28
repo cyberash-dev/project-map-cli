@@ -202,7 +202,7 @@ lifecycle:
     scope: first-time-approval
 partition_id: project-map
 name: project-map/cli
-version: "0.4.0"
+version: "1.0.0"
 boundary_type: cli
 members:
   - project-map:CTR-001
@@ -231,7 +231,7 @@ lifecycle:
     scope: first-time-approval
 partition_id: project-map
 name: project-map/map-document
-version: "0.3.0"
+version: "1.0.0"
 boundary_type: generated_published_artifact
 members:
   - project-map:CTR-003
