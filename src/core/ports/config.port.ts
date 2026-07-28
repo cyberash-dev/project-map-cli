@@ -69,6 +69,24 @@ export type AnalysisUnitConfig = {
 	readonly configDeclarations: readonly string[];
 };
 
+/** One hand-declared specification this repository serves. */
+export type ServedContract = {
+	readonly spec: string;
+	readonly contractId: string;
+	readonly mount: string | null;
+};
+
+export type ConsumedContract = {
+	readonly generatedModule: string;
+	readonly spec: string;
+	readonly contractId: string;
+};
+
+export type OpenApiConfig = {
+	readonly serves: readonly ServedContract[];
+	readonly consumes: readonly ConsumedContract[];
+};
+
 export type ResolvedConfig = {
 	readonly project: {
 		readonly name: string;
@@ -90,6 +108,7 @@ export type ResolvedConfig = {
 	readonly output: OutputConfig;
 	readonly repositoryIdentity: string | null;
 	readonly analysisUnit: AnalysisUnitConfig;
+	readonly openapi: OpenApiConfig;
 	readonly configHash: string;
 	readonly sourcePath: string | null;
 };

@@ -116,6 +116,28 @@ export const ConfigFileSchema = z
 			})
 			.default({ markdown: "PROJECT_MAP.md", json: null, facts: null }),
 		repository_identity: z.string().min(1).nullable().default(null),
+		openapi: z
+			.object({
+				serves: z
+					.array(
+						z.object({
+							spec: z.string().min(1),
+							contract_id: z.string().min(1),
+							mount: z.string().nullable().default(null),
+						}),
+					)
+					.default([]),
+				consumes: z
+					.array(
+						z.object({
+							generated_module: z.string().min(1),
+							spec: z.string().min(1),
+							contract_id: z.string().min(1),
+						}),
+					)
+					.default([]),
+			})
+			.default({ serves: [], consumes: [] }),
 		analysis_unit: z
 			.object({
 				sources: z
@@ -143,20 +165,23 @@ function requireIdentityWhereFactsAreEmitted(
 	document: {
 		output: { facts: string | null };
 		repository_identity: string | null;
+		openapi: { serves: readonly unknown[]; consumes: readonly unknown[] };
 	},
 	ctx: z.RefinementCtx,
 ): void {
 	if (document.repository_identity !== null) {
 		return;
 	}
-	if (document.output.facts === null) {
+	const declaresDetection =
+		document.openapi.serves.length > 0 || document.openapi.consumes.length > 0;
+	if (document.output.facts === null && !declaresDetection) {
 		return;
 	}
 	ctx.addIssue({
 		code: "custom",
 		path: ["repository_identity"],
 		message:
-			"repository_identity is required when output.facts names a path, because the emitted artifact carries it",
+			"repository_identity is required when a facts artifact is emitted or a detection section is declared, because both carry it into the join",
 	});
 }
 

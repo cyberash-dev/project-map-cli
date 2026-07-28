@@ -1,0 +1,15 @@
+openapi: 3.1.0
+info:
+  title: orders
+  version: "1"
+servers:
+  - url: "/v2"
+paths:
+  /orders:
+    get:
+      operationId: listOrders
+    post:
+      operationId: createOrder
+  /orders/{orderId}:
+    get:
+      operationId: getOrder

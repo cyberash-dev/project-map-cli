@@ -12,6 +12,7 @@ import type {
 	EnumsConfig,
 	IConfigLoader,
 	InteractionsConfig,
+	OpenApiConfig,
 	OutputConfig,
 	OverviewConfig,
 	ResolvedConfig,
@@ -142,6 +143,7 @@ function resolveConfig(
 		facts: raw.output.facts,
 	};
 	const analysisUnit = resolveAnalysisUnit(raw);
+	const openapi = resolveOpenApi(raw);
 
 	const configHash = hashConfig(raw);
 
@@ -166,6 +168,7 @@ function resolveConfig(
 		output,
 		repositoryIdentity: raw.repository_identity,
 		analysisUnit,
+		openapi,
 		configHash,
 		sourcePath,
 	};
@@ -178,6 +181,21 @@ function resolveAnalysisUnit(raw: ConfigFile): AnalysisUnitConfig {
 			exclude: raw.analysis_unit.sources.exclude,
 		},
 		configDeclarations: raw.analysis_unit.config_declarations,
+	};
+}
+
+function resolveOpenApi(raw: ConfigFile): OpenApiConfig {
+	return {
+		serves: raw.openapi.serves.map((entry) => ({
+			spec: entry.spec,
+			contractId: entry.contract_id,
+			mount: entry.mount,
+		})),
+		consumes: raw.openapi.consumes.map((entry) => ({
+			generatedModule: entry.generated_module,
+			spec: entry.spec,
+			contractId: entry.contract_id,
+		})),
 	};
 }
 

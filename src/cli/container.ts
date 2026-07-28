@@ -1,6 +1,9 @@
 import { ALL_LANGUAGES } from "../core/domain/language.js";
 import type { ResolvedConfig } from "../core/ports/config.port.js";
 import { BuildProjectMapUseCase } from "../features/build/build.use-case.js";
+import { DetectFactsUseCase } from "../features/detect/detect.use-case.js";
+import { FilesystemAnalysisUnitMaterializer } from "../infrastructure/analysis-unit/materializer.js";
+import { YamlOpenApiReader } from "../infrastructure/openapi/yaml-openapi-reader.js";
 import { SystemClock } from "../infrastructure/clock/system.js";
 import { CosmiconfigLoader } from "../infrastructure/config/loader.js";
 import { GlobbyWalker } from "../infrastructure/filesystem/globby-walker.js";
@@ -47,6 +50,21 @@ export function createContainer(
 		configLoader: new CosmiconfigLoader(),
 		parser: new TreeSitterParserRegistry(ALL_LANGUAGES, logger),
 	};
+}
+
+export function analysisUnitMaterializer(
+	c: Container,
+	monorepoRoot: string | null,
+): FilesystemAnalysisUnitMaterializer {
+	return new FilesystemAnalysisUnitMaterializer({
+		walker: c.walker,
+		reader: c.reader,
+		monorepoRoot,
+	});
+}
+
+export function detectUseCase(): DetectFactsUseCase {
+	return new DetectFactsUseCase(new YamlOpenApiReader());
 }
 
 export function buildUseCase(

@@ -1,0 +1,18 @@
+project:
+  name: served
+  language: go
+
+repository_identity: sample/served
+
+sections:
+  - metadata
+
+openapi:
+  serves:
+    - spec: repo:openapi/orders.yaml
+      contract_id: sample.public.v2
+      mount: /v2
+
+output:
+  markdown: PROJECT_MAP.md
+  facts: .project-map/facts.json

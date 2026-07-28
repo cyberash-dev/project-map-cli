@@ -77,3 +77,70 @@ describe("detection configuration", () => {
 		).rejects.toThrow();
 	});
 });
+
+describe("openapi configuration", () => {
+	let workspace: Workspace;
+
+	beforeEach(async () => {
+		workspace = await createWorkspace();
+	});
+	afterEach(async () => {
+		await workspace.dispose();
+	});
+
+	/* @covers project-map:CTR-005 */
+	/* @covers project-map:DLT-005 */
+	it("resolves a served specification with its contract id and mount", async () => {
+		const config = await loadYaml(
+			workspace.dir,
+			`${MINIMAL}repository_identity: midas\nopenapi:\n  serves:\n    - spec: repo:openapi/openapi.yaml\n      contract_id: midas.public.v2\n      mount: /v2\n`,
+		);
+
+		expect(config.openapi.serves).toEqual([
+			{
+				spec: "repo:openapi/openapi.yaml",
+				contractId: "midas.public.v2",
+				mount: "/v2",
+			},
+		]);
+	});
+
+	/* @covers project-map:CTR-005 */
+	it("defaults the mount to null when the specification paths are absolute", async () => {
+		const config = await loadYaml(
+			workspace.dir,
+			`${MINIMAL}repository_identity: midas\nopenapi:\n  serves:\n    - spec: repo:openapi/openapi.yaml\n      contract_id: midas.public.v2\n`,
+		);
+
+		expect(config.openapi.serves[0]?.mount).toBeNull();
+	});
+
+	/* @covers project-map:CTR-005 */
+	it("rejects a served specification with no contract id", async () => {
+		await expect(
+			loadYaml(
+				workspace.dir,
+				`${MINIMAL}repository_identity: midas\nopenapi:\n  serves:\n    - spec: repo:openapi/openapi.yaml\n`,
+			),
+		).rejects.toThrow(/contract_id/);
+	});
+
+	/* @covers project-map:ASM-002 */
+	/* @covers project-map:DLT-005 */
+	it("rejects a declared section with no repository identity", async () => {
+		await expect(
+			loadYaml(
+				workspace.dir,
+				`${MINIMAL}openapi:\n  serves:\n    - spec: repo:openapi/openapi.yaml\n      contract_id: midas.public.v2\n`,
+			),
+		).rejects.toThrow(/repository_identity/);
+	});
+
+	/* @covers project-map:CTR-005 */
+	it("defaults both sections to empty on a document that declares neither", async () => {
+		const config = await loadYaml(workspace.dir, MINIMAL);
+
+		expect(config.openapi.serves).toEqual([]);
+		expect(config.openapi.consumes).toEqual([]);
+	});
+});

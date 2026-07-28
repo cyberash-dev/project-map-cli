@@ -4,14 +4,24 @@ import { Command } from "commander";
 import { renderJson } from "../features/build/rendering/json.js";
 import { renderMarkdown } from "../features/build/rendering/markdown.js";
 import {
+	analysisUnitMaterializer,
 	buildUseCase,
+	type Container,
 	createContainer,
+	detectUseCase,
 	initUseCase,
 	installClaudeHookUseCase,
 	installClaudeSkillUseCase,
 	installGitHookUseCase,
 	versionUseCase,
 } from "./container.js";
+import type { ResolvedConfig } from "../core/ports/config.port.js";
+import { DETECTOR_SOURCE_DIGEST } from "../features/detect/registry/build-digest.generated.js";
+import {
+	renderFactsArtifact,
+	renderFactsSidecar,
+	sidecarPathFor,
+} from "../features/detect/render/artifact.js";
 import type { Framework, Language } from "../core/domain/language.js";
 import {
 	ALL_LANGUAGES,
@@ -174,7 +184,51 @@ function registerBuildCommand(program: Command): void {
 			await container.writer.write(jsonPath, renderJson(map));
 			container.logger.info(`wrote ${jsonPath}`);
 		}
+		await emitFacts(container, effectiveConfig, projectRoot);
 	});
+}
+
+async function emitFacts(
+	container: Container,
+	config: ResolvedConfig,
+	projectRoot: string,
+): Promise<void> {
+	if (config.output.facts === null) {
+		return;
+	}
+	const start = container.clock.nowMs();
+	const unit = await analysisUnitMaterializer(container, null).materialize({
+		cwd: process.cwd(),
+		config,
+		specLocators: config.openapi.serves.map((entry) => entry.spec),
+		registryVersion: DETECTOR_SOURCE_DIGEST,
+	});
+	const factSet = detectUseCase().execute({ unit, openapi: config.openapi });
+
+	const factsPath = path.resolve(projectRoot, config.output.facts);
+	await container.writer.write(
+		factsPath,
+		renderFactsArtifact({
+			repositoryIdentity: unit.repositoryIdentity,
+			unitDigest: unit.digest,
+			analyzerBuildDigest: DETECTOR_SOURCE_DIGEST,
+			registryDigest: DETECTOR_SOURCE_DIGEST,
+			facts: factSet.facts,
+			diagnostics: factSet.diagnostics,
+			coverage: factSet.coverage,
+		}),
+	);
+	await container.writer.write(
+		sidecarPathFor(factsPath),
+		renderFactsSidecar({
+			generatedAt: container.clock.nowIso(),
+			buildDurationMs: container.clock.nowMs() - start,
+			unitDigest: unit.digest,
+		}),
+	);
+	container.logger.info(
+		`wrote ${factsPath} (${factSet.facts.length} fact(s), ${factSet.diagnostics.length} diagnostic(s))`,
+	);
 }
 
 function registerVersionCommand(program: Command): void {
