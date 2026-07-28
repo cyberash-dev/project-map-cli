@@ -150,7 +150,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: 10ab972bb7620b4619cc7574714faf41d40f8e17
+    reference: 3e04d385fd36ab4398eb4ecd281352ce045f3f9b
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -162,14 +162,14 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 755a66419fd6e02bcb542bd96ebe2b3f4d24ed1515be2f65c968d30ab303e5b9
-baseline_commit_sha: 10ab972bb7620b4619cc7574714faf41d40f8e17
+freshness_token: c20ab6f61e609c08d4aed28572811536e97ad5a863902dbc73efff362fe6e25a
+baseline_commit_sha: 3e04d385fd36ab4398eb4ecd281352ce045f3f9b
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from e36dec17 to 10ab972b across the first three phases of
+  Refreshed from e36dec17 to 3e04d385 across the first four phases of
   the detection rework. The first two phases added twenty-two modules,
   each claimed by project-map:IMP-006, project-map:IMP-007 or
   project-map:IMP-008, plus the configuration keys those phases add and
@@ -184,8 +184,19 @@ notes: |
   the widened policy predicate requires. The debt count fell to 52.
   The third phase added six modules claimed by project-map:IMP-009, and
   its targets project-map:BEH-008 and project-map:INV-004 were approved
-  in their own plan. Every crossing this baseline carries is closed and
-  the debt count is 52.
+  in their own plan. That closed the debt at 52, but one of the six,
+  src/features/detect/inbound/argument-selector.ts, landed after the
+  closing commit and stayed unclaimed until now; the derived count was
+  therefore 53, not 52.
+  The fourth phase adds five modules claimed by project-map:IMP-012,
+  whose target project-map:BEH-009 is still proposed, so the debt count
+  is 57 and falls to 52 on approval. Its crossings outside those five
+  modules need no Delta: project-map:CTR-005 already declares the
+  identity_preserving key the configuration surface now carries, and the
+  resolution ladder of project-map:CTR-006 already calls any unknown in
+  a required field unresolved, which the check now sees inside a
+  template. Neither is observable on an artifact built before this
+  phase, because nothing emitted a template.
   Refreshed from c82417cd to e36dec17 earlier. That refresh crossed the
   footprint of CTR-001, CTR-002, INV-001 and INV-002; every crossing was
   authored as project-map:DLT-001 or project-map:DLT-002, or was
