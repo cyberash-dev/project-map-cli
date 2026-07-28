@@ -165,13 +165,12 @@ notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from e36dec17 to 8a9ff71b across the first three phases of the
-  detection rework. The first two phases added twenty-two modules, each
-  claimed by project-map:IMP-006, project-map:IMP-007 or
-  project-map:IMP-008, plus
-  the configuration keys those phases add and one line in
-  src/cli/commands.ts that threads `output.facts` through the option
-  override.
+  Refreshed from e36dec17 to 8a9ff71b across the first three phases of
+  the detection rework. The first two phases added twenty-two modules,
+  each claimed by project-map:IMP-006, project-map:IMP-007 or
+  project-map:IMP-008, plus the configuration keys those phases add and
+  one line in src/cli/commands.ts that threads `output.facts` through
+  the option override.
   Every crossing in those two phases is closed. The code ran ahead of its
   attestation while the operator directed the work, and the fourteen IDs
   those bindings target were approved in one plan afterwards;
