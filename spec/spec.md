@@ -143,7 +143,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: 475eadba3995acad6e02e4aa6c48bfad60c48357
+    reference: c6f307b77905452c8a9931ed923b42413801bc2c
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -155,14 +155,14 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 9eb7fed8df527dd63fa6f4f2f3dabf9d9f8bbc6dfd21446929f7d649672c3682
-baseline_commit_sha: 475eadba3995acad6e02e4aa6c48bfad60c48357
+freshness_token: e0cb5b6cf5895673f92d8601a49cfd4a87d33eb970e6fee71f50b98cf2c3a2fe
+baseline_commit_sha: c6f307b77905452c8a9931ed923b42413801bc2c
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from e36dec17 to 475eadba across the first two phases of the
+  Refreshed from e36dec17 to c6f307b7 across the first two phases of the
   detection rework: twenty-two new modules, each claimed by
   project-map:IMP-006, project-map:IMP-007 or project-map:IMP-008, plus
   the configuration keys those phases add and one line in
