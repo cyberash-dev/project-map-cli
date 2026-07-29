@@ -202,11 +202,7 @@ async function build(opts: BuildOptions): Promise<void> {
 		const renderedFactSet = hasDetectionInput(effectiveConfig)
 			? (detection?.factSet ?? null)
 			: null;
-		const markdown = renderMarkdown(
-			map,
-			effectiveConfig,
-			renderedFactSet,
-		);
+		const markdown = renderMarkdown(map, effectiveConfig, renderedFactSet);
 		const mdPath = path.resolve(projectRoot, effectiveConfig.output.markdown);
 
 		if (opts.check) {
