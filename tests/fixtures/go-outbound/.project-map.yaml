@@ -1,0 +1,25 @@
+project:
+  name: calling-go
+  language: go
+
+repository_identity: sample/calling-go
+
+sections:
+  - metadata
+
+analysis_unit:
+  sources:
+    include: ["**/*.go"]
+
+detect:
+  outbound:
+    sinks:
+      - base_type: "example.com/svc/interactions.Client"
+        call: [MakeRequest, MakeRequestWithError]
+        path_arg: [{ kind: arg, selector: 0 }, { kind: field, selector: APIMethod }]
+        method: [{ kind: arg, selector: 0 }, { kind: field, selector: Method }]
+        target: { kind: arg, selector: 0 }
+
+output:
+  markdown: PROJECT_MAP.md
+  facts: .project-map/facts.json

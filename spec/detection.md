@@ -24,7 +24,7 @@ Phase-to-record mapping, with the status each phase's records now hold:
 | B — check mode and the opt-in sections              | BEH-006, DLT-006, DLT-007, CON-001                            | proposed; the artifact is emitted but check mode does not yet compare it, and the three section ids are not yet rendered |
 | C — indexes and the intraprocedural normalizer      | BEH-008, INV-004                                              | approved, implemented                                                                                                    |
 | D — router value identity                           | BEH-009                                                       | approved, implemented                                                                                                    |
-| E — declared sinks and the record lattice           | BEH-010, BEH-011, INV-005, DLT-012                            | approved, implemented for Python; the Go half waits on the record lattice                                                |
+| E — declared sinks and the record lattice           | BEH-010, BEH-011, INV-005, DLT-012                            | approved, implemented                                                                                                    |
 | F — shared-library halves and coverage              | BEH-012, BEH-013                                              | proposed                                                                                                                 |
 
 The implementation bindings of the approved phases, project-map:IMP-006
@@ -32,11 +32,9 @@ through project-map:IMP-010 and project-map:IMP-012, live in
 `spec/spec.md` so that the §16 footprint claims their modules.
 
 Phase A, the emission half of phase B, and phases C, D and E are
-approved and implemented. Phase E covers Python: the Go half of the
-outbound ladder needs the record lattice of project-map:CTR-007, which
-no phase has built. Check mode over the artifact, the new exit codes and
-the three opt-in section ids are authored and unapproved, as is phase F:
-no code implements them.
+approved and implemented. Check mode over the artifact, the new exit
+codes and the three opt-in section ids are authored and unapproved, as
+is phase F: no code implements them.
 
 A Delta and the edit it authorizes travel together: the amendment to an
 approved record in `spec/spec.md` is made in the commit that finalizes

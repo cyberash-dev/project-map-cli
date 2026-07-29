@@ -12,6 +12,7 @@ import {
 	finalizeOutboundFacts,
 } from "./merge/merge-table.js";
 import { ingestServedContracts } from "./openapi/ingest.js";
+import { detectGoOutbound } from "./outbound/go.js";
 import { detectPythonOutbound } from "./outbound/python.js";
 import { FACTS_SCHEMA_VERSION } from "./render/artifact.js";
 
@@ -71,15 +72,24 @@ export class DetectFactsUseCase {
 			sinks: request.detect.outbound.sinks,
 			consumes: request.openapi.consumes,
 		});
+		const goOutbound = detectGoOutbound({
+			unit: request.unit,
+			parser: this.parser,
+			sinks: request.detect.outbound.sinks,
+		});
 		const operations = finalizeOutboundFacts({
-			drafts: outbound.facts,
+			drafts: [...outbound.facts, ...goOutbound.facts],
 			schemaVersion: FACTS_SCHEMA_VERSION,
 			repositoryIdentity: request.unit.repositoryIdentity,
 		});
 
 		return {
 			facts: [...endpoints, ...operations],
-			diagnostics: [...inventory.diagnostics, ...outbound.diagnostics],
+			diagnostics: [
+				...inventory.diagnostics,
+				...outbound.diagnostics,
+				...goOutbound.diagnostics,
+			],
 			coverage: coverageOf(request, endpoints.length, operations.length),
 		};
 	}

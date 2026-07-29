@@ -475,14 +475,54 @@ function destinationsOf(
 	context: Context,
 ) {
 	const type = receiverType(site) ?? "";
+	const ancestors = ancestryOf(site, context);
 	return resolveDestinations({
 		selector: bindingOf(match, "target"),
 		instance: instanceOf(site),
 		isOwnInstance: site.receiver?.text === "self",
 		ownConstructions: context.constructions.get(type) ?? [],
-		ancestry: ancestryOf(site, context),
-		imports: context.view.imports,
+		declaredBindings: ancestors.map(
+			(ancestor) => ancestor.declared?.constants ?? new Map(),
+		),
+		readable: ancestors.some((ancestor) => ancestor.declared !== null),
+		fold: (node) => foldAncestorValue(node, ancestors, context),
+		argumentOf: namedArgument,
 	});
+}
+
+/**
+ * A declaration is folded against the imports of the module that declares it,
+ * not of the module that reads it: a base class in another file names its
+ * configuration through its own import.
+ */
+function foldAncestorValue(
+	node: SyntaxNode | null,
+	ancestors: ReturnType<typeof ancestryOf>,
+	context: Context,
+) {
+	for (const ancestor of ancestors) {
+		const bound = [...(ancestor.declared?.constants.values() ?? [])];
+		if (node !== null && bound.includes(node)) {
+			return foldPythonValue(node, ancestor.view.imports);
+		}
+	}
+	return foldPythonValue(node, context.view.imports);
+}
+
+function namedArgument(
+	construction: SyntaxNode,
+	step: { readonly kind: string; readonly selector?: number | string },
+): SyntaxNode | null {
+	const args = construction.childForFieldName("arguments");
+	if (args === null || step.selector === undefined) {
+		return null;
+	}
+	const positional = args.namedChildren.filter(
+		(node) => node.type !== "keyword_argument",
+	);
+	return typeof step.selector === "number"
+		? (positional[step.selector] ?? null)
+		: (keywordArguments(args).get(step.selector) ?? null);
 }
 
 /** Whether a resolved origin names a member of a declared module. */

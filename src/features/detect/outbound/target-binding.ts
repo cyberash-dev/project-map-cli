@@ -1,11 +1,15 @@
 import type { Destination } from "../../../core/domain/facts/fact.js";
 import type { ValueIr } from "../../../core/domain/facts/value-ir.js";
-import type { Selector } from "../../../core/ports/config.port.js";
+import type {
+	Selector,
+	SelectorStep,
+} from "../../../core/ports/config.port.js";
 import type { SyntaxNode } from "../../../infrastructure/parser/ts-utils.js";
-import type { Ancestor } from "../index/python/hierarchy.js";
-import type { PythonImportIndex } from "../index/python/imports.js";
-import { keywordArguments } from "../inbound/argument-selector.js";
-import { foldPythonValue } from "../value/python-value.js";
+
+export type DestinationBinding =
+	| "instance"
+	| "owner_construction"
+	| "owner_declaration";
 
 export type DestinationRequest = {
 	readonly selector: Selector | null;
@@ -15,8 +19,15 @@ export type DestinationRequest = {
 	readonly isOwnInstance: boolean;
 	/** Every construction of the enclosing type found inside the unit. */
 	readonly ownConstructions: readonly SyntaxNode[];
-	readonly ancestry: readonly Ancestor[];
-	readonly imports: PythonImportIndex;
+	/** Declaration-level bindings of each ancestor, most derived first. */
+	readonly declaredBindings: readonly ReadonlyMap<string, SyntaxNode>[];
+	/** Whether any ancestor's declaration lies inside the analysis unit. */
+	readonly readable: boolean;
+	readonly fold: (node: SyntaxNode | null) => ValueIr;
+	readonly argumentOf: (
+		construction: SyntaxNode,
+		step: SelectorStep,
+	) => SyntaxNode | null;
 };
 
 /**
@@ -54,38 +65,18 @@ function fromConstructions(
 	request: DestinationRequest,
 	binding: "instance" | "owner_construction",
 ): readonly Destination[] {
-	const found = constructions
-		.map((construction) => argumentValue(construction, request))
-		.filter((value): value is ValueIr => value !== null)
-		.filter((value) => value.kind !== "unknown")
-		.map((ref) => destinationOf(ref, binding));
-	return dedupe(found);
-}
-
-/**
- * A construction binds the selector only through a named argument: a class
- * constant is bound by the declaration, which is the step below.
- */
-function argumentValue(
-	construction: SyntaxNode,
-	request: DestinationRequest,
-): ValueIr | null {
 	const step = request.selector?.[0];
 	if (step === undefined || step.kind !== "arg") {
-		return null;
+		return [];
 	}
-	const args = construction.childForFieldName("arguments");
-	if (args === null) {
-		return null;
-	}
-	const positional = args.namedChildren.filter(
-		(node) => node.type !== "keyword_argument",
+	return dedupe(
+		constructions
+			.map((construction) => request.argumentOf(construction, step))
+			.filter((node): node is SyntaxNode => node !== null)
+			.map((node) => request.fold(node))
+			.filter((value) => value.kind !== "unknown")
+			.map((ref) => destinationOf(ref, binding)),
 	);
-	const node =
-		typeof step.selector === "number"
-			? (positional[step.selector] ?? null)
-			: (keywordArguments(args).get(step.selector) ?? null);
-	return node === null ? null : foldPythonValue(node, request.imports);
 }
 
 /** The most derived ancestor that binds the selector wins. */
@@ -94,12 +85,12 @@ function fromDeclaration(request: DestinationRequest): readonly Destination[] {
 	if (step === undefined || step.kind !== "class_const") {
 		return [];
 	}
-	for (const ancestor of request.ancestry) {
-		const bound = ancestor.declared?.constants.get(step.selector);
+	for (const bindings of request.declaredBindings) {
+		const bound = bindings.get(step.selector);
 		if (bound === undefined) {
 			continue;
 		}
-		const value = foldPythonValue(bound, ancestor.view.imports);
+		const value = request.fold(bound);
 		if (value.kind !== "unknown") {
 			return [destinationOf(value, "owner_declaration")];
 		}
@@ -112,19 +103,13 @@ function fromDeclaration(request: DestinationRequest): readonly Destination[] {
  * leaves the unit is a boundary, and a receiver nothing proved is dispatch.
  */
 function exhausted(request: DestinationRequest): Destination {
-	const readable = request.ancestry.some(
-		(ancestor) => ancestor.declared !== null,
-	);
-	if (!readable) {
+	if (!request.readable) {
 		return { kind: "unknown", reason: "cross_boundary" };
 	}
 	return { kind: "unknown", reason: "open_world_dispatch" };
 }
 
-function destinationOf(
-	ref: ValueIr,
-	binding: "instance" | "owner_construction" | "owner_declaration",
-): Destination {
+function destinationOf(ref: ValueIr, binding: DestinationBinding): Destination {
 	return {
 		kind: ref.kind === "config_ref" ? "config_ref" : "literal",
 		ref,
