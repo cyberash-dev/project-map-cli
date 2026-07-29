@@ -153,7 +153,13 @@ test_obligation:
 id: project-map:BEH-006
 type: Behavior
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-29T10:17:34.106Z
+    change_request: detection rework phase B tail
+    scope: first-time-approval
 partition_id: project-map
 title: build --check — compare the facts artifact byte for byte
 given: |
@@ -1604,7 +1610,13 @@ test_obligation:
 id: project-map:CON-001
 type: Constraint
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-29T10:17:34.313Z
+    change_request: detection rework phase B tail
+    scope: first-time-approval
 partition_id: project-map
 title: the legacy detection sections stay bound to the legacy extractors
 rule: |
@@ -1927,7 +1939,13 @@ tests_new_behavior: |
 id: project-map:DLT-006
 type: Delta
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-29T10:17:34.172Z
+    change_request: detection rework phase B tail
+    scope: first-time-approval
 partition_id: project-map
 title: the command surface gains facts exit codes and a digest command
 target_id: project-map:CTR-001
@@ -1936,7 +1954,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "1.1.0"
+    intended_version: "1.2.0"
 as_is: |
   project-map:CTR-001 declares exit code 0 for success, 1 for a check
   drift, and 2 for no discoverable configuration. A configuration error
@@ -1973,7 +1991,13 @@ tests_new_behavior: |
 id: project-map:DLT-007
 type: Delta
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-29T10:17:34.243Z
+    change_request: detection rework phase B tail
+    scope: first-time-approval
 partition_id: project-map
 title: the map document accepts three opt-in detection sections
 target_id: project-map:CTR-003
@@ -2082,7 +2106,7 @@ surface_impact:
   - id: project-map:SUR-001
     intended_version: "1.2.0"
   - id: project-map:SUR-002
-    intended_version: "1.0.0"
+    intended_version: "1.1.0"
 as_is: |
   project-map:DLT-008 widened the predicate of project-map:POL-001 to
   admit the facts artifact and its sidecar, and declared that the
@@ -2286,6 +2310,62 @@ tests_new_behavior: |
   same fact count with the path typed unknown(cross_boundary); a call to
   the named member on a receiver that is not the sink's instance is not
   folded.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-013
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-29T10:21:01.495Z
+    change_request: detection rework phase B tail
+    scope: corrective-bump
+partition_id: project-map
+title: every superseded declaration on the map-document surface names its version
+target_id: project-map:SUR-002
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: ignore
+surface_impact:
+  - id: project-map:SUR-002
+    intended_version: "1.1.0"
+as_is: |
+  project-map:DLT-009 declares `surface_impact` on project-map:SUR-002
+  at 1.0.0. It was approved and its bump was applied, and
+  project-map:DLT-007 then carried the Surface to 1.1.0 within the same
+  unreleased change set. The declaration now names a version the Surface
+  passed through rather than the one it holds, and `sdd ready` reads it
+  as a bump still waiting to be applied.
+to_be: |
+  Every `surface_impact` declaration on project-map:SUR-002 belonging to
+  a Delta that has already been finalized names 1.1.0, the version the
+  Surface holds after project-map:DLT-007. No consumer saw the
+  intermediate version: it existed between two commits on one branch and
+  was never released.
+  This Delta is written against the Surface rather than against one
+  earlier Delta, so a later bump re-pins the same set by moving one
+  version rather than by adding a record per superseded declaration. It
+  is the counterpart of project-map:DLT-011, which does the same for
+  project-map:SUR-001.
+migration_note: |
+  No consumer-visible change. The emitted artifacts and the code are
+  untouched; only declarations in the specification graph move to the
+  version their Surface actually holds.
+  The churn has one cause, named in project-map:DLT-011: a finalized
+  Delta keeps its `surface_impact` as a live intent, so every future
+  bump of a Surface puts every past Delta on it into drift. The durable
+  fix belongs in the verifier, which cannot tell an applied bump from a
+  pending one.
+tests_old_behavior: |
+  The intermediate declaration carried no acceptance predicate of its
+  own, so no test preserves it; as_is records it.
+tests_new_behavior: |
+  `sdd ready` reports no surface_member_drift for project-map:SUR-002.
 ---
 ```
 

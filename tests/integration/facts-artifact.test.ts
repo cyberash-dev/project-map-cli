@@ -84,6 +84,7 @@ describe("specification version alignment", () => {
 	/* @covers project-map:DLT-009 */
 	/* @covers project-map:DLT-010 */
 	/* @covers project-map:DLT-011 */
+	/* @covers project-map:DLT-013 */
 	it("pins corrected versions without surface_member_drift", async () => {
 		const surfaces = await readFile(
 			new URL("../../spec/spec.md", import.meta.url),
@@ -104,16 +105,19 @@ describe("specification version alignment", () => {
 			"project-map:DLT-010",
 		);
 		const detectionCorrection = normativeRecord(deltas, "project-map:DLT-011");
+		const mapCorrection = normativeRecord(deltas, "project-map:DLT-013");
 
 		expect(cliSurface).toContain('version: "1.2.0"');
-		expect(mapSurface).toContain('version: "1.0.0"');
+		expect(mapSurface).toContain('version: "1.1.0"');
 		expect(configurationDelta).toContain('intended_version: "1.2.0"');
 		expect(detectionDelta).toContain('intended_version: "1.2.0"');
 		expect(policyDelta).toMatch(
-			/id: project-map:SUR-001\s+intended_version: "1\.2\.0"[\s\S]*id: project-map:SUR-002\s+intended_version: "1\.0\.0"/,
+			/id: project-map:SUR-001\s+intended_version: "1\.2\.0"[\s\S]*id: project-map:SUR-002\s+intended_version: "1\.1\.0"/,
 		);
 		expect(configurationCorrection).toContain("target_id: project-map:DLT-004");
 		expect(detectionCorrection).toContain("target_id: project-map:SUR-001");
+		expect(mapCorrection).toContain("target_id: project-map:SUR-002");
+		expect(mapCorrection).toContain('intended_version: "1.1.0"');
 	});
 });
 

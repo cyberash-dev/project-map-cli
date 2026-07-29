@@ -260,7 +260,7 @@ lifecycle:
     scope: first-time-approval
 partition_id: project-map
 name: project-map/map-document
-version: "1.0.0"
+version: "1.1.0"
 boundary_type: generated_published_artifact
 members:
   - project-map:CTR-003
@@ -532,6 +532,10 @@ schema: |
       --json [path]            bare flag resolves to "project-map.json"
       --check                  default false
       --verbose                default false
+  project-map facts
+      --config <path>
+      --unit-digest            default false
+      --verbose                default false
   project-map version
   project-map install-git-hook
       --type <type>            "pre-push" | "pre-commit", default "pre-push"
@@ -551,8 +555,8 @@ postconditions: |
   Each command's write set is bounded by project-map:POL-001. No command
   performs network access (project-map:POL-002).
 external_identifiers: |
-  Command names: init, build, version, install-git-hook, claude install,
-  watch. Option names as listed in schema. Option values that are closed
+  Command names: init, build, facts, version, install-git-hook,
+  claude install, watch. Option names as listed in schema. Option values that are closed
   enumerations: --type ∈ {pre-push, pre-commit}; --scope ∈ {project, user}.
   Process exit codes as listed in error_taxonomy.
 compatibility_rules: |
@@ -568,7 +572,17 @@ error_taxonomy: |
      install-git-hook did not write; claude install received both
      --no-hook and --no-skill; claude install made no progress; watch was
      invoked.
-  2  build found no discoverable configuration file (BEH-003).
+  2  build or facts found no discoverable configuration file (BEH-003).
+  3  the committed facts artifact names another analyzer build or
+     another adapter registry than the running build (BEH-006). It
+     outranks 1: a fingerprint difference accounts for every byte
+     difference downstream of it.
+  4  the build raised a mandatory check diagnostic, which is
+     selector_unresolved or marker_invalid (BEH-006). It is independent
+     of the committed bytes.
+  5  a config-time error, raised before any build runs: a configuration
+     that violates the schema of project-map:CTR-002, and every code of
+     project-map:CTR-004.
 applicability:
   invariant_to_all_axes: true
 concurrency_model:
@@ -590,7 +604,7 @@ test_obligation:
     - each enumerated option value
     - each exit code in error_taxonomy
   failure_scenarios:
-    - an exit code outside {0, 1, 2}
+    - an exit code outside {0, 1, 2, 3, 4, 5}
     - --type or --scope accepting a value outside its enumeration
 ---
 ```
@@ -696,8 +710,18 @@ schema: |
     sections      one per entry of <config.sections>, in the order that
                   list carries, each rendered by its section renderer
   A section whose collection is empty renders no heading and no body.
-  The SectionId set is: overview, contexts, entities, enums, endpoints,
-  storage, interactions, workers, metadata.
+  The accepted SectionId set is: overview, contexts, entities, enums,
+  endpoints, storage, interactions, workers, metadata,
+  inbound_endpoints, outbound_operations, detection_coverage.
+  The accepted set and the default `sections` list are distinct. The
+  default is the first nine, so a configuration that names no
+  `sections` key renders the document it rendered before.
+  The three detection ids render the facts of project-map:CTR-006:
+  `inbound_endpoints` an H2 "Inbound endpoints" over method, route,
+  resolution, provenance and contracts; `outbound_operations` an H2
+  "Outbound operations" over owner, method, route, destination and
+  resolution; `detection_coverage` an H2 "Detection coverage" over the
+  coverage measures and, where any exist, the diagnostics.
   The metadata section renders an H2 "Generation metadata" and a
   two-column table whose rows appear in this order: Tool version,
   Config hash, Scanned files, Excluded, Build duration, Language,
