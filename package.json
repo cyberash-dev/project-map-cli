@@ -41,7 +41,7 @@
 		"node": ">=22"
 	},
 	"scripts": {
-		"build": "node scripts/emit-build-digest.mjs && tsc -p tsconfig.build.json",
+		"build": "node scripts/emit-build-digest.mjs && tsc -p tsconfig.build.json && node scripts/mark-bin-executable.mjs",
 		"prepublishOnly": "npm run lint && npm run build && npm test",
 		"start": "node dist/cli/index.js",
 		"lint": "eslint .",
