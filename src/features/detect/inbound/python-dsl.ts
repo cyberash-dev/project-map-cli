@@ -226,7 +226,8 @@ function prefixOf(request: DraftRequest): string {
 		return "";
 	}
 	const declared = request.view.declarations.classOf(request.callee);
-	return declared?.constants.get(step.selector) ?? "";
+	const constant = declared?.constants.get(step.selector);
+	return constant === undefined ? "" : (pythonStringLiteral(constant) ?? "");
 }
 
 function anchorOf(node: SyntaxNode, view: ModuleView): SourceAnchor {

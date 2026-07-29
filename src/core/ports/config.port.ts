@@ -128,9 +128,36 @@ export type DeclaredRouter = {
 	readonly identityPreserving: readonly IdentityPreserving[];
 };
 
+/**
+ * A member of the sink's base type that joins the path onto the target. The
+ * ordinary hand-written client owns both, so without this the path argument
+ * resolves to a call the analysis unit cannot see through.
+ */
+export type PathVia = {
+	readonly member: string;
+	readonly arg: number;
+};
+
+/** One sending member of a sink, with the bindings that override the sink's. */
+export type SinkCall = {
+	readonly member: string;
+	readonly pathArg: Selector | null;
+	readonly method: Selector | null;
+	readonly target: Selector | null;
+};
+
+export type DeclaredSink = {
+	readonly baseType: string;
+	readonly call: readonly SinkCall[];
+	readonly pathArg: Selector | null;
+	readonly method: Selector | null;
+	readonly target: Selector | null;
+	readonly pathVia: PathVia | null;
+};
+
 export type DetectConfig = {
 	readonly inbound: { readonly routers: readonly DeclaredRouter[] };
-	readonly outbound: { readonly sinks: readonly unknown[] };
+	readonly outbound: { readonly sinks: readonly DeclaredSink[] };
 };
 
 export type ResolvedConfig = {

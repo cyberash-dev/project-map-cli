@@ -213,7 +213,23 @@ function resolveDetect(raw: ConfigFile): DetectConfig {
 				identityPreserving: entry.identity_preserving,
 			})),
 		},
-		outbound: { sinks: raw.detect.outbound.sinks },
+		outbound: { sinks: raw.detect.outbound.sinks.map(resolveSink) },
+	};
+}
+
+function resolveSink(raw: ConfigFile["detect"]["outbound"]["sinks"][number]) {
+	return {
+		baseType: raw.base_type,
+		call: raw.call.map((entry) => ({
+			member: entry.member,
+			pathArg: entry.path_arg,
+			method: entry.method,
+			target: entry.target,
+		})),
+		pathArg: raw.path_arg,
+		method: raw.method,
+		target: raw.target,
+		pathVia: raw.path_via,
 	};
 }
 

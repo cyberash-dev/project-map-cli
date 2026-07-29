@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { pythonDeclarationIndex } from "../../src/features/detect/index/python/declarations.js";
+import {
+	pythonDeclarationIndex,
+	pythonStringLiteral,
+} from "../../src/features/detect/index/python/declarations.js";
 import { ConsoleLogger } from "../../src/infrastructure/logger/console.js";
 import { TreeSitterParserRegistry } from "../../src/infrastructure/parser/tree-sitter.js";
 
@@ -24,12 +27,24 @@ describe("python declaration index", () => {
 	});
 
 	/* @covers project-map:BEH-008 */
-	it("records a string class constant", () => {
+	it("records a class constant as the node that bound it", () => {
 		const index = indexOf(
 			"class Url(PrefixedUrl):\n    PREFIX = '/api/merchant'\n",
 		);
 
-		expect(index.classOf("Url")?.constants.get("PREFIX")).toBe("/api/merchant");
+		const bound = index.classOf("Url")?.constants.get("PREFIX");
+		expect(bound === undefined ? null : pythonStringLiteral(bound)).toBe(
+			"/api/merchant",
+		);
+	});
+
+	/* @covers project-map:BEH-011 */
+	it("records a class constant that is not a string", () => {
+		const index = indexOf("class Url:\n    BASE_URL = conf.ORDERS_URL\n");
+
+		expect(index.classOf("Url")?.constants.get("BASE_URL")?.text).toBe(
+			"conf.ORDERS_URL",
+		);
 	});
 
 	/* @covers project-map:BEH-008 */

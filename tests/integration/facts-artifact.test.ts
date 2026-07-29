@@ -105,15 +105,15 @@ describe("specification version alignment", () => {
 		);
 		const detectionCorrection = normativeRecord(deltas, "project-map:DLT-011");
 
-		expect(cliSurface).toContain('version: "1.0.0"');
+		expect(cliSurface).toContain('version: "1.2.0"');
 		expect(mapSurface).toContain('version: "1.0.0"');
-		expect(configurationDelta).toContain('intended_version: "1.0.0"');
-		expect(detectionDelta).toContain('intended_version: "1.0.0"');
+		expect(configurationDelta).toContain('intended_version: "1.2.0"');
+		expect(detectionDelta).toContain('intended_version: "1.2.0"');
 		expect(policyDelta).toMatch(
-			/id: project-map:SUR-001\s+intended_version: "1\.0\.0"[\s\S]*id: project-map:SUR-002\s+intended_version: "1\.0\.0"/,
+			/id: project-map:SUR-001\s+intended_version: "1\.2\.0"[\s\S]*id: project-map:SUR-002\s+intended_version: "1\.0\.0"/,
 		);
 		expect(configurationCorrection).toContain("target_id: project-map:DLT-004");
-		expect(detectionCorrection).toContain("target_id: project-map:DLT-005");
+		expect(detectionCorrection).toContain("target_id: project-map:SUR-001");
 	});
 });
 

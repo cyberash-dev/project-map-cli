@@ -1,0 +1,36 @@
+project:
+  name: calling
+  language: python
+
+repository_identity: sample/calling
+
+sections:
+  - metadata
+
+analysis_unit:
+  sources:
+    include: ["**/*.py"]
+
+openapi:
+  consumes:
+    - generated_module: "gen.orders_api"
+      spec: "repo:gen/orders.yaml"
+      contract_id: "orders.v1"
+
+detect:
+  outbound:
+    sinks:
+      - base_type: "vendor_interactions.AbstractInteractionClient"
+        call: [get, post]
+        path_arg: { kind: arg, selector: "url" }
+        path_via: { member: endpoint_url, arg: 0 }
+        target: { kind: class_const, selector: "BASE_URL" }
+      - base_type: "vendor_interactions.ConfiguredClient"
+        call:
+          - member: post
+        path_arg: { kind: arg, selector: "url" }
+        target: { kind: arg, selector: "base_url" }
+
+output:
+  markdown: PROJECT_MAP.md
+  facts: .project-map/facts.json

@@ -29,6 +29,38 @@ const IdentityPreservingSchema = z
 		message: "an identity_preserving entry with `from: arg` requires `index`",
 	});
 
+/** A bare string names a member and inherits every sink-level binding. */
+const SinkCallSchema = z
+	.union([
+		z.string().min(1),
+		z.object({
+			member: z.string().min(1),
+			path_arg: SelectorSchema.nullable().default(null),
+			method: SelectorSchema.nullable().default(null),
+			target: SelectorSchema.nullable().default(null),
+		}),
+	])
+	.transform((entry) =>
+		typeof entry === "string"
+			? { member: entry, path_arg: null, method: null, target: null }
+			: entry,
+	);
+
+const SinkSchema = z.object({
+	base_type: z.string().min(1),
+	call: z.array(SinkCallSchema).default([]),
+	path_arg: SelectorSchema.nullable().default(null),
+	method: SelectorSchema.nullable().default(null),
+	target: SelectorSchema.nullable().default(null),
+	path_via: z
+		.object({
+			member: z.string().min(1),
+			arg: z.number().int().min(0),
+		})
+		.nullable()
+		.default(null),
+});
+
 export const ConfigFileSchema = z
 	.object({
 		project: z.object({
@@ -180,7 +212,7 @@ export const ConfigFileSchema = z
 					})
 					.default({ routers: [] }),
 				outbound: z
-					.object({ sinks: z.array(z.unknown()).default([]) })
+					.object({ sinks: z.array(SinkSchema).default([]) })
 					.default({ sinks: [] }),
 			})
 			.default({ inbound: { routers: [] }, outbound: { sinks: [] } }),

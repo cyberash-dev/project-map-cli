@@ -24,17 +24,19 @@ Phase-to-record mapping, with the status each phase's records now hold:
 | B — check mode and the opt-in sections              | BEH-006, DLT-006, DLT-007, CON-001                            | proposed; the artifact is emitted but check mode does not yet compare it, and the three section ids are not yet rendered |
 | C — indexes and the intraprocedural normalizer      | BEH-008, INV-004                                              | approved, implemented                                                                                                    |
 | D — router value identity                           | BEH-009                                                       | approved, implemented                                                                                                    |
-| E — declared sinks and the record lattice           | BEH-010, BEH-011, INV-005, DLT-012                            | proposed; the configuration surface cannot yet express the path form both validation services use                        |
+| E — declared sinks and the record lattice           | BEH-010, BEH-011, INV-005, DLT-012                            | approved, implemented for Python; the Go half waits on the record lattice                                                |
 | F — shared-library halves and coverage              | BEH-012, BEH-013                                              | proposed                                                                                                                 |
 
 The implementation bindings of the approved phases, project-map:IMP-006
-through project-map:IMP-009 and project-map:IMP-012, live in
+through project-map:IMP-010 and project-map:IMP-012, live in
 `spec/spec.md` so that the §16 footprint claims their modules.
 
-Phase A, the emission half of phase B, phase C and phase D are approved
-and implemented. Check mode over the artifact, the new exit codes and
-the three opt-in section ids are authored and unapproved, as are phases
-E and F: no code implements them.
+Phase A, the emission half of phase B, and phases C, D and E are
+approved and implemented. Phase E covers Python: the Go half of the
+outbound ladder needs the record lattice of project-map:CTR-007, which
+no phase has built. Check mode over the artifact, the new exit codes and
+the three opt-in section ids are authored and unapproved, as is phase F:
+no code implements them.
 
 A Delta and the edit it authorizes travel together: the amendment to an
 approved record in `spec/spec.md` is made in the commit that finalizes
@@ -434,7 +436,13 @@ test_obligation:
 id: project-map:BEH-010
 type: Behavior
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-29T07:46:48.049Z
+    change_request: detection rework phase E
+    scope: first-time-approval
 partition_id: project-map
 title: detection — the outbound classification ladder
 given: a call site inside the candidate universe of project-map:BEH-013
@@ -508,7 +516,13 @@ test_obligation:
 id: project-map:BEH-011
 type: Behavior
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-29T07:46:48.109Z
+    change_request: detection rework phase E
+    scope: first-time-approval
 partition_id: project-map
 title: detection — the destination of an HTTP outbound variant
 given: an outbound call site claimed by project-map:BEH-010
@@ -859,8 +873,14 @@ schema: |
   Neither info.title with info.version nor a content digest is the join
   identity.
   `detect.outbound` carries `sinks[]` (`base_type`, `call[]`,
-  `path_arg`, `method`, `target`), `factories[]`, `registry[]`, and
-  `module_ids[]`. `detect.inbound.routers[]` carries `dsl`, `path_arg`,
+  `path_arg`, `method`, `target`, `path_via`), `factories[]`,
+  `registry[]`, and `module_ids[]`.
+  `path_via` is optional and has the shape `{member, arg}`. Before the
+  selected value is normalized, the AST node the `path_arg` selector
+  reaches is examined; when it is a call to `member` on the sink's own
+  instance, the path is argument `arg` of that call. The sink's
+  `target` stays the separate destination and contributes no path
+  segment. `detect.inbound.routers[]` carries `dsl`, `path_arg`,
   `prefix_from`, `verb_from`, and `identity_preserving[]`.
   `detect.queue[]` carries a producer or consumer shape and a `topic`
   selector.
@@ -892,7 +912,8 @@ postconditions: |
 external_identifiers: |
   The `openapi` and `detect` key names and every sub-key spelled above;
   the selector step-kind names; the `from: member`, `from: receiver`,
-  `from: arg`, and `closure_arg0_param0` literals; the `contract_id` and
+  `from: arg`, and `closure_arg0_param0` literals; the `path_via` key
+  with its `member` and `arg` sub-keys; the `contract_id` and
   `module_id` key names.
 compatibility_rules: |
   Renaming a key, a step kind, or a declared literal is a major bump of
@@ -1396,7 +1417,13 @@ test_obligation:
 id: project-map:INV-005
 type: Invariant
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-29T07:46:48.171Z
+    change_request: detection rework phase E
+    scope: first-time-approval
 partition_id: project-map
 title: an unproven value is typed, never guessed and never dropped
 always: |
@@ -1805,7 +1832,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "1.0.0"
+    intended_version: "1.2.0"
 as_is: |
   project-map:CTR-002 lists fourteen top-level configuration keys, none
   of which names a repository identity or bounds an analysis unit. The
@@ -1827,9 +1854,9 @@ to_be: |
   resolution, and no key is renamed or removed.
   This Delta and project-map:DLT-005 are approved in one plan, so the
   two minor bumps they carry are applied as one move. Per
-  project-map:DLT-010 both declare 1.0.0, the version the Surface holds
+  project-map:DLT-011 both declare 1.2.0, the version the Surface holds
   once project-map:DLT-009 adds the major bump the widened policy
-  predicate requires.
+  predicate requires and project-map:DLT-012 adds the sink key.
 migration_note: |
   A configuration written before this change validates unchanged and
   resolves to the same source set, because `analysis_unit` defaults to
@@ -1866,7 +1893,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "1.0.0"
+    intended_version: "1.2.0"
 as_is: |
   project-map:CTR-002 accepts no `openapi` and no `detect` section.
   Detection anchors cannot be declared, so an in-house wrapper is
@@ -1880,8 +1907,9 @@ to_be: |
   project-map:SUR-001 gains project-map:CTR-005 as a member. The bump
   this Delta contributes is minor: both sections default to empty, which
   reproduces the prior behavior. Per project-map:DLT-011 it declares
-  1.0.0, the version the Surface holds once project-map:DLT-009 adds the
-  major bump the widened policy predicate requires.
+  1.2.0, the version the Surface holds once project-map:DLT-009 adds the
+  major bump the widened policy predicate requires and
+  project-map:DLT-012 adds the sink key.
 migration_note: |
   A configuration written before this change runs the built-in adapters
   alone, because both sections default to empty, and needs no identity,
@@ -2054,7 +2082,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "1.0.0"
+    intended_version: "1.2.0"
   - id: project-map:SUR-002
     intended_version: "1.0.0"
 as_is: |
@@ -2067,7 +2095,7 @@ as_is: |
   project-map:POL-001 through their member Contracts. The declared
   moves were minor: 0.2.2 to 0.4.0 and 0.3.0 unchanged.
 to_be: |
-  project-map:SUR-001 moves to 1.0.0 and project-map:SUR-002 moves to
+  project-map:SUR-001 moves to 1.2.0 and project-map:SUR-002 moves to
   1.0.0. Neither predicate of the two Surfaces changed; the bump records
   that a guarantee their consumers hold has been weakened.
   The weakened guarantee is specific. Before, `build` provably opened at
@@ -2113,7 +2141,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "1.0.0"
+    intended_version: "1.2.0"
 as_is: |
   project-map:DLT-004 declares `surface_impact`
   project-map:SUR-001@0.4.0. It was approved and its bump was applied,
@@ -2122,7 +2150,7 @@ as_is: |
   the Surface passed through rather than the one it holds, and
   `sdd ready` reads that as a bump still waiting to be applied.
 to_be: |
-  The declaration names 1.0.0, the version project-map:SUR-001 reaches
+  The declaration names 1.2.0, the version project-map:SUR-001 reaches
   in this change set. No consumer saw 0.4.0: it existed between two
   commits on one branch and was never released, so recording the
   intermediate step buys nothing and misstates the outcome.
@@ -2148,40 +2176,53 @@ tests_new_behavior: |
 id: project-map:DLT-011
 type: Delta
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-29T07:50:09.552Z
+    change_request: detection rework phase E
+    scope: corrective-bump
 partition_id: project-map
-title: another earlier delta names a surface version that was superseded
-target_id: project-map:DLT-005
+title: every superseded surface declaration names the version the surface holds
+target_id: project-map:SUR-001
 kind: replace
 baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "1.0.0"
+    intended_version: "1.2.0"
 as_is: |
-  project-map:DLT-005 declares `surface_impact`
-  project-map:SUR-001@0.4.0. It was approved and its bump was applied,
-  and project-map:DLT-009 then carried the same Surface to 1.0.0 within
-  the same unreleased change set. The declaration now names a version
-  the Surface passed through rather than the one it holds, and
-  `sdd ready` reads that as a bump still waiting to be applied.
+  project-map:DLT-004, project-map:DLT-005, project-map:DLT-009 and
+  project-map:DLT-010 each declare `surface_impact` on
+  project-map:SUR-001 at 1.0.0 or below. Each was approved and its bump
+  was applied, and a later Delta in the same unreleased change set then
+  carried the Surface past that version. The declarations now name
+  versions the Surface passed through rather than the one it holds, and
+  `sdd ready` reads each as a bump still waiting to be applied.
 to_be: |
-  The declaration names 1.0.0, the version project-map:SUR-001 reaches
-  in this change set. No consumer saw 0.4.0: it existed between two
-  commits on one branch and was never released, so recording the
-  intermediate step buys nothing and misstates the outcome.
+  Every `surface_impact` declaration on project-map:SUR-001 belonging to
+  a Delta that has already been finalized names 1.2.0, the version the
+  Surface holds after project-map:DLT-012. No consumer saw the
+  intermediate versions: each existed between two commits on one branch
+  and none was released, so recording an intermediate step buys nothing
+  and misstates the outcome.
+  This Delta is written against the Surface rather than against one
+  earlier Delta, so a later bump re-pins the same set by moving one
+  version rather than by adding a record per superseded declaration.
 migration_note: |
   No consumer-visible change. The emitted artifacts and the code are
-  untouched; only one declaration in the specification graph moves to
-  the version its Surface actually holds.
-  The churn is worth naming: it exists because the Surface was bumped
-  twice inside one change set, once for the added members and once for
-  the widened policy predicate. Folding the second into the first would
-  have avoided it, and a later change set that touches a Policy
-  predicate should declare the major bump from the start.
+  untouched; only declarations in the specification graph move to the
+  version their Surface actually holds.
+  The churn is worth naming. It exists because a finalized Delta keeps
+  its `surface_impact` as a live intent, so every future bump of a
+  Surface puts every past Delta on it into drift. Folding a change
+  set's bumps into one declaration reduces how often this fires but does
+  not remove it; the durable fix belongs in the verifier, which cannot
+  tell an applied bump from a pending one.
 tests_old_behavior: |
-  The intermediate declaration carried no acceptance predicate of its
-  own, so no test preserves it; as_is records it.
+  The intermediate declarations carried no acceptance predicate of their
+  own, so no test preserves them; as_is records them.
 tests_new_behavior: |
   `sdd ready` reports no surface_member_drift for project-map:SUR-001.
 ---
@@ -2192,7 +2233,13 @@ tests_new_behavior: |
 id: project-map:DLT-012
 type: Delta
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-29T07:46:48.234Z
+    change_request: detection rework phase E
+    scope: first-time-approval
 partition_id: project-map
 title: a sink may declare the member that composes its path
 target_id: project-map:CTR-005
@@ -2247,30 +2294,6 @@ tests_new_behavior: |
 ---
 
 ## 16. Implementation bindings
-
-```yaml
----
-id: project-map:IMP-010
-type: ImplementationBinding
-lifecycle:
-  status: proposed
-partition_id: project-map
-target_ids:
-  - project-map:BEH-010
-  - project-map:BEH-011
-  - project-map:INV-005
-binding:
-  outbound_ladder: src/features/detect/outbound/ladder.ts
-  sinks: src/features/detect/outbound/sinks.ts
-  target_binding: src/features/detect/outbound/target-binding.ts
-  record_lattice: src/features/detect/value/record.ts
-  config_keys_port: src/core/ports/config-keys.port.ts
-authority: code_annotation
-verification_method: |
-  Golden fixtures cover each ladder step, each stop condition, and the
-  finite-branch case whose expected resolution is ambiguous.
----
-```
 
 ```yaml
 ---

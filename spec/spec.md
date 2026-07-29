@@ -10,7 +10,7 @@ Status of this document: onboarding in progress. The partition's
 observable behavior is not yet claimed by an approved normative ID.
 It shrinks per PR; it does not reach zero in one change.
 
-Accounting for the current value: 107 modules under `src/`, of which 55
+Accounting for the current value: 116 modules under `src/`, of which 64
 are claimed by an `Implementation binding` in §16 whose `target_ids` are
 approved. The remaining 52 are the per-slice extraction adapters and the
 ports they sit behind; their observable behavior is lifted in later
@@ -18,13 +18,15 @@ change sets. The count is derived from the §16 footprint rather than
 assessed by hand, so it moves only when a binding gains or loses a path,
 or when a target is approved.
 
-The four approved phases of the detection rework are inside the 55.
+The five approved phases of the detection rework are inside the 64.
 Each one briefly raised the count while its records were still
 `proposed`, because a module counts as modeled only under an approved
 target, and each approval brought it back down. The first two took it to
 74, above the 72 the trend was set against; that breach was reported
 rather than smoothed and cleared in one step. Phase D took it to 57 and
-its approval returned it to 52.
+its approval returned it to 52. Phase E raised it not at all: its records
+were approved before its code, so its nine modules were claimed the
+moment they landed.
 
 ---
 
@@ -217,7 +219,7 @@ lifecycle:
     scope: first-time-approval
 partition_id: project-map
 name: project-map/cli
-version: "1.0.0"
+version: "1.2.0"
 boundary_type: cli
 members:
   - project-map:CTR-001
@@ -1451,6 +1453,43 @@ verification_method: |
   including the major-version segment that is never a package name, and the
   whole-segment origin match. tests/unit/canonical-path-ir.test.ts covers
   the path grammar over components that did not all fold to a value.
+---
+```
+
+```yaml
+---
+id: project-map:IMP-010
+type: ImplementationBinding
+lifecycle:
+  status: proposed
+partition_id: project-map
+target_ids:
+  - project-map:BEH-010
+  - project-map:BEH-011
+  - project-map:INV-005
+  - project-map:DLT-012
+binding:
+  outbound_ladder: src/features/detect/outbound/ladder.ts
+  sinks: src/features/detect/outbound/sinks.ts
+  target_binding: src/features/detect/outbound/target-binding.ts
+  transports: src/features/detect/outbound/transports.ts
+  absolute_url: src/features/detect/outbound/absolute-url.ts
+  python_adapter: src/features/detect/outbound/python.ts
+  python_sites: src/features/detect/outbound/python-sites.ts
+  python_values: src/features/detect/value/python-value.ts
+  hierarchy_index: src/features/detect/index/python/hierarchy.ts
+  config_schema: src/infrastructure/config/schema.ts
+  use_case: src/features/detect/detect.use-case.ts
+authority: code_annotation
+verification_method: |
+  tests/integration/python-outbound.test.ts drives the real command tree over
+  a fixture carrying each tier of the classification ladder, each step of the
+  destination ladder, a construction that reaches no send, a construction
+  paired with one, an unclassified callee inside the candidate universe, and a
+  member call outside it.
+  The `path_via` key of project-map:DLT-012 is covered there too: the same
+  fixture folds a path written through the declared helper and keeps the
+  sink's target as the destination rather than a path segment.
 ---
 ```
 

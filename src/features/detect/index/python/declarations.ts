@@ -6,10 +6,17 @@ import {
 } from "../../../../infrastructure/parser/ts-utils.js";
 import { byteOffsetTable } from "../anchors.js";
 
+const BASE_NODES: ReadonlySet<string> = new Set([
+	"identifier",
+	"attribute",
+	"subscript",
+]);
+
 export type PythonClass = {
 	readonly name: string;
 	readonly bases: readonly string[];
-	readonly constants: ReadonlyMap<string, string>;
+	/** Class-level assignments, held as nodes: a constant is not always a string. */
+	readonly constants: ReadonlyMap<string, SyntaxNode>;
 	readonly methods: ReadonlySet<string>;
 	readonly anchor: SourceAnchor;
 };
@@ -68,15 +75,15 @@ function readBases(node: SyntaxNode): string[] {
 	if (superclasses === null) {
 		return [];
 	}
+	/* A generic base is written `Base[T]`; the subscript is not part of the
+	 * name an import binds, so the caller trims it. */
 	return superclasses.namedChildren
-		.filter(
-			(child) => child.type === "identifier" || child.type === "attribute",
-		)
+		.filter((child) => BASE_NODES.has(child.type))
 		.map((child) => child.text);
 }
 
-function readConstants(body: SyntaxNode): Map<string, string> {
-	const constants = new Map<string, string>();
+function readConstants(body: SyntaxNode): Map<string, SyntaxNode> {
+	const constants = new Map<string, SyntaxNode>();
 	for (const statement of body.namedChildren) {
 		if (statement.type !== "expression_statement") {
 			continue;
@@ -90,7 +97,7 @@ function readConstants(body: SyntaxNode): Map<string, string> {
 
 function readConstantAssignment(
 	node: SyntaxNode,
-	constants: Map<string, string>,
+	constants: Map<string, SyntaxNode>,
 ): void {
 	if (node.type !== "assignment") {
 		return;
@@ -100,10 +107,7 @@ function readConstantAssignment(
 	if (target === null || value === null || target.type !== "identifier") {
 		return;
 	}
-	const literal = pythonStringLiteral(value);
-	if (literal !== null) {
-		constants.set(target.text, literal);
-	}
+	constants.set(target.text, value);
 }
 
 function readMethods(body: SyntaxNode): Set<string> {
