@@ -147,7 +147,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: df3b88d9af1b280e08e9ea2853869ec0ea5c23c2
+    reference: 4618bc5d2d8d518ae12e90a519d2aea5e1491364
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -159,15 +159,15 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: a84bdef229da8d5a566ec16f8c92690a086dcbc780690201a19c2cbfe920c086
-baseline_commit_sha: df3b88d9af1b280e08e9ea2853869ec0ea5c23c2
+freshness_token: 6442eed02f8bee633b726553cee2beb5a5da5fe0ca45c231ee18aa7a80d73d3a
+baseline_commit_sha: 4618bc5d2d8d518ae12e90a519d2aea5e1491364
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from e36dec17 to df3b88d9 across the first five phases of
-  the detection rework. The first two phases added twenty-two modules,
+  Refreshed from e36dec17 to 4618bc5d across the first five phases of
+  the detection rework and the tail of the second. The first two phases added twenty-two modules,
   each claimed by project-map:IMP-006, project-map:IMP-007 or
   project-map:IMP-008, plus the configuration keys those phases add and
   one line in src/cli/commands.ts that threads `output.facts` through
@@ -206,6 +206,18 @@ notes: |
   Its Go half followed in df3b88d9 with six more modules on the same
   binding, and needed no approval of its own: project-map:BEH-010 and
   project-map:BEH-011 name no language.
+  b9aefaaa closed the tail of phase B: the three opt-in section ids, the
+  check-mode comparison of the artifact, the exit codes and the
+  `facts --unit-digest` command. It crosses the footprint of
+  project-map:CTR-001 and project-map:CTR-003, which
+  project-map:DLT-006 and project-map:DLT-007 authorize; both amendments
+  landed in 4618bc5d, together with the version corrections
+  project-map:DLT-013 carries.
+  This refresh waited for that approval. Taking it at b9aefaaa would
+  have made four proposed records part of the baseline, after which no
+  later refresh would surface their crossings and the new exit codes,
+  command and SectionIds would have been merged without the human
+  approval the gate exists to require.
   Refreshed from c82417cd to e36dec17 earlier. That refresh crossed the
   footprint of CTR-001, CTR-002, INV-001 and INV-002; every crossing was
   authored as project-map:DLT-001 or project-map:DLT-002, or was
