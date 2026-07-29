@@ -53,10 +53,9 @@ describe("python declaration index", () => {
 			"class PingHandler(BaseHandler):\n    async def get(self):\n        pass\n\n    async def post(self):\n        pass\n",
 		);
 
-		expect([...(index.classOf("PingHandler")?.methods ?? [])].sort()).toEqual([
-			"get",
-			"post",
-		]);
+		expect(
+			[...(index.classOf("PingHandler")?.methods.keys() ?? [])].sort(),
+		).toEqual(["get", "post"]);
 	});
 
 	/* @covers project-map:BEH-008 */

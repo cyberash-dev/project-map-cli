@@ -39,6 +39,9 @@ func Build(d *deps) chi.Router {
 
 	root.Mount("/v1", v1)
 
+	root.NotFound(d.Loose)
+	v1.NotFound(d.Loose)
+
 	root.Route("/admin", func(admin chi.Router) {
 		admin.Get("/health", d.Health)
 	})

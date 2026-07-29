@@ -60,7 +60,7 @@ lifecycle:
     scope: first-time-approval
 partition_id: project-map
 name: project-map/detection-facts
-version: "1.0.0"
+version: "1.1.0"
 boundary_type: generated_published_artifact
 members:
   - project-map:CTR-006
@@ -1002,6 +1002,12 @@ schema: |
   declaration anchor, never display_name; an alias and a re-export
   resolve to the original declaration anchor. A concrete handler whose
   declaration lies outside the unit is typed unknown(cross_boundary).
+  A symbol carries the declaration anchor where the declaration is
+  inside the analysis unit and the anchor of the reference that names it
+  where it is not. The second case has exactly one producer, the
+  callee_operation of an outbound fact carrying a non-null module_id;
+  cross-repository equality of that value is (module_id, display_name)
+  and belongs to the linker.
   Identity is the semantic core, excluding provenance and evidence.
   mechanism belongs to every core. The inbound core is
   (mechanism, canonical route, method) for HTTP and
@@ -2369,6 +2375,65 @@ tests_new_behavior: |
 ---
 ```
 
+```yaml
+---
+id: project-map:DLT-014
+type: Delta
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: a consumer half anchors the callee it names at the reference site
+target_id: project-map:CTR-006
+kind: extend
+baseline_version: project-map:BL-001
+compatibility_action: ignore
+surface_impact:
+  - id: project-map:SUR-003
+    intended_version: "1.1.0"
+as_is: |
+  project-map:CTR-006 fixes a symbol value as {kind: "symbol",
+  declaration: <anchor>, display_name} and fixes that an alias and a
+  re-export resolve to the original declaration anchor. It also fixes
+  that a concrete handler whose declaration lies outside the unit is
+  typed unknown(cross_boundary).
+  project-map:BEH-012 requires the consumer half of a shared-library
+  operation to carry callee_operation as the join key. On that half the
+  member is declared inside the library, which is outside the analysis
+  unit by construction: the consumer imports the type and calls the
+  member, and never sees the body. Under the rule as written the only
+  available typing is unknown(cross_boundary), which erases the join key
+  the behavior exists to emit.
+to_be: |
+  A symbol value carries the declaration anchor where the declaration is
+  inside the analysis unit, and the anchor of the reference that names
+  the symbol where it is not. The two cases are distinguished by
+  provenance, not by the field: an outbound fact carrying a non-null
+  module_id names its callee from the reference site, and every other
+  symbol value in the artifact keeps naming a declaration.
+  Equality of a callee_operation across repositories is
+  (module_id, display_name) and belongs to the linker; equality inside
+  one unit stays the declaration anchor, so handler-conflict detection
+  is untouched.
+  project-map:SUR-003 takes a minor bump from 1.0.0 to 1.1.0: the rule
+  constrains a field that previously had no non-null producer, and no
+  emitted value changes shape.
+migration_note: |
+  No previously emitted fact changes. Before this Delta module_id was
+  always null and callee_operation was therefore always null, so the
+  case the rule governs had no producer.
+tests_old_behavior: |
+  The existing obligation of project-map:CTR-006 keeps handler equality
+  and the alias case bound to the declaration anchor, and keeps a
+  handler declared outside the unit typed unknown(cross_boundary).
+tests_new_behavior: |
+  A consumer fixture calling a member of a type whose declaration is
+  outside the unit emits callee_operation as a symbol whose declaration
+  anchor spans the member access in the consumer and whose display_name
+  is the member identifier, while the same run keeps an endpoint whose
+  handler lies outside the unit typed unknown.
+---
+```
+
 ---
 
 ## 16. Implementation bindings
@@ -2383,15 +2448,39 @@ partition_id: project-map
 target_ids:
   - project-map:BEH-012
   - project-map:BEH-013
+  - project-map:DLT-014
 binding:
-  registry: src/features/detect/registry/adapters.ts
-  registry_digest: src/features/detect/registry/registry-digest.ts
+  shared_library: src/features/detect/outbound/library.ts
+  client_registry: src/features/detect/outbound/registry.ts
   diagnostics: src/features/detect/merge/diagnostics.ts
-  sections: src/features/detect/render/markdown-sections.ts
+  coverage: src/features/detect/merge/coverage.ts
+  sink_boundary: src/features/detect/outbound/sinks.ts
+  transport_halves: src/features/detect/outbound/transports.ts
+  hierarchy_index: src/features/detect/index/python/hierarchy.ts
+  declaration_index: src/features/detect/index/python/declarations.ts
+  python_adapter: src/features/detect/outbound/python.ts
+  outbound_ladder: src/features/detect/outbound/ladder.ts
+  router_scope: src/features/detect/inbound/go/router-scope.ts
+  chi_adapter: src/features/detect/inbound/go/chi.ts
+  config_schema: src/infrastructure/config/schema.ts
+  config_resolution: src/infrastructure/config/loader.ts
+  use_case: src/features/detect/detect.use-case.ts
 authority: code_annotation
 verification_method: |
-  Oracle fixtures checked in under tests/oracles/ carry the expected
-  fact and diagnostic sets of the two validation services; coverage
-  denominators are asserted against them.
+  tests/integration/python-shared-library.test.ts drives the real command
+  tree over two fixtures, a library that publishes a declared type and a
+  consumer that reaches it through a declared container. It covers both
+  halves of the join key, a target the consumer declares locally against
+  one living only in the library, a statically resolved member against a
+  dynamically selected one, a type carrying no module identity, and the
+  anchor each half gives the callee it names.
+  tests/integration/detection-coverage.test.ts drives the candidate
+  universe and the denominators: one callee reached from three anchors,
+  a member the sink subclass itself declares, the serving half of a
+  transport package, an inventory present against absent, and a half
+  deferred to the linker held out of the denominator.
+  tests/integration/go-chi-routes.test.ts covers the router half of the
+  universe: a member call on a proven router that names no route, merged
+  across two anchors, against a receiver that is not a router.
 ---
 ```

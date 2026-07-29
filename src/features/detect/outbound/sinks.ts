@@ -20,17 +20,46 @@ export function sinkOfAncestry(
 	ancestors: readonly Ancestor[],
 	sinks: readonly DeclaredSink[],
 ): DeclaredSink | null {
+	return sinkBoundaryOf(ancestors, sinks)?.sink ?? null;
+}
+
+/** The sink a class belongs to, with the ancestor that declares the boundary. */
+export function sinkBoundaryOf(
+	ancestors: readonly Ancestor[],
+	sinks: readonly DeclaredSink[],
+): { readonly sink: DeclaredSink; readonly index: number } | null {
 	for (const sink of sinks) {
-		const claimed = ancestors.some(
+		const index = ancestors.findIndex(
 			(ancestor) =>
 				ancestor.origin !== null &&
 				originMatches(sink.baseType, ancestor.origin),
 		);
-		if (claimed) {
-			return sink;
+		if (index >= 0) {
+			return { sink, index };
 		}
 	}
 	return null;
+}
+
+/**
+ * Whether calling `member` on an instance of this hierarchy leaves it. A member
+ * an ancestor below the boundary declares is the subclass's own business; one
+ * declared at the boundary or above it, or nowhere the unit can see, can only
+ * have come from the declared base type.
+ */
+export function crossesSinkBoundary(
+	ancestors: readonly Ancestor[],
+	sinks: readonly DeclaredSink[],
+	member: string,
+): boolean {
+	const boundary = sinkBoundaryOf(ancestors, sinks);
+	if (boundary === null) {
+		return false;
+	}
+	const declaredAt = ancestors.findIndex((ancestor) =>
+		ancestor.declared?.methods.has(member),
+	);
+	return declaredAt < 0 || declaredAt >= boundary.index;
 }
 
 export function callOfMember(

@@ -215,10 +215,31 @@ export const ConfigFileSchema = z
 					})
 					.default({ routers: [] }),
 				outbound: z
-					.object({ sinks: z.array(SinkSchema).default([]) })
-					.default({ sinks: [] }),
+					.object({
+						sinks: z.array(SinkSchema).default([]),
+						registry: z
+							.array(
+								z.object({
+									container_type: z.string().min(1),
+									access: z.string().min(1),
+								}),
+							)
+							.default([]),
+						module_ids: z
+							.array(
+								z.object({
+									type: z.string().min(1),
+									module_id: z.string().min(1),
+								}),
+							)
+							.default([]),
+					})
+					.default({ sinks: [], registry: [], module_ids: [] }),
 			})
-			.default({ inbound: { routers: [] }, outbound: { sinks: [] } }),
+			.default({
+				inbound: { routers: [] },
+				outbound: { sinks: [], registry: [], module_ids: [] },
+			}),
 		analysis_unit: z
 			.object({
 				sources: z

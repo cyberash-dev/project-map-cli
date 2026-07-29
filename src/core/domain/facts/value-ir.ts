@@ -90,6 +90,23 @@ export function isTemplateIr(value: ValueIr): value is TemplateIr {
  * Whether any part of a value stayed unproven. A canonical template and a
  * parameter hole are themselves resolved, so only a nested `unknown` counts.
  */
+/**
+ * Every reason a value stayed unproven, holes nested in a template or a choice
+ * included. A caller that has to tell one class of hole from another needs all
+ * of them, not only the one the outermost value carries.
+ */
+export function reasonsOf(value: ValueIr): readonly ReasonCode[] {
+	if (value.kind === "unknown") {
+		return [value.reason];
+	}
+	if (value.kind === "template") {
+		return value.parts.flatMap((part) =>
+			typeof part === "string" ? [] : reasonsOf(part),
+		);
+	}
+	return value.kind === "choice" ? value.alternatives.flatMap(reasonsOf) : [];
+}
+
 export function containsUnknown(value: ValueIr): boolean {
 	if (value.kind === "unknown") {
 		return true;

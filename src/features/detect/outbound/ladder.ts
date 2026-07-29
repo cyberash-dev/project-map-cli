@@ -9,6 +9,12 @@ import { deriveResolution } from "../merge/resolution.js";
 
 export type DraftOutboundFact = Omit<OutboundOperationFact, "id">;
 
+/** The join key of a shared-library half; both members are null without one. */
+export type JoinKey = {
+	readonly moduleId: string;
+	readonly calleeOperation: OutboundOperationFact["callee_operation"];
+};
+
 export type OperationDraft = {
 	readonly provenance: Provenance;
 	readonly method: ValueIr;
@@ -16,6 +22,7 @@ export type OperationDraft = {
 	readonly destinations: readonly Destination[];
 	readonly ownerOperation: string;
 	readonly anchor: SourceAnchor;
+	readonly join?: JoinKey | null;
 };
 
 /**
@@ -35,8 +42,8 @@ export function outboundDraft(draft: OperationDraft): DraftOutboundFact {
 		operation,
 		owner_operation: draft.ownerOperation,
 		call_site: draft.anchor,
-		module_id: null,
-		callee_operation: null,
+		module_id: draft.join?.moduleId ?? null,
+		callee_operation: draft.join?.calleeOperation ?? null,
 		contract_ref: null,
 		provenance: [draft.provenance],
 		resolution: deriveResolution({ operation, requiresDestination: true }),

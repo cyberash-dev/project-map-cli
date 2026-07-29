@@ -1,0 +1,27 @@
+project:
+  name: split-lib
+  language: python
+
+repository_identity: sample/split-lib
+
+sections:
+  - metadata
+
+analysis_unit:
+  sources:
+    include: ["**/*.py"]
+
+detect:
+  outbound:
+    sinks:
+      - base_type: "vendor_interactions.AbstractInteractionClient"
+        call: [get, post]
+        path_arg: { kind: arg, selector: "url" }
+        target: { kind: class_const, selector: "BASE_URL" }
+    module_ids:
+      - type: "lib.split.client.AbstractSplitClient"
+        module_id: "lib.split"
+
+output:
+  markdown: PROJECT_MAP.md
+  facts: .project-map/facts.json

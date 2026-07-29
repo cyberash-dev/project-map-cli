@@ -6,6 +6,7 @@ import type { PythonImportIndex } from "./imports.js";
 const MAX_DEPTH = 16;
 
 export type ModuleView = {
+	readonly path: string;
 	readonly imports: PythonImportIndex;
 	readonly declarations: PythonDeclarationIndex;
 };
@@ -19,6 +20,8 @@ export type AncestryRequest = {
 export type Ancestor = {
 	readonly name: string;
 	readonly origin: string | null;
+	/** Dotted name of a declaration inside the unit; null for a reference. */
+	readonly qualifiedName: string | null;
 	readonly declared: PythonClass | null;
 	readonly view: ModuleView;
 };
@@ -59,7 +62,13 @@ function walk(
 		return;
 	}
 	seen.add(key);
-	found.push({ name: cursor.name, origin, declared, view: cursor.view });
+	found.push({
+		name: cursor.name,
+		origin,
+		qualifiedName: qualifiedNameOf(cursor, declared),
+		declared,
+		view: cursor.view,
+	});
 	if (declared === null) {
 		const elsewhere = followImport(cursor, request);
 		if (elsewhere !== null) {
@@ -86,6 +95,34 @@ function originOf(cursor: Cursor): string | null {
 		return null;
 	}
 	return cursor.view.imports.originOf(cursor.name);
+}
+
+/**
+ * The dotted name of a class the unit declares, taken from the path of the
+ * module that declares it. An imported name carries no such name here: the
+ * reading module's path would spell a class that lives elsewhere.
+ */
+function qualifiedNameOf(
+	cursor: Cursor,
+	declared: PythonClass | null,
+): string | null {
+	if (declared === null) {
+		return null;
+	}
+	const module = dottedModuleName(cursor.view.path);
+	return module === null ? null : `${module}.${cursor.name}`;
+}
+
+/** The dotted name a module answers to, taken from its path in the unit. */
+export function dottedModuleName(relPath: string): string | null {
+	if (!relPath.endsWith(".py")) {
+		return null;
+	}
+	const withoutSuffix = relPath.slice(0, -".py".length);
+	const asPackage = withoutSuffix.endsWith("/__init__")
+		? withoutSuffix.slice(0, -"/__init__".length)
+		: withoutSuffix;
+	return asPackage.length === 0 ? null : asPackage.split("/").join(".");
 }
 
 function followImport(cursor: Cursor, request: AncestryRequest): Cursor | null {

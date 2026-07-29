@@ -17,7 +17,9 @@ export type PythonClass = {
 	readonly bases: readonly string[];
 	/** Class-level assignments, held as nodes: a constant is not always a string. */
 	readonly constants: ReadonlyMap<string, SyntaxNode>;
-	readonly methods: ReadonlySet<string>;
+	readonly methods: ReadonlyMap<string, SourceAnchor>;
+	/** Annotated class attributes, by attribute name, as the type they name. */
+	readonly attributes: ReadonlyMap<string, string>;
 	readonly anchor: SourceAnchor;
 };
 
@@ -61,13 +63,55 @@ function readClass(
 		name: name.text,
 		bases: readBases(node),
 		constants: body === null ? new Map() : readConstants(body),
-		methods: body === null ? new Set() : readMethods(body),
-		anchor: {
-			path: relPath,
-			start_byte: offsets.byteOffsetAt(node.startIndex),
-			end_byte: offsets.byteOffsetAt(node.endIndex),
-		},
+		methods: body === null ? new Map() : readMethods(body, relPath, offsets),
+		attributes: body === null ? new Map() : readAttributes(body),
+		anchor: anchorOf(node, relPath, offsets),
 	};
+}
+
+function anchorOf(
+	node: SyntaxNode,
+	relPath: string,
+	offsets: ReturnType<typeof byteOffsetTable>,
+): SourceAnchor {
+	return {
+		path: relPath,
+		start_byte: offsets.byteOffsetAt(node.startIndex),
+		end_byte: offsets.byteOffsetAt(node.endIndex),
+	};
+}
+
+/**
+ * An attribute annotated in a class body binds a name to a type without any
+ * value flowing: the annotation is the proof, so a container of clients is
+ * readable without following a construction.
+ */
+function readAttributes(body: SyntaxNode): Map<string, string> {
+	const attributes = new Map<string, string>();
+	for (const statement of body.namedChildren) {
+		if (statement.type !== "expression_statement") {
+			continue;
+		}
+		for (const child of statement.namedChildren) {
+			readAnnotatedAttribute(child, attributes);
+		}
+	}
+	return attributes;
+}
+
+function readAnnotatedAttribute(
+	node: SyntaxNode,
+	attributes: Map<string, string>,
+): void {
+	if (node.type !== "assignment") {
+		return;
+	}
+	const target = node.childForFieldName("left");
+	const annotation = node.childForFieldName("type");
+	if (target === null || annotation === null || target.type !== "identifier") {
+		return;
+	}
+	attributes.set(target.text, annotation.text);
 }
 
 function readBases(node: SyntaxNode): string[] {
@@ -110,8 +154,12 @@ function readConstantAssignment(
 	constants.set(target.text, value);
 }
 
-function readMethods(body: SyntaxNode): Set<string> {
-	const methods = new Set<string>();
+function readMethods(
+	body: SyntaxNode,
+	relPath: string,
+	offsets: ReturnType<typeof byteOffsetTable>,
+): Map<string, SourceAnchor> {
+	const methods = new Map<string, SourceAnchor>();
 	for (const child of body.namedChildren) {
 		const statement = undecorated(child);
 		if (statement === null || statement.type !== "function_definition") {
@@ -119,7 +167,7 @@ function readMethods(body: SyntaxNode): Set<string> {
 		}
 		const name = statement.childForFieldName("name");
 		if (name !== null) {
-			methods.add(name.text);
+			methods.set(name.text, anchorOf(statement, relPath, offsets));
 		}
 	}
 	return methods;

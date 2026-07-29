@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { routesOf } from "../support/facts.js";
+import { diagnosticsOf } from "../support/operations.js";
 import {
 	createWorkspace,
 	runCli,
@@ -84,5 +85,37 @@ describe("go router value identity", () => {
 		await runCli(workspace.dir, ["build"]);
 
 		expect(await routesOf(workspace.dir)).toHaveLength(5);
+	});
+});
+
+describe("a router member that names no route", () => {
+	let workspace: Workspace;
+
+	beforeEach(async () => {
+		workspace = await createWorkspace("go-chi-routes");
+	});
+	afterEach(async () => {
+		await workspace.dispose();
+	});
+
+	/* @covers project-map:BEH-013 */
+	it("diagnoses a router member no tier classifies, merged across anchors", async () => {
+		await runCli(workspace.dir, ["build"]);
+
+		expect(await diagnosticsOf(workspace.dir)).toContainEqual({
+			code: "external_registration_unclassified",
+			callee: "github.com/go-chi/chi/v5.NotFound",
+			count: 2,
+		});
+	});
+
+	/* @covers project-map:BEH-013 */
+	it("emits no registration diagnostic for a receiver that is not a router", async () => {
+		await runCli(workspace.dir, ["build"]);
+
+		const diagnostics = await diagnosticsOf(workspace.dir);
+		expect(diagnostics.map((entry) => entry.callee)).not.toContain(
+			"github.com/go-chi/chi/v5.Get",
+		);
 	});
 });

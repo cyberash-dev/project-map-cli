@@ -14,6 +14,7 @@ import {
 import { ingestServedContracts } from "./openapi/ingest.js";
 import { detectGoOutbound } from "./outbound/go.js";
 import { detectPythonOutbound } from "./outbound/python.js";
+import { coverageOf } from "./merge/coverage.js";
 import { FACTS_SCHEMA_VERSION } from "./render/artifact.js";
 
 export type FactSet = {
@@ -51,10 +52,8 @@ export class DetectFactsUseCase {
 			parser: this.parser,
 			routers: request.detect.inbound.routers,
 		};
-		const routed = [
-			...detectPythonDslRoutes(inbound),
-			...detectGoRouterRoutes(inbound),
-		];
+		const goRouted = detectGoRouterRoutes(inbound);
+		const routed = [...detectPythonDslRoutes(inbound), ...goRouted.facts];
 		/*
 		 * Stage three: the inventory and the code registrations are reconciled
 		 * by semantic core rather than raced, so a route declared in both
@@ -70,6 +69,8 @@ export class DetectFactsUseCase {
 			unit: request.unit,
 			parser: this.parser,
 			sinks: request.detect.outbound.sinks,
+			registry: request.detect.outbound.registry,
+			moduleIds: request.detect.outbound.moduleIds,
 			consumes: request.openapi.consumes,
 		});
 		const goOutbound = detectGoOutbound({
@@ -87,35 +88,18 @@ export class DetectFactsUseCase {
 			facts: [...endpoints, ...operations],
 			diagnostics: [
 				...inventory.diagnostics,
+				...goRouted.diagnostics,
 				...outbound.diagnostics,
 				...goOutbound.diagnostics,
 			],
-			coverage: coverageOf(request, endpoints.length, operations.length),
+			coverage: coverageOf({
+				endpoints,
+				operations,
+				hasInventory: request.openapi.serves.length > 0,
+				hasOutboundShape:
+					request.detect.outbound.sinks.length > 0 ||
+					request.openapi.consumes.length > 0,
+			}),
 		};
 	}
-}
-
-/**
- * The inbound denominator is the declared inventory where one exists. Where no
- * specification is served there is nothing honest to divide by, so the value
- * is reported as unmeasured rather than as a completed fraction.
- */
-function coverageOf(
-	request: DetectRequest,
-	inboundFacts: number,
-	outboundFacts: number,
-): Readonly<Record<string, string | number>> {
-	const outbound =
-		request.detect.outbound.sinks.length === 0 &&
-		request.openapi.consumes.length === 0
-			? { outbound: "unmeasured" }
-			: { outbound_classified: outboundFacts };
-	if (request.openapi.serves.length === 0) {
-		return { inbound: "unmeasured", ...outbound };
-	}
-	return {
-		inbound_declared: inboundFacts,
-		inbound_handler_linked: 0,
-		...outbound,
-	};
 }

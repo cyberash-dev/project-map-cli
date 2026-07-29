@@ -6,6 +6,11 @@ import type { ISourceParser } from "../../../../core/ports/parser.port.js";
 import type { SyntaxNode } from "../../../../infrastructure/parser/ts-utils.js";
 import { byteOffsetTable } from "../../index/anchors.js";
 import { goImportIndex } from "../../index/go/imports.js";
+import type { Diagnostic } from "../../../../core/domain/facts/diagnostic.js";
+import {
+	type DiagnosticSite,
+	mergeDiagnostics,
+} from "../../merge/diagnostics.js";
 import type { DraftEndpointFact } from "../../merge/merge-table.js";
 import { deriveResolution } from "../../merge/resolution.js";
 import { canonicalPathIr } from "../../openapi/path-grammar.js";
@@ -16,6 +21,11 @@ import {
 	type RouterValue,
 	type ScopeResult,
 } from "./router-scope.js";
+
+export type GoRouterResult = {
+	readonly facts: readonly DraftEndpointFact[];
+	readonly diagnostics: readonly Diagnostic[];
+};
 
 export type GoRouterRequest = {
 	readonly unit: AnalysisUnit;
@@ -30,13 +40,12 @@ const LOST_IDENTITY: ValueIr = { kind: "unknown", reason: "dynamic" };
  * back to the construction it came from, and the prefix chain is whatever that
  * value was mounted at.
  */
-export function detectGoRouterRoutes(
-	request: GoRouterRequest,
-): readonly DraftEndpointFact[] {
+export function detectGoRouterRoutes(request: GoRouterRequest): GoRouterResult {
 	if (request.routers.length === 0) {
-		return [];
+		return { facts: [], diagnostics: [] };
 	}
 	const drafts: DraftEndpointFact[] = [];
+	const unclassified: DiagnosticSite[] = [];
 	for (const source of request.unit.sources) {
 		if (!source.path.endsWith(".go")) {
 			continue;
@@ -57,8 +66,27 @@ export function detectGoRouterRoutes(
 		);
 		const offsets = byteOffsetTable(source.text);
 		drafts.push(...draftsOf(scope, source.path, offsets));
+		unclassified.push(...diagnosticSitesOf(scope, source.path, offsets));
 	}
-	return drafts;
+	return { facts: drafts, diagnostics: mergeDiagnostics(unclassified) };
+}
+
+/**
+ * A member call on a proven router that named no route. The callee is the
+ * declared router DSL joined to the member, so two spellings of one router
+ * merge onto one core.
+ */
+function diagnosticSitesOf(
+	scope: ScopeResult,
+	relPath: string,
+	offsets: ReturnType<typeof byteOffsetTable>,
+): readonly DiagnosticSite[] {
+	return scope.unclassified.map((entry) => ({
+		code: "external_registration_unclassified" as const,
+		canonicalCallee: `${entry.router.dsl}.${entry.member}`,
+		shape: { arity: entry.arity, receiver_type: entry.router.dsl },
+		anchor: anchorOf(entry.call, relPath, offsets),
+	}));
 }
 
 function draftsOf(

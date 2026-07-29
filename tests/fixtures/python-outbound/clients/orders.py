@@ -24,7 +24,13 @@ class OrdersClient(BaseClient):
         )
 
     async def ping(self):
+        self.retry(1)
         return await self.trace('/ping')
+
+    def _stamp(self, body):
+        self.retry(2)
+        self.retry(3)
+        return body
 
 
 class TenantClient(ConfiguredClient):

@@ -25,9 +25,21 @@ const PACKAGES: ReadonlySet<string> = new Set([
 /** The constructors that build a request without sending it. */
 const BUILDERS: ReadonlySet<string> = new Set(["Request", "PreparedRequest"]);
 
+/**
+ * The halves of these packages that serve requests rather than send them. A
+ * response the service returns is not an outbound call, so a site inside one
+ * of them is outside the candidate universe of project-map:BEH-013.
+ */
+const SERVER_HALVES: readonly string[] = ["aiohttp.web"];
+
 export function isTransportPackage(origin: string): boolean {
 	const root = origin.split(".")[0];
-	return root !== undefined && PACKAGES.has(root);
+	if (root === undefined || !PACKAGES.has(root)) {
+		return false;
+	}
+	return !SERVER_HALVES.some(
+		(half) => origin === half || origin.startsWith(`${half}.`),
+	);
 }
 
 export function isSendingMember(member: string): boolean {

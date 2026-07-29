@@ -1,13 +1,18 @@
-import type { Evidence } from "../../../core/domain/facts/anchor.js";
 import type {
-	CallShape,
 	Diagnostic,
+	DiagnosticCode,
 } from "../../../core/domain/facts/diagnostic.js";
+import type {
+	Destination,
+	OutboundOperationFact,
+} from "../../../core/domain/facts/fact.js";
 import type { ValueIr } from "../../../core/domain/facts/value-ir.js";
 import type { AnalysisUnit } from "../../../core/ports/analysis-unit.port.js";
 import type {
+	ClientRegistry,
 	ConsumedContract,
 	DeclaredSink,
+	ModuleIdMapping,
 } from "../../../core/ports/config.port.js";
 import type {
 	ISourceParser,
@@ -18,18 +23,37 @@ import {
 	rootOf,
 	type SyntaxNode,
 } from "../../../infrastructure/parser/ts-utils.js";
-import { orderEvidence } from "../canonical/array-order.js";
-import { jcs } from "../canonical/jcs.js";
 import { byteOffsetTable } from "../index/anchors.js";
 import { pythonDeclarationIndex } from "../index/python/declarations.js";
 import { ancestry } from "../index/python/hierarchy.js";
 import { pythonImportIndex } from "../index/python/imports.js";
 import { argumentFor, keywordArguments } from "../inbound/argument-selector.js";
+import { type DiagnosticSite, mergeDiagnostics } from "../merge/diagnostics.js";
 import { canonicalPathIr } from "../openapi/path-grammar.js";
 import { foldPythonValue } from "../value/python-value.js";
 import { splitAbsoluteUrl } from "./absolute-url.js";
-import { type DraftOutboundFact, outboundDraft } from "./ladder.js";
-import { bindingOf, callOfMember, sinkOfAncestry } from "./sinks.js";
+import {
+	type DraftOutboundFact,
+	type JoinKey,
+	outboundDraft,
+} from "./ladder.js";
+import {
+	inLibraryDestinations,
+	memberAnchor,
+	moduleIdOfAncestry,
+	symbolOf,
+} from "./library.js";
+import {
+	clientRegistryIndex,
+	type RegistryIndex,
+	type ResolvedType,
+} from "./registry.js";
+import {
+	bindingOf,
+	callOfMember,
+	crossesSinkBoundary,
+	sinkOfAncestry,
+} from "./sinks.js";
 import { resolveDestinations } from "./target-binding.js";
 import {
 	isRequestBuilder,
@@ -42,6 +66,8 @@ export type PythonOutboundRequest = {
 	readonly unit: AnalysisUnit;
 	readonly parser: ISourceParser;
 	readonly sinks: readonly DeclaredSink[];
+	readonly registry: readonly ClientRegistry[];
+	readonly moduleIds: readonly ModuleIdMapping[];
 	readonly consumes: readonly ConsumedContract[];
 };
 
@@ -51,6 +77,7 @@ export type OutboundResult = {
 };
 
 type ModuleView = {
+	readonly path: string;
 	readonly file: ParsedFile;
 	readonly imports: ReturnType<typeof pythonImportIndex>;
 	readonly declarations: ReturnType<typeof pythonDeclarationIndex>;
@@ -62,11 +89,18 @@ type Context = {
 	readonly modules: ReadonlyMap<string, ModuleView>;
 	readonly sourcePaths: readonly string[];
 	readonly constructions: ReadonlyMap<string, readonly SyntaxNode[]>;
+	readonly registry: RegistryIndex;
 	readonly request: PythonOutboundRequest;
 	/* Nodes a claimed site read through def-use: they are not separate calls. */
 	readonly consumed: Set<number>;
 	/* Claimed sites whose declared selector reached no node. */
-	readonly unresolvedSelectors: CallSite[];
+	readonly unresolvedSelectors: DiagnosticSite[];
+};
+
+/** An unclassified site, keyed so a later def-use claim can withdraw it. */
+type Candidate = {
+	readonly startIndex: number;
+	readonly site: DiagnosticSite;
 };
 
 export function detectPythonOutbound(
@@ -78,16 +112,22 @@ export function detectPythonOutbound(
 	const modules = parseModules(request);
 	const constructions = constructionIndex(modules);
 	const sourcePaths = [...modules.keys()];
+	const registry = clientRegistryIndex({
+		registries: request.registry,
+		modules,
+		sourcePaths,
+	});
 	const consumed = new Set<number>();
-	const unresolvedSelectors: CallSite[] = [];
+	const unresolvedSelectors: DiagnosticSite[] = [];
 	const facts: DraftOutboundFact[] = [];
-	const candidates: CallSite[] = [];
+	const candidates: Candidate[] = [];
 	for (const view of modules.values()) {
 		const context = {
 			view,
 			modules,
 			sourcePaths,
 			constructions,
+			registry,
 			request,
 			consumed,
 			unresolvedSelectors,
@@ -104,14 +144,14 @@ export function detectPythonOutbound(
 	/* Filtered after the walk: a construction is consumed by a send that the
 	 * document order may put after it. */
 	const unclassified = candidates.filter(
-		(site) => !consumed.has(site.call.startIndex),
+		(candidate) => !consumed.has(candidate.startIndex),
 	);
 	return {
 		facts,
-		diagnostics: [
-			...diagnosticsOf(unclassified, modules, "external_call_unclassified"),
-			...diagnosticsOf(unresolvedSelectors, modules, "selector_unresolved"),
-		],
+		diagnostics: mergeDiagnostics([
+			...unclassified.map((candidate) => candidate.site),
+			...unresolvedSelectors,
+		]),
 	};
 }
 
@@ -131,6 +171,7 @@ function parseModules(request: PythonOutboundRequest): Map<string, ModuleView> {
 			continue;
 		}
 		modules.set(source.path, {
+			path: source.path,
 			file,
 			imports: pythonImportIndex(file),
 			declarations: pythonDeclarationIndex(file),
@@ -168,7 +209,8 @@ function classify(site: CallSite, context: Context): DraftOutboundFact | null {
 	return (
 		generatedTier(site, context) ??
 		transportTier(site, context) ??
-		declaredTier(site, context)
+		declaredTier(site, context) ??
+		libraryTier(site, context)
 	);
 }
 
@@ -318,9 +360,13 @@ function declaredTier(
 	const pathNode =
 		pathArg === null ? null : argumentFor(pathArg, positional, keywords);
 	if (pathArg !== null && pathNode === null) {
-		context.unresolvedSelectors.push(site);
+		context.unresolvedSelectors.push(
+			diagnosticSite(site, context, "selector_unresolved"),
+		);
 	}
 	const composed = throughPathVia(pathNode, match, context.consumed);
+	const join = libraryHalfKey(site, context);
+	const destinations = destinationsOf(site, match, context);
 	return outboundDraft({
 		provenance: "declared",
 		method: declaredMethod(site, match),
@@ -330,9 +376,138 @@ function declaredTier(
 				context.view.imports,
 			),
 		]),
-		destinations: destinationsOf(site, match, context),
+		destinations:
+			join === null ? destinations : inLibraryDestinations(destinations),
 		ownerOperation: site.ownerOperation,
 		anchor: anchorOf(site.call, context.view),
+		join,
+	});
+}
+
+/**
+ * The library half of project-map:BEH-012. It exists only where the enclosing
+ * declaration is itself the operation: a call on someone else's instance is a
+ * consumer of that operation, never a member of it.
+ */
+function libraryHalfKey(site: CallSite, context: Context): JoinKey | null {
+	if (site.receiver?.text !== "self") {
+		return null;
+	}
+	const ancestors = ancestryOf(site, context);
+	const moduleId = moduleIdOfAncestry(ancestors, context.request.moduleIds);
+	const member = site.ownerOperation.split(".")[1];
+	if (moduleId === null || member === undefined) {
+		return null;
+	}
+	const anchor = memberAnchor(ancestors, member);
+	return {
+		moduleId,
+		calleeOperation:
+			anchor === null
+				? { kind: "unknown", reason: "cross_boundary" }
+				: symbolOf(anchor, member),
+	};
+}
+
+/**
+ * The consumer half of project-map:BEH-012. The receiver's type is proven and
+ * carries a module identity, but the member it names is declared inside the
+ * library, so the operation itself stays typed rather than guessed.
+ */
+function libraryTier(
+	site: CallSite,
+	context: Context,
+): DraftOutboundFact | null {
+	const reached = libraryCallee(site, context);
+	if (reached === null) {
+		return null;
+	}
+	const ancestors = ancestryOfType(reached.type, context);
+	const moduleId = moduleIdOfAncestry(ancestors, context.request.moduleIds);
+	if (moduleId === null) {
+		return null;
+	}
+	const hole: ValueIr = { kind: "unknown", reason: "operation_in_library" };
+	return outboundDraft({
+		provenance: "declared",
+		method: hole,
+		path: hole,
+		destinations: inLibraryDestinations(
+			consumerDestinations(reached.type, ancestors, context),
+		),
+		ownerOperation: site.ownerOperation,
+		anchor: anchorOf(site.call, context.view),
+		join: { moduleId, calleeOperation: reached.callee },
+	});
+}
+
+type LibraryCallee = {
+	readonly type: ResolvedType;
+	readonly callee: OutboundOperationFact["callee_operation"];
+};
+
+/**
+ * The type a call reaches through a declared container, with the member it
+ * names. A member selected at run time keeps the type and types the member.
+ */
+function libraryCallee(site: CallSite, context: Context): LibraryCallee | null {
+	const dynamic = dynamicMemberOf(site, context);
+	if (dynamic !== null) {
+		return dynamic;
+	}
+	if (site.member === null || site.receiver === null) {
+		return null;
+	}
+	const type = context.registry.typeOf(site.receiver.text);
+	if (type === null) {
+		return null;
+	}
+	const callee = site.call.childForFieldName("function");
+	return callee === null
+		? null
+		: {
+				type,
+				callee: symbolOf(anchorOf(callee, context.view), site.member),
+			};
+}
+
+/** `getattr(<container access>, <expression>)`: the type holds, the member does not. */
+function dynamicMemberOf(
+	site: CallSite,
+	context: Context,
+): LibraryCallee | null {
+	const callee = site.call.childForFieldName("function");
+	if (callee === null || callee.type !== "call") {
+		return null;
+	}
+	if (callee.childForFieldName("function")?.text !== "getattr") {
+		return null;
+	}
+	const receiver = callee.childForFieldName("arguments")?.namedChildren[0];
+	const type =
+		receiver === undefined ? null : context.registry.typeOf(receiver.text);
+	return type === null
+		? null
+		: { type, callee: { kind: "unknown", reason: "dynamic" } };
+}
+
+function consumerDestinations(
+	type: ResolvedType,
+	ancestors: ReturnType<typeof ancestryOf>,
+	context: Context,
+): readonly Destination[] {
+	const sink = sinkOfAncestry(ancestors, context.request.sinks);
+	return resolveDestinations({
+		selector: sink?.target ?? null,
+		instance: null,
+		isOwnInstance: false,
+		ownConstructions: context.constructions.get(type.name) ?? [],
+		declaredBindings: ancestors.map(
+			(ancestor) => ancestor.declared?.constants ?? new Map(),
+		),
+		readable: ancestors.some((ancestor) => ancestor.declared !== null),
+		fold: (node) => foldAncestorValue(node, ancestors, context),
+		argumentOf: namedArgument,
 	});
 }
 
@@ -450,29 +625,37 @@ function sinkMatchOf(site: CallSite, context: Context) {
 }
 
 function ancestryOf(site: CallSite, context: Context) {
-	const type = receiverType(site);
-	if (type === null) {
-		return [];
-	}
-	return ancestry(type, {
-		view: context.view,
+	const type = receiverType(site, context);
+	return type === null ? [] : ancestryOfType(type, context);
+}
+
+function ancestryOfType(type: ResolvedType, context: Context) {
+	return ancestry(type.name, {
+		view: type.view,
 		modules: context.modules,
 		sourcePaths: context.sourcePaths,
 	});
 }
 
 /**
- * The type of the receiver: the enclosing declaration for its own instance, and
- * otherwise the type a local construction named. A receiver bound to nothing
- * this scope constructed has no proven type and claims no sink.
+ * The type of the receiver: the enclosing declaration for its own instance, the
+ * type a local construction named, and the type a declared container binds to
+ * the attribute an access reaches. A receiver none of the three proves has no
+ * type and claims no sink.
  */
-function receiverType(site: CallSite): string | null {
+function receiverType(site: CallSite, context: Context): ResolvedType | null {
 	if (site.receiver?.text === "self") {
 		const owner = site.ownerOperation.split(".")[0] ?? "";
-		return owner.length === 0 ? null : owner;
+		return owner.length === 0 ? null : { name: owner, view: context.view };
 	}
 	const construction = instanceOf(site);
-	return construction?.childForFieldName("function")?.text ?? null;
+	const constructed = construction?.childForFieldName("function")?.text ?? null;
+	if (constructed !== null) {
+		return { name: constructed, view: context.view };
+	}
+	return site.receiver === null
+		? null
+		: context.registry.typeOf(site.receiver.text);
 }
 
 function instanceOf(site: CallSite): SyntaxNode | null {
@@ -487,13 +670,13 @@ function destinationsOf(
 	match: NonNullable<ReturnType<typeof sinkMatchOf>>,
 	context: Context,
 ) {
-	const type = receiverType(site) ?? "";
+	const type = receiverType(site, context);
 	const ancestors = ancestryOf(site, context);
 	return resolveDestinations({
 		selector: bindingOf(match, "target"),
 		instance: instanceOf(site),
 		isOwnInstance: site.receiver?.text === "self",
-		ownConstructions: context.constructions.get(type) ?? [],
+		ownConstructions: context.constructions.get(type?.name ?? "") ?? [],
 		declaredBindings: ancestors.map(
 			(ancestor) => ancestor.declared?.constants ?? new Map(),
 		),
@@ -559,96 +742,59 @@ function dottedOrigin(dotted: string, context: Context): string | null {
 }
 
 /**
- * The candidate universe this phase can see: a call inside a transport package
- * that no tier claimed, and a member of a declared sink instance that the sink
- * does not list. Anything else is an arbitrary member call and is not counted.
+ * The candidate universe of project-map:BEH-013: a call inside a transport
+ * package that no tier claimed, and a call that leaves a declared sink through
+ * a member the sink does not list. Anything else is an arbitrary member call,
+ * which is neither diagnosed nor counted.
  */
 function collectUnclassified(
 	site: CallSite,
 	context: Context,
-	into: CallSite[],
+	into: Candidate[],
 ): void {
-	const origin = calleeOrigin(site, context);
-	if (origin !== null && isTransportPackage(origin)) {
-		into.push(site);
+	if (!insideUniverse(site, context)) {
 		return;
 	}
-	const ancestors = ancestryOf(site, context);
-	if (
-		ancestors.length > 0 &&
-		sinkOfAncestry(ancestors, context.request.sinks)
-	) {
-		into.push(site);
+	into.push({
+		startIndex: site.call.startIndex,
+		site: diagnosticSite(site, context, "external_call_unclassified"),
+	});
+}
+
+function insideUniverse(site: CallSite, context: Context): boolean {
+	const origin = calleeOrigin(site, context);
+	if (origin !== null && isTransportPackage(origin)) {
+		return true;
 	}
+	if (site.member === null) {
+		return false;
+	}
+	return crossesSinkBoundary(
+		ancestryOf(site, context),
+		context.request.sinks,
+		site.member,
+	);
 }
 
 /**
- * Diagnostics merge by their core, and `count` is the number of DISTINCT
- * source anchors: one callee reached from three call sites is one diagnostic
- * with count three, never three diagnostics or a count of traversal visits.
+ * The core a diagnostic merges on. Both components are resolved rather than
+ * spelled: the callee through the provenance of its qualifier, the receiver
+ * through the type the receiver was proven to hold.
  */
-function diagnosticsOf(
-	sites: readonly CallSite[],
-	modules: ReadonlyMap<string, ModuleView>,
-	code: Diagnostic["code"],
-): readonly Diagnostic[] {
-	const byCore = new Map<string, Evidence[]>();
-	const shapes = new Map<string, CallShape>();
-	for (const site of sites) {
-		const view = viewOf(site, modules);
-		if (view === null) {
-			continue;
-		}
-		const shape: CallShape = {
-			arity: site.call.childForFieldName("arguments")?.namedChildCount ?? 0,
-			receiver_type: site.receiver?.text ?? null,
-		};
-		const key = `${site.calleeText} ${shape.arity} ${shape.receiver_type ?? ""}`;
-		shapes.set(key, shape);
-		byCore.set(key, [
-			...(byCore.get(key) ?? []),
-			{ ...anchorOf(site.call, view), role: "call" },
-		]);
-	}
-	return [...byCore.entries()]
-		.map(([key, evidence]) => diagnosticOf(key, evidence, shapes, code))
-		.sort((left, right) =>
-			left.canonical_callee < right.canonical_callee ? -1 : 1,
-		);
-}
-
-function diagnosticOf(
-	key: string,
-	evidence: readonly Evidence[],
-	shapes: ReadonlyMap<string, CallShape>,
-	code: Diagnostic["code"],
-): Diagnostic {
-	const distinct = orderEvidence([
-		...new Map(evidence.map((entry) => [jcs(entry), entry])).values(),
-	]);
+function diagnosticSite(
+	site: CallSite,
+	context: Context,
+	code: DiagnosticCode,
+): DiagnosticSite {
 	return {
 		code,
-		canonical_callee: key.split(" ")[0] ?? "",
-		canonical_call_shape: shapes.get(key) ?? { arity: 0, receiver_type: null },
-		evidence: distinct,
-		count: distinct.length,
+		canonicalCallee: calleeOrigin(site, context) ?? site.calleeText,
+		shape: {
+			arity: site.call.childForFieldName("arguments")?.namedChildCount ?? 0,
+			receiver_type: receiverType(site, context)?.name ?? null,
+		},
+		anchor: anchorOf(site.call, context.view),
 	};
-}
-
-function viewOf(
-	site: CallSite,
-	modules: ReadonlyMap<string, ModuleView>,
-): ModuleView | null {
-	for (const view of modules.values()) {
-		if (containsNode(rootOf(view.file.tree), site.call)) {
-			return view;
-		}
-	}
-	return null;
-}
-
-function containsNode(root: SyntaxNode, node: SyntaxNode): boolean {
-	return root.startIndex <= node.startIndex && root.endIndex >= node.endIndex;
 }
 
 function localBinding(node: SyntaxNode, name: string): SyntaxNode | null {

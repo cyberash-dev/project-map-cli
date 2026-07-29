@@ -73,7 +73,7 @@ function collectVerbs(
 		}
 		return;
 	}
-	for (const member of declared.methods) {
+	for (const member of declared.methods.keys()) {
 		if (HTTP_VERBS.has(member)) {
 			verbs.add(member.toUpperCase());
 		}

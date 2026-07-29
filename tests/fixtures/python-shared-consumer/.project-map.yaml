@@ -1,0 +1,32 @@
+project:
+  name: consuming
+  language: python
+
+repository_identity: sample/consuming
+
+sections:
+  - metadata
+
+analysis_unit:
+  sources:
+    include: ["**/*.py"]
+
+detect:
+  outbound:
+    sinks:
+      - base_type: "vendor_interactions.AbstractInteractionClient"
+        call: [get, post]
+        path_arg: { kind: arg, selector: "url" }
+        target: { kind: class_const, selector: "BASE_URL" }
+    registry:
+      - container_type: "clients.container.InteractionClients"
+        access: "self.clients"
+    module_ids:
+      - type: "lib.split.client.AbstractSplitClient"
+        module_id: "lib.split"
+      - type: "lib.audit.client.AbstractAuditClient"
+        module_id: "lib.audit"
+
+output:
+  markdown: PROJECT_MAP.md
+  facts: .project-map/facts.json

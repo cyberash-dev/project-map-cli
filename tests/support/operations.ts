@@ -1,6 +1,12 @@
 import { readFile } from "node:fs/promises";
 import * as path from "node:path";
 
+export type Anchor = {
+	readonly path: string;
+	readonly start_byte: number;
+	readonly end_byte: number;
+};
+
 export type Operation = {
 	readonly provenance: string;
 	readonly owner: string;
@@ -9,6 +15,9 @@ export type Operation = {
 	readonly destinations: readonly string[];
 	readonly bindings: readonly string[];
 	readonly resolution: string;
+	readonly moduleId: string | null;
+	readonly callee: string | null;
+	readonly calleeDeclaration: Anchor | null;
 };
 
 export type DiagnosticView = {
@@ -82,6 +91,36 @@ function operationOf(fact: unknown): Operation {
 			bindingOf(memberAt(variant, "destination")),
 		),
 		resolution: stringAt(fact, "resolution"),
+		moduleId: nullableStringAt(fact, "module_id"),
+		callee: renderCallee(memberAt(fact, "callee_operation")),
+		calleeDeclaration: declarationOf(memberAt(fact, "callee_operation")),
+	};
+}
+
+function nullableStringAt(value: unknown, key: string): string | null {
+	const found = memberAt(value, key);
+	return typeof found === "string" ? found : null;
+}
+
+function renderCallee(callee: unknown): string | null {
+	if (callee === null || callee === undefined) {
+		return null;
+	}
+	if (stringAt(callee, "kind") === "unknown") {
+		return `{unknown:${stringAt(callee, "reason")}}`;
+	}
+	return stringAt(callee, "display_name");
+}
+
+function declarationOf(callee: unknown): Anchor | null {
+	if (!isRecord(callee) || stringAt(callee, "kind") !== "symbol") {
+		return null;
+	}
+	const declaration = memberAt(callee, "declaration");
+	return {
+		path: stringAt(declaration, "path"),
+		start_byte: Number(memberAt(declaration, "start_byte")),
+		end_byte: Number(memberAt(declaration, "end_byte")),
 	};
 }
 
@@ -110,6 +149,16 @@ export async function operationsOf(dir: string): Promise<Operation[]> {
 	return facts
 		.filter((fact) => stringAt(fact, "kind") === "outbound_operation")
 		.map(operationOf);
+}
+
+export async function coverageOf(
+	dir: string,
+): Promise<Record<string, unknown>> {
+	const coverage = memberAt(await artifactOf(dir), "coverage");
+	if (!isRecord(coverage)) {
+		throw new Error("artifact carries no coverage record");
+	}
+	return coverage;
 }
 
 export async function diagnosticsOf(dir: string): Promise<DiagnosticView[]> {

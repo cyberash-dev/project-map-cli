@@ -63,9 +63,18 @@ export type MountRecord = {
 	readonly parent: string | null;
 };
 
+/** A member call on a proven router value that no registration form claims. */
+export type UnclassifiedRegistration = {
+	readonly router: DeclaredRouter;
+	readonly member: string;
+	readonly arity: number;
+	readonly call: SyntaxNode;
+};
+
 export type ScopeResult = {
 	readonly registrations: readonly Registration[];
 	readonly mounts: ReadonlyMap<string, readonly MountRecord[]>;
+	readonly unclassified: readonly UnclassifiedRegistration[];
 };
 
 type Analysis = {
@@ -74,6 +83,7 @@ type Analysis = {
 	readonly relPath: string;
 	readonly registrations: Registration[];
 	readonly mounts: Map<string, MountRecord[]>;
+	readonly unclassified: UnclassifiedRegistration[];
 };
 
 type Scope = {
@@ -97,6 +107,7 @@ export function analyzeGoRouterValues(
 		relPath: file.relPath,
 		registrations: [],
 		mounts: new Map(),
+		unclassified: [],
 	};
 	for (const declaration of rootOf(file.tree).namedChildren) {
 		const body = declaration.childForFieldName("body");
@@ -104,7 +115,11 @@ export function analyzeGoRouterValues(
 			visitChildren(body, freshScope(), analysis);
 		}
 	}
-	return { registrations: analysis.registrations, mounts: analysis.mounts };
+	return {
+		registrations: analysis.registrations,
+		mounts: analysis.mounts,
+		unclassified: analysis.unclassified,
+	};
 }
 
 function freshScope(): Scope {
@@ -262,7 +277,34 @@ function classifyCall(
 	if (member.name === MOUNT) {
 		return recordMount(member, scope, analysis);
 	}
-	return evaluate(call, scope, analysis) !== null;
+	if (evaluate(call, scope, analysis) !== null) {
+		return true;
+	}
+	recordUnclassified(call, member, scope, analysis);
+	return false;
+}
+
+/**
+ * A member call on a router the analysis proved crosses the router boundary of
+ * project-map:BEH-013 without naming a route, so it is diagnosed rather than
+ * guessed at. A receiver that is not a router crosses nothing.
+ */
+function recordUnclassified(
+	call: SyntaxNode,
+	member: Member,
+	scope: Scope,
+	analysis: Analysis,
+): void {
+	const receiver = evaluate(member.receiver, scope, analysis);
+	if (receiver === null) {
+		return;
+	}
+	analysis.unclassified.push({
+		router: receiver.router,
+		member: member.name,
+		arity: member.args.length,
+		call,
+	});
 }
 
 type Member = {

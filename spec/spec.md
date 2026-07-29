@@ -1267,11 +1267,13 @@ lifecycle:
 partition_id: project-map
 target_ids:
   - project-map:CTR-003
+  - project-map:DLT-007
   - project-map:GA-001
   - project-map:INV-001
 binding:
   section_ids: src/core/domain/project-map.ts
   document_assembly: src/features/build/rendering/markdown.ts
+  detection_sections: src/features/build/rendering/detection-sections.ts
   json_emission: src/features/build/rendering/json.ts
   table_helpers: src/features/build/rendering/mdast-helpers.ts
   clock: src/infrastructure/clock/system.ts
@@ -1409,6 +1411,7 @@ lifecycle:
 partition_id: project-map
 target_ids:
   - project-map:BEH-005
+  - project-map:BEH-006
   - project-map:BEH-007
   - project-map:GA-002
   - project-map:CTR-005
@@ -1424,6 +1427,7 @@ binding:
   artifact: src/features/detect/render/artifact.ts
   composition_root: src/cli/container.ts
   command_surface: src/cli/commands.ts
+  check_mode: src/cli/facts-check.ts
 authority: code_annotation
 verification_method: |
   tests/integration/facts-artifact.test.ts drives the real command tree

@@ -155,9 +155,33 @@ export type DeclaredSink = {
 	readonly pathVia: PathVia | null;
 };
 
+/**
+ * The canonical identity of a shared client library, keyed on the type the
+ * library publishes. Both halves of an operation carry it, and the linker
+ * joins them on it together with the callee's name.
+ */
+export type ModuleIdMapping = {
+	readonly type: string;
+	readonly moduleId: string;
+};
+
+/**
+ * A container that hands business code its clients. The access path proves the
+ * receiver's type without following a value: the container's declaration binds
+ * the attribute to a type, and that binding is what detection reads.
+ */
+export type ClientRegistry = {
+	readonly containerType: string;
+	readonly access: string;
+};
+
 export type DetectConfig = {
 	readonly inbound: { readonly routers: readonly DeclaredRouter[] };
-	readonly outbound: { readonly sinks: readonly DeclaredSink[] };
+	readonly outbound: {
+		readonly sinks: readonly DeclaredSink[];
+		readonly registry: readonly ClientRegistry[];
+		readonly moduleIds: readonly ModuleIdMapping[];
+	};
 };
 
 export type ResolvedConfig = {

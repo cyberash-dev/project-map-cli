@@ -15,6 +15,7 @@ import type {
 	EnumsConfig,
 	IConfigLoader,
 	InteractionsConfig,
+	ModuleIdMapping,
 	OpenApiConfig,
 	OutputConfig,
 	OverviewConfig,
@@ -228,8 +229,46 @@ function resolveDetect(raw: ConfigFile): DetectConfig {
 				identityPreserving: entry.identity_preserving,
 			})),
 		},
-		outbound: { sinks: raw.detect.outbound.sinks.map(resolveSink) },
+		outbound: {
+			sinks: raw.detect.outbound.sinks.map(resolveSink),
+			registry: raw.detect.outbound.registry.map((entry) => ({
+				containerType: entry.container_type,
+				access: entry.access,
+			})),
+			moduleIds: resolveModuleIds(raw.detect.outbound.module_ids),
+		},
 	};
+}
+
+/**
+ * One module_id names exactly one type and one type carries exactly one
+ * module_id: a mapping that is not a bijection would let the linker join a
+ * consumer half onto the wrong library.
+ */
+function resolveModuleIds(
+	raw: ConfigFile["detect"]["outbound"]["module_ids"],
+): readonly ModuleIdMapping[] {
+	const byType = new Map<string, string>();
+	const byModuleId = new Map<string, string>();
+	for (const entry of raw) {
+		const claimedType = byModuleId.get(entry.module_id);
+		const claimedId = byType.get(entry.type);
+		if (claimedType !== undefined && claimedType !== entry.type) {
+			throw new ConfigTimeError(
+				"duplicate_module_id",
+				`module_id ${entry.module_id} names both ${claimedType} and ${entry.type}`,
+			);
+		}
+		if (claimedId !== undefined && claimedId !== entry.module_id) {
+			throw new ConfigTimeError(
+				"duplicate_module_id",
+				`type ${entry.type} carries both module_id ${claimedId} and ${entry.module_id}`,
+			);
+		}
+		byType.set(entry.type, entry.module_id);
+		byModuleId.set(entry.module_id, entry.type);
+	}
+	return [...byType].map(([type, moduleId]) => ({ type, moduleId }));
 }
 
 function resolveSink(raw: ConfigFile["detect"]["outbound"]["sinks"][number]) {
