@@ -148,7 +148,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: b57b1d3337a84ea5b18d8f483c44409cd7feece1
+    reference: 13be01c6650b627f1d69784e74156ca36c7f8600
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -160,14 +160,14 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: d98c1e9a09578cb2448a75803f4f560189844c52787421ef61e3539961092264
-baseline_commit_sha: b57b1d3337a84ea5b18d8f483c44409cd7feece1
+freshness_token: 3b0ecc37016597639ecfb396546e377fe6569614573dad693a520e431ce71aa5
+baseline_commit_sha: 13be01c6650b627f1d69784e74156ca36c7f8600
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from e36dec17 to b57b1d33 across every phase of the
+  Refreshed from e36dec17 to 13be01c6 across every phase of the
   detection rework and the 1.0.0 release.
   The first two phases added twenty-two modules, each claimed by project-map:IMP-006, project-map:IMP-007 or
   project-map:IMP-008, plus the configuration keys those phases add and
@@ -239,7 +239,8 @@ notes: |
   SectionIds existed the phrase read as the section list, and validation
   followed the paraphrase rather than project-map:ASM-002. The Contract
   now repeats the assumption's wording. The same commit adds the
-  `detect` arms validation had been missing.
+  `detect` arms validation had been missing, and 13be01c6 reformats the
+  one call it reflowed.
   d2b04006 closed the sixth phase: the join key both halves of a
   shared-library operation carry, the container that proves a receiver's
   type, the narrowed candidate universe and the coverage denominators.
