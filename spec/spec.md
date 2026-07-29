@@ -147,7 +147,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: 2692a7e06286152bfd4222ea6c68239ce54ae399
+    reference: df3b88d9af1b280e08e9ea2853869ec0ea5c23c2
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -159,14 +159,14 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: ef9b14c782618caf3f3fc89e706fbf029db4884ff50caf0b123f0d8e82212db9
-baseline_commit_sha: 2692a7e06286152bfd4222ea6c68239ce54ae399
+freshness_token: a84bdef229da8d5a566ec16f8c92690a086dcbc780690201a19c2cbfe920c086
+baseline_commit_sha: df3b88d9af1b280e08e9ea2853869ec0ea5c23c2
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from e36dec17 to 2692a7e0 across the first five phases of
+  Refreshed from e36dec17 to df3b88d9 across the first five phases of
   the detection rework. The first two phases added twenty-two modules,
   each claimed by project-map:IMP-006, project-map:IMP-007 or
   project-map:IMP-008, plus the configuration keys those phases add and
@@ -203,6 +203,9 @@ notes: |
   not always a string. Approving before implementing left the gate red
   between the two commits; the earlier phases approved after, and that
   is the order to keep.
+  Its Go half followed in df3b88d9 with six more modules on the same
+  binding, and needed no approval of its own: project-map:BEH-010 and
+  project-map:BEH-011 name no language.
   Refreshed from c82417cd to e36dec17 earlier. That refresh crossed the
   footprint of CTR-001, CTR-002, INV-001 and INV-002; every crossing was
   authored as project-map:DLT-001 or project-map:DLT-002, or was
