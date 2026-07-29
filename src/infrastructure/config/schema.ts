@@ -6,8 +6,6 @@ import {
 import {
 	DEFAULT_SECTION_IDS,
 	SECTION_IDS,
-	isDetectionSection,
-	type SectionId,
 } from "../../core/domain/project-map.js";
 import { SelectorSchema } from "./selector-schema.js";
 
@@ -270,7 +268,6 @@ function requireIdentityWhereFactsAreEmitted(
 		output: { facts: string | null };
 		repository_identity: string | null;
 		openapi: { serves: readonly unknown[]; consumes: readonly unknown[] };
-		sections: readonly SectionId[];
 		detect: {
 			inbound: { routers: readonly unknown[] };
 			outbound: {
@@ -286,7 +283,6 @@ function requireIdentityWhereFactsAreEmitted(
 		return;
 	}
 	const hasDetectionInput =
-		document.sections.some(isDetectionSection) ||
 		document.openapi.serves.length > 0 ||
 		document.openapi.consumes.length > 0 ||
 		document.detect.inbound.routers.length > 0 ||
@@ -300,7 +296,7 @@ function requireIdentityWhereFactsAreEmitted(
 		code: "custom",
 		path: ["repository_identity"],
 		message:
-			"repository_identity is required when a facts artifact is emitted, a detection section is declared, or detection is configured, because each carries it into the join",
+			"repository_identity is required when a facts artifact is emitted or detection is configured, because each carries it into the join",
 	});
 }
 

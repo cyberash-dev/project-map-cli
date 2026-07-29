@@ -63,10 +63,13 @@ describe("detection configuration", () => {
 	});
 
 	/* @covers project-map:ASM-002 */
-	it("rejects a detection section without a repository identity", async () => {
-		await expect(
-			loadYaml(workspace.dir, `${MINIMAL}sections:\n  - inbound_endpoints\n`),
-		).rejects.toThrow(/repository_identity/);
+	it("accepts a detection section without a repository identity when no facts are emitted", async () => {
+		const config = await loadYaml(
+			workspace.dir,
+			`${MINIMAL}sections:\n  - inbound_endpoints\n`,
+		);
+
+		expect(config.repositoryIdentity).toBeNull();
 	});
 
 	/* @covers project-map:ASM-002 */

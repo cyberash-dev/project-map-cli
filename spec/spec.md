@@ -18,15 +18,16 @@ change sets. The count is derived from the §16 footprint rather than
 assessed by hand, so it moves only when a binding gains or loses a path,
 or when a target is approved.
 
-The five approved phases of the detection rework are inside the 70.
-Each one briefly raised the count while its records were still
-`proposed`, because a module counts as modeled only under an approved
-target, and each approval brought it back down. The first two took it to
-74, above the 72 the trend was set against; that breach was reported
-rather than smoothed and cleared in one step. Phase D took it to 57 and
-its approval returned it to 52. Phase E raised it not at all: its records
-were approved before its code, so its nine modules were claimed the
-moment they landed.
+All six approved phases of the detection rework are inside the 70. Each
+one briefly raised the count while its records were still `proposed`,
+because a module counts as modeled only under an approved target, and
+each approval brought it back down. The first two took it to 74, above
+the 72 the trend was set against; that breach was reported rather than
+smoothed and cleared in one step. Phase D took it to 57 and its approval
+returned it to 52. Phase E raised it not at all: its records were
+approved before its code, so its nine modules were claimed the moment
+they landed. Phase F took it to 56, and its approval returned it to 52
+along with two modules the tail of phase B had left unclaimed.
 
 ---
 
@@ -664,8 +665,10 @@ schema: |
   overview, contexts, entities, enums, endpoints, storage, interactions,
   workers, output, repository_identity, analysis_unit, openapi, detect.
   `output.facts` is a path defaulting to null. `repository_identity` is
-  a logical string, required exactly when a facts artifact is emitted or
-  a detection section is present, per project-map:ASM-002.
+  a logical string, required exactly when `output.facts` is non-null or
+  an `openapi` or `detect` section is present, per project-map:ASM-002.
+  Naming a detection SectionId requires it of nothing by itself: a
+  section with no configured input renders empty.
   `analysis_unit` carries `sources.include`, `sources.exclude`, and
   `config_declarations`, whose semantics project-map:CTR-004 fixes.
   `openapi` and `detect` each default to empty, and their schema is

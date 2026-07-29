@@ -110,6 +110,17 @@ describe("the default section list", () => {
 		}
 	});
 
+	/* @covers project-map:ASM-002 */
+	it("renders no coverage section without detection inputs", async () => {
+		await withSections(workspace.dir, ["detection_coverage"]);
+
+		await runCli(workspace.dir, ["build"]);
+
+		expect(await documentOf(workspace.dir)).not.toContain(
+			"## Detection coverage",
+		);
+	});
+
 	/* @covers project-map:CON-001 */
 	it("keeps the legacy section beside its reworked counterpart", async () => {
 		await withIdentity(workspace.dir);

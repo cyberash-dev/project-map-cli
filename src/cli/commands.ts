@@ -199,10 +199,13 @@ async function build(opts: BuildOptions): Promise<void> {
 		const useCase = buildUseCase(container, effectiveConfig);
 		const { map, projectRoot } = await useCase.execute(process.cwd());
 		const detection = await detectFacts(container, effectiveConfig);
+		const renderedFactSet = hasDetectionInput(effectiveConfig)
+			? (detection?.factSet ?? null)
+			: null;
 		const markdown = renderMarkdown(
 			map,
 			effectiveConfig,
-			detection?.factSet ?? null,
+			renderedFactSet,
 		);
 		const mdPath = path.resolve(projectRoot, effectiveConfig.output.markdown);
 
@@ -244,9 +247,10 @@ async function detectFacts(
 	container: Container,
 	config: ResolvedConfig,
 ): Promise<Detection | null> {
-	const wanted =
-		config.output.facts !== null || config.sections.some(isDetectionSection);
-	if (!wanted) {
+	const isDetectionWanted =
+		config.output.facts !== null ||
+		(config.sections.some(isDetectionSection) && hasDetectionInput(config));
+	if (!isDetectionWanted) {
 		return null;
 	}
 	const startedMs = container.clock.nowMs();
@@ -275,6 +279,17 @@ async function detectFacts(
 			coverage: factSet.coverage,
 		}),
 	};
+}
+
+function hasDetectionInput(config: ResolvedConfig): boolean {
+	return (
+		config.openapi.serves.length > 0 ||
+		config.openapi.consumes.length > 0 ||
+		config.detect.inbound.routers.length > 0 ||
+		config.detect.outbound.sinks.length > 0 ||
+		config.detect.outbound.registry.length > 0 ||
+		config.detect.outbound.moduleIds.length > 0
+	);
 }
 
 async function emitFacts(
