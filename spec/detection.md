@@ -17,15 +17,15 @@ file governs the implementation exactly as one in `spec/spec.md` does.
 
 Phase-to-record mapping, with the status each phase's records now hold:
 
-| Phase                                               | Records                                                       | Status                                                                                                                   |
-| :-------------------------------------------------- | :------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------- |
-| A — determinism core and the analysis-unit boundary | CTR-004, CTR-006, CTR-007, CTR-008, INV-003, POL-003, DLT-004 | approved, implemented                                                                                                    |
-| B — OpenAPI inbound and artifact emission           | CTR-005, BEH-005, BEH-007, GA-002, SUR-003, DLT-005, DLT-008  | approved, implemented                                                                                                    |
-| B — check mode and the opt-in sections              | BEH-006, DLT-006, DLT-007, CON-001                            | proposed; the artifact is emitted but check mode does not yet compare it, and the three section ids are not yet rendered |
-| C — indexes and the intraprocedural normalizer      | BEH-008, INV-004                                              | approved, implemented                                                                                                    |
-| D — router value identity                           | BEH-009                                                       | approved, implemented                                                                                                    |
-| E — declared sinks and the record lattice           | BEH-010, BEH-011, INV-005, DLT-012                            | approved, implemented                                                                                                    |
-| F — shared-library halves and coverage              | BEH-012, BEH-013                                              | proposed                                                                                                                 |
+| Phase                                               | Records                                                       | Status                         |
+| :-------------------------------------------------- | :------------------------------------------------------------ | :----------------------------- |
+| A — determinism core and the analysis-unit boundary | CTR-004, CTR-006, CTR-007, CTR-008, INV-003, POL-003, DLT-004 | approved, implemented          |
+| B — OpenAPI inbound and artifact emission           | CTR-005, BEH-005, BEH-007, GA-002, SUR-003, DLT-005, DLT-008  | approved, implemented          |
+| B — check mode and the opt-in sections              | BEH-006, DLT-006, DLT-007, CON-001                            | implemented, awaiting approval |
+| C — indexes and the intraprocedural normalizer      | BEH-008, INV-004                                              | approved, implemented          |
+| D — router value identity                           | BEH-009                                                       | approved, implemented          |
+| E — declared sinks and the record lattice           | BEH-010, BEH-011, INV-005, DLT-012                            | approved, implemented          |
+| F — shared-library halves and coverage              | BEH-012, BEH-013                                              | proposed                       |
 
 The implementation bindings of the approved phases, project-map:IMP-006
 through project-map:IMP-010 and project-map:IMP-012, live in
