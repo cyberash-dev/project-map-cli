@@ -5,6 +5,7 @@
 	"discovery_scope": [
 		"src",
 		"tests",
+		"scripts/mark-bin-executable.mjs",
 		"package.json",
 		"tsconfig.json",
 		"tsconfig.build.json",
