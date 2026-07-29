@@ -147,7 +147,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: 4618bc5d2d8d518ae12e90a519d2aea5e1491364
+    reference: 640a76efb7861e6f9c040d2f9cce83143a416b67
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -159,15 +159,15 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 6442eed02f8bee633b726553cee2beb5a5da5fe0ca45c231ee18aa7a80d73d3a
-baseline_commit_sha: 4618bc5d2d8d518ae12e90a519d2aea5e1491364
+freshness_token: 0fefad89b9cf3999a4d6ac404325b19c811c0a5ceb3423f9b6aaec16f319f97e
+baseline_commit_sha: 640a76efb7861e6f9c040d2f9cce83143a416b67
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from e36dec17 to 4618bc5d across the first five phases of
-  the detection rework and the tail of the second. The first two phases added twenty-two modules,
+  Refreshed from e36dec17 to 640a76ef across every phase of the
+  detection rework. The first two phases added twenty-two modules,
   each claimed by project-map:IMP-006, project-map:IMP-007 or
   project-map:IMP-008, plus the configuration keys those phases add and
   one line in src/cli/commands.ts that threads `output.facts` through
@@ -218,6 +218,20 @@ notes: |
   later refresh would surface their crossings and the new exit codes,
   command and SectionIds would have been merged without the human
   approval the gate exists to require.
+  d2b04006 closed the sixth phase: the join key both halves of a
+  shared-library operation carry, the container that proves a receiver's
+  type, the narrowed candidate universe and the coverage denominators.
+  It adds four modules claimed by project-map:IMP-011, whose targets
+  project-map:BEH-012 and project-map:BEH-013 were approved after the
+  code, in the order this record names. Its crossings outside those four
+  are the two configuration keys project-map:CTR-005 already declares,
+  the anchor project-map:DLT-014 authorizes on a consumer half, and two
+  indexes that now hold a member's declaration anchor and a class's
+  annotated attributes.
+  The same commit claims src/cli/facts-check.ts and
+  src/features/build/rendering/detection-sections.ts, which the tail of
+  phase B added and no binding had named; the derived count was
+  therefore 54, not 52, between 4618bc5d and this refresh.
   Refreshed from c82417cd to e36dec17 earlier. That refresh crossed the
   footprint of CTR-001, CTR-002, INV-001 and INV-002; every crossing was
   authored as project-map:DLT-001 or project-map:DLT-002, or was
