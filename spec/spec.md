@@ -148,7 +148,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: 640a76efb7861e6f9c040d2f9cce83143a416b67
+    reference: b57b1d3337a84ea5b18d8f483c44409cd7feece1
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -160,16 +160,16 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 0fefad89b9cf3999a4d6ac404325b19c811c0a5ceb3423f9b6aaec16f319f97e
-baseline_commit_sha: 640a76efb7861e6f9c040d2f9cce83143a416b67
+freshness_token: d98c1e9a09578cb2448a75803f4f560189844c52787421ef61e3539961092264
+baseline_commit_sha: b57b1d3337a84ea5b18d8f483c44409cd7feece1
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from e36dec17 to 640a76ef across every phase of the
-  detection rework. The first two phases added twenty-two modules,
-  each claimed by project-map:IMP-006, project-map:IMP-007 or
+  Refreshed from e36dec17 to b57b1d33 across every phase of the
+  detection rework and the 1.0.0 release.
+  The first two phases added twenty-two modules, each claimed by project-map:IMP-006, project-map:IMP-007 or
   project-map:IMP-008, plus the configuration keys those phases add and
   one line in src/cli/commands.ts that threads `output.facts` through
   the option override.
@@ -219,6 +219,27 @@ notes: |
   later refresh would surface their crossings and the new exit codes,
   command and SectionIds would have been merged without the human
   approval the gate exists to require.
+  4c6b1d5 is the release. Inside Discovery scope it changes four fields
+  of package.json: version moves from 0.2.2 to 1.0.0; description adds
+  the detection-facts artifact; keywords gain static-analysis, openapi
+  and spec-driven-development; and files gains CHANGELOG.md. The first
+  three changes alter public npm metadata, and the last changes the
+  contents of the published npm package. No normative ID names that
+  publication surface, so project-map:OQ-004 classifies the crossing and
+  preserves the released artifact pending a decision.
+  The same commit applies to project-map:CTR-002 the four top-level keys
+  project-map:DLT-004 and project-map:DLT-005 authorize and that were
+  never written into the Contract: repository_identity, analysis_unit,
+  openapi and detect, together with output.facts. The code accepted them
+  from phase A onward, so the Contract text was behind its own approved
+  Deltas rather than ahead of the code.
+  b57b1d33 corrects what that amendment got wrong. The Delta phrases the
+  requiredness rule as "a detection section is present", meaning the
+  configuration blocks it introduced; once the three detection
+  SectionIds existed the phrase read as the section list, and validation
+  followed the paraphrase rather than project-map:ASM-002. The Contract
+  now repeats the assumption's wording. The same commit adds the
+  `detect` arms validation had been missing.
   d2b04006 closed the sixth phase: the join key both halves of a
   shared-library operation carry, the container that proves a receiver's
   type, the narrowed candidate universe and the coverage denominators.
@@ -1616,6 +1637,40 @@ notes: |
   Raised during brownfield recon, not from a reported defect. Recorded
   rather than silently corrected, per SDD §6.4: changing it is a Delta,
   not a fix.
+---
+```
+
+```yaml
+---
+id: project-map:OQ-004
+type: Open-Q
+partition_id: project-map
+question: |
+  The 1.0.0 release changes the public npm artifact without a normative
+  ID: package version moves from 0.2.2 to 1.0.0, the description adds
+  the detection-facts artifact, the keywords gain static-analysis,
+  openapi and spec-driven-development, and the published file allow-list
+  gains CHANGELOG.md. Which normative records should govern the npm
+  registry metadata and the tarball contents?
+options:
+  - option: model the npm package as a public Surface with Contracts
+    consequence: |
+      The registry fields and published file allow-list become explicit
+      external identifiers of that Surface. Future changes require a
+      Delta and the Surface semver change its compatibility rules demand.
+  - option: model the tarball as a GeneratedArtifact
+    consequence: |
+      The emitted tarball contents and reproducibility rules become an
+      approved GeneratedArtifact on a public Surface, while a Contract
+      on that Surface governs the registry metadata.
+blocking: no
+owner: cyberash
+default_if_unresolved: preserve the 1.0.0 published metadata and tarball contents
+notes: |
+  Raised while refreshing project-map:BL-001 through 4c6b1d5. The
+  baseline records the released state but does not silently make it
+  normative; resolving this question requires owner approval of the
+  selected records.
 ---
 ```
 
