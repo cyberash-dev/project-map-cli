@@ -5,7 +5,7 @@
 	"discovery_scope": [
 		"src",
 		"tests",
-		"scripts/mark-bin-executable.mjs",
+		"scripts",
 		"package.json",
 		"tsconfig.json",
 		"tsconfig.build.json",
@@ -17,14 +17,24 @@
 	},
 	"mechanism": "git_tree_hash_v1",
 	"lint": {
-		"spec_files": ["spec/spec.md", "spec/detection.md"],
+		"spec_files": [
+			"spec/spec.md",
+			"spec/detection.md"
+		],
 		"approver_blocklist": []
 	},
 	"partitions": {
 		"project-map": {
-			"spec_paths": ["spec/spec.md", "spec/detection.md"],
-			"test_paths": ["tests/**/*.test.ts"],
-			"sandbox_paths": ["spec/detection.md"]
+			"spec_paths": [
+				"spec/spec.md",
+				"spec/detection.md"
+			],
+			"test_paths": [
+				"tests/**/*.test.ts"
+			],
+			"sandbox_paths": [
+				"spec/detection.md"
+			]
 		}
 	}
 }

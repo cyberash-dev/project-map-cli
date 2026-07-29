@@ -142,14 +142,14 @@ partition_id: project-map
 discovery_scope:
   - src
   - tests
-  - scripts/mark-bin-executable.mjs
+  - scripts
   - package.json
   - tsconfig.json
   - tsconfig.build.json
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: 7b34621f7cf653d072a956f6eda15a0e6a4113c6
+    reference: a5824753687dba476737d1eb8f878f3e05f83d15
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -161,14 +161,14 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 14f185e905bb4655ce389abd6a5f0526adcdf66c70bafe4caabcee8aab454d45
-baseline_commit_sha: 7b34621f7cf653d072a956f6eda15a0e6a4113c6
+freshness_token: 90a83d7813d40ecfae8fbcbc31f2c6bb24fc8516ad2c2e187449e88faa21def5
+baseline_commit_sha: a5824753687dba476737d1eb8f878f3e05f83d15
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from e36dec17 to 7b34621f across every phase of the
+  Refreshed from e36dec17 to a5824753 across every phase of the
   detection rework and the 1.0.0 release.
   The first two phases added twenty-two modules, each claimed by project-map:IMP-006, project-map:IMP-007 or
   project-map:IMP-008, plus the configuration keys those phases add and
@@ -250,9 +250,10 @@ notes: |
   and add one test. The package.json change alters the next npm tarball,
   because npm includes package.json unconditionally. project-map:OQ-004
   classifies this crossing of the unmodeled publication surface and its
-  default forbids publishing the change while the question is unresolved;
-  this baseline records but does not authorize it. The test closes part of
-  the obligation of project-map:CTR-001, which states every command over an
+  default forbids publishing version 1.0.0 until approved normative records
+  govern the npm registry metadata and tarball contents; this baseline
+  records but does not authorize the release. The test closes part of the
+  obligation of project-map:CTR-001, which states every command over an
   invocation while the rest of the suite invokes the program in process.
   d2b04006 closed the sixth phase: the join key both halves of a
   shared-library operation carry, the container that proves a receiver's
@@ -1660,14 +1661,13 @@ id: project-map:OQ-004
 type: Open-Q
 partition_id: project-map
 question: |
-  The 1.0.0 release changes the public npm artifact without a normative
-  ID: package version moves from 0.2.2 to 1.0.0, the description adds
+  The 1.0.0 release changes the npm artifact without a normative ID:
+  the package version moves from 0.2.2 to 1.0.0, the description adds
   the detection-facts artifact, the keywords gain static-analysis,
-  openapi and spec-driven-development, and the published file allow-list
-  gains CHANGELOG.md. The later executable-mode fix changes
-  package.json#scripts.build, so the next npm pack or publish also emits
-  a tarball different from the published 1.0.0 artifact. Which normative
-  records should govern the npm registry metadata and the tarball contents?
+  openapi and spec-driven-development, the published file allow-list
+  gains CHANGELOG.md, and `scripts.build` gains the step that marks the
+  emitted binary executable. Which normative records should govern the
+  npm registry metadata and the tarball contents?
 options:
   - option: model the npm package as a public Surface with Contracts
     consequence: |
@@ -1679,14 +1679,22 @@ options:
       The emitted tarball contents and reproducibility rules become an
       approved GeneratedArtifact on a public Surface, while a Contract
       on that Surface governs the registry metadata.
+  - option: leave the npm artifact unmodeled and do not publish it
+    consequence: |
+      Version 1.0.0 remains unpublished. Publishing stays unauthorized
+      until approved normative records govern the npm registry metadata
+      and tarball contents.
 blocking: no
 owner: cyberash
-default_if_unresolved: preserve the published 1.0.0 metadata and tarball contents; do not publish the build-script change
+default_if_unresolved: leave the npm artifact unmodeled and do not publish it
 notes: |
-  Raised while refreshing project-map:BL-001 through 4c6b1d5 and extended
-  for the package.json change in cd58ca42. The baseline records both states
-  but does not silently make either normative; resolving this question
-  requires owner approval of the selected records.
+  Raised while refreshing project-map:BL-001 through 4c6b1d5 and
+  extended for the `scripts.build` change in cd58ca4a. Every listed
+  change lands before 1.0.0 is published: the registry holds 0.2.2 and
+  no v1.0.0 tag exists, so no migration is required. Absence of a shipped
+  artifact does not authorize publishing an unmodeled public surface.
+  The baseline records the state but does not authorize the release;
+  making it normative requires owner approval of the selected records.
 ---
 ```
 
