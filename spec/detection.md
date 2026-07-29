@@ -25,16 +25,14 @@ Phase-to-record mapping, with the status each phase's records now hold:
 | C — indexes and the intraprocedural normalizer      | BEH-008, INV-004                                              | approved, implemented |
 | D — router value identity                           | BEH-009                                                       | approved, implemented |
 | E — declared sinks and the record lattice           | BEH-010, BEH-011, INV-005, DLT-012                            | approved, implemented |
-| F — shared-library halves and coverage              | BEH-012, BEH-013                                              | proposed              |
+| F — shared-library halves and coverage              | BEH-012, BEH-013, DLT-014                                     | approved, implemented |
 
 The implementation bindings of the approved phases, project-map:IMP-006
 through project-map:IMP-010 and project-map:IMP-012, live in
 `spec/spec.md` so that the §16 footprint claims their modules.
 
-Phase A, the emission half of phase B, and phases C, D and E are
-approved and implemented. Check mode over the artifact, the new exit
-codes and the three opt-in section ids are authored and unapproved, as
-is phase F: no code implements them.
+Phase A, both halves of phase B, and phases C, D, E and F are approved
+and implemented.
 
 A Delta and the edit it authorizes travel together: the amendment to an
 approved record in `spec/spec.md` is made in the commit that finalizes
@@ -605,7 +603,13 @@ test_obligation:
 id: project-map:BEH-012
 type: Behavior
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-29T12:46:32.189Z
+    change_request: detection rework phase F
+    scope: first-time-approval
 partition_id: project-map
 title: detection — the two halves of a shared-library operation
 given: |
@@ -676,7 +680,13 @@ test_obligation:
 id: project-map:BEH-013
 type: Behavior
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-29T12:46:32.250Z
+    change_request: detection rework phase F
+    scope: first-time-approval
 partition_id: project-map
 title: detection — the candidate universe, diagnostics, and coverage
 given: a call or registration site inside the analysis unit
@@ -2380,7 +2390,13 @@ tests_new_behavior: |
 id: project-map:DLT-014
 type: Delta
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-29T12:46:32.311Z
+    change_request: detection rework phase F
+    scope: first-time-approval
 partition_id: project-map
 title: a consumer half anchors the callee it names at the reference site
 target_id: project-map:CTR-006
