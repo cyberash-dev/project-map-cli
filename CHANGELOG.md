@@ -1,0 +1,78 @@
+# Changelog
+
+Notable changes per release. Versions follow semver over the CLI's observable
+behaviour; the three published surfaces carry their own versions, listed under
+each release.
+
+## 1.0.0
+
+First stable release. The map document is unchanged for a repository that does
+not opt in, and a second artifact joins it.
+
+Surfaces: `project-map/cli` 1.2.0 · `project-map/map-document` 1.1.0 ·
+`project-map/detection-facts` 1.1.0 (new).
+
+### Added
+
+- **Detection facts artifact.** `output.facts` emits `.project-map/facts.json`,
+  a canonical (RFC 8785) document of inbound endpoints and outbound operations
+  with byte anchors, provenance and a typed resolution. It carries no timestamp
+  and compares byte for byte; the timestamp and build duration live in a
+  `.meta.json` sidecar that check mode never opens.
+- **Structural detection.** Routes and calls are recognised by import
+  provenance, declared configuration and value identity rather than by
+  identifier names. Inbound: an OpenAPI inventory, a Python declaration DSL, and
+  Go router values (chi). Outbound: generated clients, HTTP transports, declared
+  sinks, and both halves of a shared-library operation.
+- **`analysis_unit`.** A content-addressed set of sources and configuration
+  documents. Detection reads nothing else: no live filesystem, no absolute path,
+  no compiler, no environment. Two builds of the same tree at different absolute
+  paths produce identical bytes.
+- **`openapi` configuration.** `serves[]` turns a served specification into
+  inventory facts, reconciled with code registrations by semantic core;
+  `consumes[]` marks a generated client module.
+- **`detect` configuration.** `inbound.routers[]` declares a registration DSL
+  and the members that propagate router identity. `outbound.sinks[]` declares a
+  client base type, its sending members, and the selectors that reach the path,
+  the method and the target. `outbound.registry[]` declares the container that
+  hands clients to business code, and `outbound.module_ids[]` names the type a
+  shared client library publishes.
+- **Three opt-in sections**: `inbound_endpoints`, `outbound_operations` and
+  `detection_coverage`. They belong to the accepted section set and to no
+  default.
+- **`project-map facts --unit-digest`** prints the analysis-unit digest and
+  writes nothing.
+- **`repository_identity`**, a logical name that enters every fact id, so two
+  repositories exposing the same route produce different ids.
+- **Exit codes 3, 4 and 5.** 3: the committed facts artifact names another
+  analyzer build or adapter registry. 4: the build raised a mandatory check
+  diagnostic. 5: a config-time error, raised before any build runs.
+
+### Changed
+
+- `build --check` additionally compares the facts artifact when `output.facts`
+  is configured.
+- A configuration carrying an unknown top-level key now exits 5 instead of
+  crashing.
+- The config hash covers the whole validated document.
+
+### Unchanged on purpose
+
+- The legacy `endpoints` and `interactions` sections keep rendering the prior
+  extractors' output. Both outputs are available on one repository so a consumer
+  can compare them on its own sources before switching. Rebinding the legacy ids
+  to the reworked detectors is a later major version.
+- A repository that names no `sections` key renders exactly the document it
+  rendered before.
+
+### Upgrading
+
+- **Rebuild and commit `PROJECT_MAP.md`.** The `Tool version` row of the
+  generation metadata is inside the bytes check mode compares, so a release
+  reports every committed document as out of date until it is rebuilt.
+- Nothing else is required: every new configuration key defaults to a value that
+  reproduces the previous resolution.
+
+## 0.2.x and earlier
+
+See the git history. Those releases predate the specification in `spec/`.

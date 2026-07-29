@@ -662,7 +662,14 @@ schema: |
   project block validates.
   Top-level keys: project, root, respect_gitignore, exclude, sections,
   overview, contexts, entities, enums, endpoints, storage, interactions,
-  workers, output.
+  workers, output, repository_identity, analysis_unit, openapi, detect.
+  `output.facts` is a path defaulting to null. `repository_identity` is
+  a logical string, required exactly when a facts artifact is emitted or
+  a detection section is present, per project-map:ASM-002.
+  `analysis_unit` carries `sources.include`, `sources.exclude`, and
+  `config_declarations`, whose semantics project-map:CTR-004 fixes.
+  `openapi` and `detect` each default to empty, and their schema is
+  project-map:CTR-005.
 preconditions: the file is readable and parses as its declared format
 postconditions: |
   Resolution yields a configuration whose root is expressed relative to

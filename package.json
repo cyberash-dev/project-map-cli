@@ -1,7 +1,7 @@
 {
 	"name": "project-map-cli",
-	"version": "0.2.2",
-	"description": "CLI that builds a deterministic PROJECT_MAP.md architectural map for a single repository (Python, JS/TS, Go, Java, Kotlin)",
+	"version": "1.0.0",
+	"description": "CLI that builds a deterministic PROJECT_MAP.md architectural map and a byte-reproducible detection-facts artifact for a single repository (Python, JS/TS, Go, Java, Kotlin)",
 	"license": "MIT",
 	"author": "cyberash",
 	"type": "module",
@@ -12,6 +12,7 @@
 	"files": [
 		"dist",
 		"README.md",
+		"CHANGELOG.md",
 		"LICENSE"
 	],
 	"keywords": [
@@ -20,7 +21,10 @@
 		"tree-sitter",
 		"cli",
 		"hexagonal",
-		"vertical-slice"
+		"vertical-slice",
+		"static-analysis",
+		"openapi",
+		"spec-driven-development"
 	],
 	"repository": {
 		"type": "git",

@@ -6,6 +6,8 @@ import {
 import {
 	DEFAULT_SECTION_IDS,
 	SECTION_IDS,
+	isDetectionSection,
+	type SectionId,
 } from "../../core/domain/project-map.js";
 import { SelectorSchema } from "./selector-schema.js";
 
@@ -268,22 +270,37 @@ function requireIdentityWhereFactsAreEmitted(
 		output: { facts: string | null };
 		repository_identity: string | null;
 		openapi: { serves: readonly unknown[]; consumes: readonly unknown[] };
+		sections: readonly SectionId[];
+		detect: {
+			inbound: { routers: readonly unknown[] };
+			outbound: {
+				sinks: readonly unknown[];
+				registry: readonly unknown[];
+				module_ids: readonly unknown[];
+			};
+		};
 	},
 	ctx: z.RefinementCtx,
 ): void {
 	if (document.repository_identity !== null) {
 		return;
 	}
-	const declaresDetection =
-		document.openapi.serves.length > 0 || document.openapi.consumes.length > 0;
-	if (document.output.facts === null && !declaresDetection) {
+	const hasDetectionInput =
+		document.sections.some(isDetectionSection) ||
+		document.openapi.serves.length > 0 ||
+		document.openapi.consumes.length > 0 ||
+		document.detect.inbound.routers.length > 0 ||
+		document.detect.outbound.sinks.length > 0 ||
+		document.detect.outbound.registry.length > 0 ||
+		document.detect.outbound.module_ids.length > 0;
+	if (document.output.facts === null && !hasDetectionInput) {
 		return;
 	}
 	ctx.addIssue({
 		code: "custom",
 		path: ["repository_identity"],
 		message:
-			"repository_identity is required when a facts artifact is emitted or a detection section is declared, because both carry it into the join",
+			"repository_identity is required when a facts artifact is emitted, a detection section is declared, or detection is configured, because each carries it into the join",
 	});
 }
 

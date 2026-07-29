@@ -10,6 +10,12 @@ enums, HTTP endpoints, persistence schemas, external-service clients,
 workers). Designed to be read by agents as the first step of any cross-cutting
 question.
 
+It optionally emits a second artifact, `.project-map/facts.json`: the same
+repository's inbound endpoints and outbound calls as canonical, join-ready
+facts, so a separate tool can wire services together across repositories. The
+map document is for humans and agents; the facts artifact is for machines and
+compares byte for byte.
+
 ## Supported languages
 
 | Language   | tree-sitter grammar                             |
@@ -37,6 +43,21 @@ question.
 Slots that are "—" are implemented as ports — adding a new adapter is a
 drop-in in the relevant slice.
 
+### Structural detection coverage
+
+The reworked detection behind `inbound_endpoints` / `outbound_operations` is
+separate from the table above and recognises code by import provenance and
+declared configuration, never by identifier names.
+
+| Mechanism                | Python                                     | Go                             |
+| ------------------------ | ------------------------------------------ | ------------------------------ |
+| Inbound, from a spec     | `openapi.serves[]` — any language          | same                           |
+| Inbound, from code       | declaration DSL (`detect.inbound.routers`) | router values (chi and alikes) |
+| Outbound, generated      | `openapi.consumes[]` modules               | —                              |
+| Outbound, transport      | requests, aiohttp, httpx, urllib3          | —                              |
+| Outbound, declared sink  | `detect.outbound.sinks[]`                  | `detect.outbound.sinks[]`      |
+| Outbound, shared library | `detect.outbound.module_ids[]`             | —                              |
+
 ## Architecture
 
 Vertical Slice + Hexagonal.
@@ -45,10 +66,21 @@ Vertical Slice + Hexagonal.
 src/
   core/                                # Domain + ports (no infra deps)
     domain/                            # ProjectMap, SourceLocation, Language, …
+      facts/                           # Fact schema, value IR, anchors, diagnostics
     ports/                             # ISourceParser, IFileWalker, IConfigLoader, …
   features/                            # One vertical slice per use-case
     init/
       init.use-case.ts
+    detect/                            # Structural detection → facts.json
+      detect.use-case.ts
+      canonical/                       # RFC 8785 JCS, array order, fact identity
+      index/                           # Import, declaration and hierarchy indexes
+      value/                           # Value normalizer (literal, config_ref, …)
+      openapi/                         # Inventory ingest + canonical path grammar
+      inbound/                         # Route registration adapters, per language
+      outbound/                        # Classification ladder, per language
+      merge/                           # Semantic core, merge table, coverage
+      render/                          # Artifact and sidecar emission
     build/
       build.use-case.ts                # Composition of all extractor slices
       extraction-context.ts
@@ -65,8 +97,8 @@ src/
       rendering/
         markdown.ts                    # mdast → GFM
         json.ts
+        detection-sections.ts          # The three opt-in detection sections
     version/
-    watch/                             # planned (v2)
   infrastructure/                      # Adapter implementations for each port
     parser/
       tree-sitter.ts                   # ISourceParser implementation
@@ -79,6 +111,10 @@ src/
       schema.ts                        # zod
       loader.ts                        # cosmiconfig
       defaults.ts
+    analysis-unit/
+      materializer.ts                  # The only filesystem read detection sees
+    openapi/
+      yaml-openapi-reader.ts
     revision/
       git.ts                           # git rev-parse HEAD
     clock/system.ts
@@ -130,9 +166,26 @@ project-map build --only contexts,enums,endpoints
 # Run in CI: exit 1 if the committed PROJECT_MAP.md is out of date.
 project-map build --check
 
+# Print the analysis-unit digest; writes nothing.
+project-map facts --unit-digest
+
 # Print version and which tree-sitter grammars loaded.
 project-map version
 ```
+
+### Exit codes
+
+| Code | Meaning                                                                       |
+| ---- | ----------------------------------------------------------------------------- |
+| 0    | success                                                                       |
+| 1    | the requested effect did not occur — including a `--check` mismatch           |
+| 2    | no discoverable configuration file                                            |
+| 3    | the committed facts artifact names another analyzer build or adapter registry |
+| 4    | the build raised a mandatory check diagnostic                                 |
+| 5    | a config-time error, raised before any build runs                             |
+
+3 outranks 1: a fingerprint difference accounts for every byte difference
+downstream of it. 4 is independent of the committed bytes.
 
 ## Configuration (`.project-map.yaml`)
 
@@ -204,7 +257,105 @@ workers:
 output:
   markdown: PROJECT_MAP.md
   json: project-map.json # omit or `null` to skip
+  facts: null # .project-map/facts.json to emit the facts artifact
 ```
+
+Unknown top-level keys are rejected: a typo exits 5 rather than being ignored.
+
+## Structural detection
+
+Opt-in, and separate from the legacy `endpoints` / `interactions` sections,
+which keep rendering the prior extractors' output for this whole major version.
+A repository that names no new section id sees exactly the document it saw
+before.
+
+```yaml
+repository_identity: arcadia/billing/my_service # required once detection is on
+
+sections:
+  - metadata
+  - inbound_endpoints # H2 "Inbound endpoints"
+  - outbound_operations # H2 "Outbound operations"
+  - detection_coverage # H2 "Detection coverage"
+
+analysis_unit: # everything detection is allowed to observe
+  sources:
+    include: ["**/*.py"]
+    exclude: ["**/tests/**"]
+
+openapi:
+  serves:
+    - spec: repo:openapi/orders.yaml # the specification this service serves
+      contract_id: orders.v1 # the logical identity consumers join on
+      mount: /v1
+  consumes:
+    - generated_module: gen.orders_api # calls into it are one operation
+      spec: repo:openapi/orders.yaml
+      contract_id: orders.v1
+
+detect:
+  inbound:
+    routers:
+      - dsl: "sendr_aiohttp.PrefixedUrl" # matched by import origin, not name
+        path_arg: { kind: arg, selector: 0 }
+        prefix_from: { kind: class_const, selector: PREFIX }
+        verb_from:
+          { kind: handler_methods, handler: { kind: arg, selector: 1 } }
+      - dsl: "github.com/go-chi/chi/v5"
+        path_arg: { kind: arg, selector: 0 }
+        identity_preserving: # members a router value survives
+          - { member: withStats, from: arg, index: 0 }
+  outbound:
+    sinks:
+      - base_type: "sendr_interactions.AbstractInteractionClient"
+        call: [get, post, put, patch, delete]
+        path_arg: { kind: arg, selector: url }
+        path_via: { member: endpoint_url, arg: 0 } # helper joining path to target
+        target: { kind: class_const, selector: BASE_URL }
+    registry: # how business code reaches a client
+      - container_type: "interactions.InteractionClients"
+        access: "self.clients"
+    module_ids: # a client type whose operations live in a library
+      - type: "pay.lib.interactions.split.client.AbstractYandexSplitClient"
+        module_id: "pay.lib.interactions.split"
+
+output:
+  facts: .project-map/facts.json
+```
+
+Selectors are a closed set of steps — `arg`, `field`, `class_const`, `receiver`
+and a dotted `property-path`. A glob or a name pattern in a selector is a
+config-time error: matching by name is what this rework exists to remove.
+
+### The facts artifact
+
+```jsonc
+{
+	"schema_version": "1",
+	"repository_identity": "arcadia/billing/my_service",
+	"analysis_unit_digest": "sha256:…", // what was read
+	"analyzer_build_digest": "sha256:…", // which analyzer read it
+	"adapter_registry_digest": "sha256:…", // with which adapters
+	"coverage": { "inbound_declared": 165, "inbound_registered_in_code": 0 },
+	"facts": [
+		/* endpoint and outbound_operation records */
+	],
+	"diagnostics": [
+		/* unclassified sites inside the candidate universe */
+	],
+}
+```
+
+Every unproven value is typed rather than guessed: a path the analyzer could
+not fold is `unknown(dynamic)`, a destination the repository does not bind is
+`unknown(operation_in_library_root)`, and each fact carries a `resolution` of
+`resolved`, `ambiguous`, `unresolved` or `conflicting`. Coverage denominators
+are honest — an axis nothing declares reports `unmeasured` rather than a
+completed fraction.
+
+The artifact carries no timestamp; the generation time and build duration live
+in `.project-map/facts.meta.json`, which `--check` never opens. Add the sidecar
+to `.gitignore` and commit the artifact.
 
 ## Output determinism
 
@@ -214,6 +365,29 @@ output:
 - Config hash is deterministic (`sha256` of canonicalized config JSON).
 - Running `build` twice on an unchanged tree → byte-identical output (modulo
   the build-duration cell).
+- The facts artifact is stricter: it is a pure function of the analysis unit
+  and compares byte for byte with no normalization at all. Building the same
+  tree from a different absolute path produces the same bytes.
+- No network access and no model inference in the build path.
+
+The `Tool version` metadata row sits inside the compared bytes, so upgrading
+the CLI reports every committed `PROJECT_MAP.md` as out of date until it is
+rebuilt. That is deliberate: the committed document records which version
+produced it.
+
+## Versioning
+
+The npm version is the CLI's release version. Three published surfaces carry
+their own semver, and `CHANGELOG.md` lists them per release:
+
+| Surface                       | Covers                                                 |
+| ----------------------------- | ------------------------------------------------------ |
+| `project-map/cli`             | command names, option names, exit codes, config schema |
+| `project-map/map-document`    | `PROJECT_MAP.md` structure and its JSON companion      |
+| `project-map/detection-facts` | `facts.json` schema, identity and serialization        |
+
+`facts.json` additionally embeds its own `schema_version`, so a consumer can
+pin against the artifact without reading the package version.
 
 ## Adding a new language adapter to an existing slice
 
@@ -229,6 +403,9 @@ output:
 3. Call `renderSection(...)` on it from `features/build/rendering/markdown.ts`.
 4. Add a section id to `core/domain/project-map.ts::SECTION_IDS` and zod
    schema.
+
+The project is spec-driven: `spec/` holds the normative records, and a change
+to observable behaviour starts there. See `CLAUDE.md` for the workflow.
 
 ## Agent integration
 
@@ -325,3 +502,5 @@ git push
 - Not a graph — Graphify does that.
 - No LLM calls in the build path. Ever.
 - Not a linter.
+- Not a cross-repository linker. `project-map` never crosses a repository
+  boundary; it emits facts that carry the keys a linker joins on.

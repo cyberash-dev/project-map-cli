@@ -63,6 +63,23 @@ describe("detection configuration", () => {
 	});
 
 	/* @covers project-map:ASM-002 */
+	it("rejects a detection section without a repository identity", async () => {
+		await expect(
+			loadYaml(workspace.dir, `${MINIMAL}sections:\n  - inbound_endpoints\n`),
+		).rejects.toThrow(/repository_identity/);
+	});
+
+	/* @covers project-map:ASM-002 */
+	it("rejects a detector without a repository identity", async () => {
+		await expect(
+			loadYaml(
+				workspace.dir,
+				`${MINIMAL}detect:\n  inbound:\n    routers:\n      - dsl: router\n        path_arg: { kind: arg, selector: 0 }\n`,
+			),
+		).rejects.toThrow(/repository_identity/);
+	});
+
+	/* @covers project-map:ASM-002 */
 	/* @covers project-map:DLT-004 */
 	it("accepts a document that emits no facts and declares no identity", async () => {
 		const config = await loadYaml(workspace.dir, MINIMAL);
