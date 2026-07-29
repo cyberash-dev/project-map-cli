@@ -115,7 +115,12 @@ export type ProjectMap = {
 	readonly workers: readonly Worker[];
 };
 
-export const SECTION_IDS = [
+/**
+ * The sections a repository renders unless it names others. The reworked
+ * detection is not among them: a repository that changes no configuration must
+ * see the document it saw before, because check mode compares it byte for byte.
+ */
+export const DEFAULT_SECTION_IDS = [
 	"overview",
 	"contexts",
 	"entities",
@@ -127,4 +132,21 @@ export const SECTION_IDS = [
 	"metadata",
 ] as const;
 
+/** The opt-in sections the reworked detection renders under. */
+export const DETECTION_SECTION_IDS = [
+	"inbound_endpoints",
+	"outbound_operations",
+	"detection_coverage",
+] as const;
+
+export const SECTION_IDS = [
+	...DEFAULT_SECTION_IDS,
+	...DETECTION_SECTION_IDS,
+] as const;
+
 export type SectionId = (typeof SECTION_IDS)[number];
+export type DetectionSectionId = (typeof DETECTION_SECTION_IDS)[number];
+
+export function isDetectionSection(id: SectionId): id is DetectionSectionId {
+	return DETECTION_SECTION_IDS.some((known) => known === id);
+}

@@ -3,6 +3,8 @@ import { writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import { cosmiconfig } from "cosmiconfig";
 import * as yaml from "yaml";
+import type { z } from "zod";
+import { ConfigTimeError } from "../../core/domain/config-time-error.js";
 import type { Framework, Language } from "../../core/domain/language.js";
 import type {
 	AnalysisUnitConfig,
@@ -57,9 +59,16 @@ export class CosmiconfigLoader implements IConfigLoader {
 			return null;
 		}
 
-		const parsed = ConfigFileSchema.parse(result.config);
-		const sourcePath = result.filepath;
-		return resolveConfig(parsed, sourcePath, cwd);
+		const validated = ConfigFileSchema.safeParse(result.config);
+		if (!validated.success) {
+			/* A schema violation is raised before any build runs, so it carries
+			 * the config-time exit code rather than an unclassified crash. */
+			throw new ConfigTimeError(
+				"schema_violation",
+				`${result.filepath} is not a valid configuration: ${issuesOf(validated.error)}`,
+			);
+		}
+		return resolveConfig(validated.data, result.filepath, cwd);
 	}
 
 	async writeDefault(
@@ -167,6 +176,12 @@ function resolveConfig(
 		configHash,
 		sourcePath,
 	};
+}
+
+function issuesOf(error: z.ZodError): string {
+	return error.issues
+		.map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+		.join("; ");
 }
 
 function resolveOutput(raw: ConfigFile): OutputConfig {

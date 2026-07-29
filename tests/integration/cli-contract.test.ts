@@ -96,14 +96,14 @@ describe("CLI exit-code contract", () => {
 		expect(await readFile(configPath, "utf8")).toBe(original);
 	});
 
-	/* @covers project-map:CTR-002 */
-	it("build rejects a config carrying an unknown top-level key", async () => {
+	/* @covers project-map:DLT-006 */
+	it("build exits 5 on a config carrying an unknown top-level key", async () => {
 		await writeFile(
 			path.join(workspace.dir, ".project-map.yaml"),
 			"project:\n  name: probe\n  language: python\nnot_a_real_key: 1\n",
 			"utf8",
 		);
 
-		await expect(runCli(workspace.dir, ["build"])).rejects.toThrow();
+		expect(await runCli(workspace.dir, ["build"])).toBe(5);
 	});
 });

@@ -22,12 +22,19 @@ import {
 	renderFactsSidecar,
 	sidecarPathFor,
 } from "../features/detect/render/artifact.js";
+import { ConfigTimeError } from "../core/domain/config-time-error.js";
 import type { Framework, Language } from "../core/domain/language.js";
 import {
 	ALL_LANGUAGES,
 	FRAMEWORKS_BY_LANGUAGE,
 } from "../core/domain/language.js";
-import { SECTION_IDS, type SectionId } from "../core/domain/project-map.js";
+import {
+	isDetectionSection,
+	SECTION_IDS,
+	type SectionId,
+} from "../core/domain/project-map.js";
+import type { FactSet } from "../features/detect/detect.use-case.js";
+import { type CheckOutcome, checkFactsArtifact } from "./facts-check.js";
 
 const require = createRequire(import.meta.url);
 
@@ -65,6 +72,12 @@ type BuildOptions = {
 	readonly verbose: boolean;
 };
 
+type FactsOptions = {
+	readonly config?: string;
+	readonly unitDigest: boolean;
+	readonly verbose: boolean;
+};
+
 type InstallGitHookOptions = {
 	readonly type: string;
 	readonly force: boolean;
@@ -85,6 +98,7 @@ export function createProgram(): Command {
 
 	registerInitCommand(program);
 	registerBuildCommand(program);
+	registerFactsCommand(program);
 	registerVersionCommand(program);
 	registerInstallGitHookCommand(program);
 	registerClaudeCommand(program);
@@ -136,11 +150,36 @@ function registerBuildCommand(program: Command): void {
 		.option("--out <path>", "override output path")
 		.option("--only <sections>", "comma-separated section IDs to include")
 		.option("--json [path]", "also emit JSON output (path optional)")
-		.option("--check", "exit 1 if output differs from existing file", false)
+		.option(
+			"--check",
+			"write nothing; exit 1 on drift, 3 on a fingerprint mismatch, 4 on a mandatory diagnostic",
+			false,
+		)
 		.option("--verbose", "verbose logging", false);
 
 	command.action(async () => {
-		const opts = command.opts<BuildOptions>();
+		await runBuild(command.opts<BuildOptions>());
+	});
+}
+
+/**
+ * A configuration-time error is raised before any build runs, so it carries its
+ * own exit code rather than surfacing as an unclassified crash.
+ */
+async function runBuild(opts: BuildOptions): Promise<void> {
+	try {
+		await build(opts);
+	} catch (error: unknown) {
+		if (!(error instanceof ConfigTimeError)) {
+			throw error;
+		}
+		process.stderr.write(`${error.message}\n`);
+		process.exitCode = 5;
+	}
+}
+
+async function build(opts: BuildOptions): Promise<void> {
+	{
 		const container = createContainer(TOOL_VERSION, Boolean(opts.verbose));
 		const config = await container.configLoader.load(
 			process.cwd(),
@@ -159,21 +198,23 @@ function registerBuildCommand(program: Command): void {
 		);
 		const useCase = buildUseCase(container, effectiveConfig);
 		const { map, projectRoot } = await useCase.execute(process.cwd());
-		const markdown = renderMarkdown(map, effectiveConfig);
+		const detection = await detectFacts(container, effectiveConfig);
+		const markdown = renderMarkdown(
+			map,
+			effectiveConfig,
+			detection?.factSet ?? null,
+		);
 		const mdPath = path.resolve(projectRoot, effectiveConfig.output.markdown);
 
 		if (opts.check) {
-			const existing = (await container.reader.exists(mdPath))
-				? await container.reader.read(mdPath)
-				: "";
-			const normExisting = stripMetadata(existing);
-			const normNew = stripMetadata(markdown);
-			if (normExisting === normNew) {
-				container.logger.info("PROJECT_MAP.md is up to date.");
-				return;
-			}
-			process.stderr.write("PROJECT_MAP.md is out of date.\n");
-			process.exitCode = 1;
+			await runCheck({
+				container,
+				config: effectiveConfig,
+				markdown,
+				mdPath,
+				detection,
+				projectRoot,
+			});
 			return;
 		}
 
@@ -184,19 +225,31 @@ function registerBuildCommand(program: Command): void {
 			await container.writer.write(jsonPath, renderJson(map));
 			container.logger.info(`wrote ${jsonPath}`);
 		}
-		await emitFacts(container, effectiveConfig, projectRoot);
-	});
+		await emitFacts(container, effectiveConfig, projectRoot, detection);
+	}
 }
 
-async function emitFacts(
+type Detection = {
+	readonly factSet: FactSet;
+	readonly artifact: string;
+	readonly unitDigest: string;
+	readonly startedMs: number;
+};
+
+/**
+ * Detection runs whenever the document or the artifact needs it, so the two
+ * never disagree: one analysis unit, one fact set, rendered twice.
+ */
+async function detectFacts(
 	container: Container,
 	config: ResolvedConfig,
-	projectRoot: string,
-): Promise<void> {
-	if (config.output.facts === null) {
-		return;
+): Promise<Detection | null> {
+	const wanted =
+		config.output.facts !== null || config.sections.some(isDetectionSection);
+	if (!wanted) {
+		return null;
 	}
-	const start = container.clock.nowMs();
+	const startedMs = container.clock.nowMs();
 	const unit = await analysisUnitMaterializer(container, null).materialize({
 		cwd: process.cwd(),
 		config,
@@ -208,11 +261,11 @@ async function emitFacts(
 		openapi: config.openapi,
 		detect: config.detect,
 	});
-
-	const factsPath = path.resolve(projectRoot, config.output.facts);
-	await container.writer.write(
-		factsPath,
-		renderFactsArtifact({
+	return {
+		factSet,
+		unitDigest: unit.digest,
+		startedMs,
+		artifact: renderFactsArtifact({
 			repositoryIdentity: unit.repositoryIdentity,
 			unitDigest: unit.digest,
 			analyzerBuildDigest: DETECTOR_SOURCE_DIGEST,
@@ -221,18 +274,131 @@ async function emitFacts(
 			diagnostics: factSet.diagnostics,
 			coverage: factSet.coverage,
 		}),
-	);
+	};
+}
+
+async function emitFacts(
+	container: Container,
+	config: ResolvedConfig,
+	projectRoot: string,
+	detection: Detection | null,
+): Promise<void> {
+	if (config.output.facts === null || detection === null) {
+		return;
+	}
+	const factsPath = path.resolve(projectRoot, config.output.facts);
+	await container.writer.write(factsPath, detection.artifact);
 	await container.writer.write(
 		sidecarPathFor(factsPath),
 		renderFactsSidecar({
 			generatedAt: container.clock.nowIso(),
-			buildDurationMs: container.clock.nowMs() - start,
-			unitDigest: unit.digest,
+			buildDurationMs: container.clock.nowMs() - detection.startedMs,
+			unitDigest: detection.unitDigest,
 		}),
 	);
 	container.logger.info(
-		`wrote ${factsPath} (${factSet.facts.length} fact(s), ${factSet.diagnostics.length} diagnostic(s))`,
+		`wrote ${factsPath} (${detection.factSet.facts.length} fact(s), ${detection.factSet.diagnostics.length} diagnostic(s))`,
 	);
+}
+
+type CheckRequest = {
+	readonly container: Container;
+	readonly config: ResolvedConfig;
+	readonly markdown: string;
+	readonly mdPath: string;
+	readonly detection: Detection | null;
+	readonly projectRoot: string;
+};
+
+/**
+ * Check mode writes no path. The document is compared modulo metadata; the
+ * artifact is compared byte for byte, because it carries no timestamp.
+ */
+async function runCheck(request: CheckRequest): Promise<void> {
+	const outcome = await artifactOutcome(request);
+	if (outcome.code !== 0) {
+		process.stderr.write(`${outcome.reason}\n`);
+		process.exitCode = outcome.code;
+		return;
+	}
+	const existing = (await request.container.reader.exists(request.mdPath))
+		? await request.container.reader.read(request.mdPath)
+		: "";
+	if (stripMetadata(existing) === stripMetadata(request.markdown)) {
+		request.container.logger.info("PROJECT_MAP.md is up to date.");
+		return;
+	}
+	process.stderr.write("PROJECT_MAP.md is out of date.\n");
+	process.exitCode = 1;
+}
+
+async function artifactOutcome(request: CheckRequest): Promise<CheckOutcome> {
+	if (request.config.output.facts === null || request.detection === null) {
+		return { code: 0 };
+	}
+	const factsPath = path.resolve(
+		request.projectRoot,
+		request.config.output.facts,
+	);
+	const committed = (await request.container.reader.exists(factsPath))
+		? await request.container.reader.read(factsPath)
+		: null;
+	return checkFactsArtifact({
+		committed,
+		built: request.detection.artifact,
+		analyzerBuildDigest: DETECTOR_SOURCE_DIGEST,
+		registryDigest: DETECTOR_SOURCE_DIGEST,
+		factSet: request.detection.factSet,
+	});
+}
+
+/**
+ * The digest of the analysis unit, printed and nothing else. A consumer that
+ * needs to know whether detection would see a different tree asks for it
+ * without producing an artifact to compare.
+ */
+function registerFactsCommand(program: Command): void {
+	const command = program
+		.command("facts")
+		.description("Report the analysis unit detection would observe.")
+		.option("--config <path>", "explicit path to .project-map.yaml")
+		.option("--unit-digest", "print the analysis-unit digest", false)
+		.option("--verbose", "verbose logging", false);
+
+	command.action(async () => {
+		const opts = command.opts<FactsOptions>();
+		try {
+			await reportUnitDigest(opts);
+		} catch (error: unknown) {
+			if (!(error instanceof ConfigTimeError)) {
+				throw error;
+			}
+			process.stderr.write(`${error.message}\n`);
+			process.exitCode = 5;
+		}
+	});
+}
+
+async function reportUnitDigest(opts: FactsOptions): Promise<void> {
+	const container = createContainer(TOOL_VERSION, Boolean(opts.verbose));
+	const config = await container.configLoader.load(
+		process.cwd(),
+		opts.config ?? null,
+	);
+	if (!config) {
+		container.logger.error(
+			"no .project-map.yaml found. Run `project-map init` to create one.",
+		);
+		process.exitCode = 2;
+		return;
+	}
+	const unit = await analysisUnitMaterializer(container, null).materialize({
+		cwd: process.cwd(),
+		config,
+		specLocators: config.openapi.serves.map((entry) => entry.spec),
+		registryVersion: DETECTOR_SOURCE_DIGEST,
+	});
+	process.stdout.write(`${unit.digest}\n`);
 }
 
 function registerVersionCommand(program: Command): void {

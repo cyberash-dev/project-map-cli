@@ -1,11 +1,15 @@
 import type { Root, RootContent } from "mdast";
 import { toMarkdown } from "mdast-util-to-markdown";
 import { gfmTableToMarkdown } from "mdast-util-gfm-table";
-import type {
-	ProjectMap,
-	SectionId,
+import {
+	type DetectionSectionId,
+	isDetectionSection,
+	type ProjectMap,
+	type SectionId,
 } from "../../../core/domain/project-map.js";
 import type { ResolvedConfig } from "../../../core/ports/config.port.js";
+import type { FactSet } from "../../detect/detect.use-case.js";
+import { renderDetectionSection } from "./detection-sections.js";
 import { renderContexts } from "../slices/contexts/render.js";
 import { renderEndpoints } from "../slices/endpoints/render.js";
 import { renderEntities } from "../slices/entities/render.js";
@@ -18,6 +22,7 @@ import { heading, paragraph, table, text } from "./mdast-helpers.js";
 export function renderMarkdown(
 	map: ProjectMap,
 	config: ResolvedConfig,
+	facts: FactSet | null = null,
 ): string {
 	const children: RootContent[] = [];
 	children.push(heading(1, `Project Map: ${map.project.name}`));
@@ -41,7 +46,9 @@ export function renderMarkdown(
 	);
 
 	for (const id of config.sections) {
-		const nodes = renderSection(id, map);
+		const nodes = isDetectionSection(id)
+			? renderDetectionSection(id, facts)
+			: renderSection(id, map);
 		for (const node of nodes) {
 			children.push(node);
 		}
@@ -62,7 +69,10 @@ export function renderMarkdown(
 	});
 }
 
-function renderSection(id: SectionId, map: ProjectMap): RootContent[] {
+function renderSection(
+	id: Exclude<SectionId, DetectionSectionId>,
+	map: ProjectMap,
+): RootContent[] {
 	switch (id) {
 		case "overview":
 			return map.metadata.overview

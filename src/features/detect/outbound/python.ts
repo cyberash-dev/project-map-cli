@@ -65,6 +65,8 @@ type Context = {
 	readonly request: PythonOutboundRequest;
 	/* Nodes a claimed site read through def-use: they are not separate calls. */
 	readonly consumed: Set<number>;
+	/* Claimed sites whose declared selector reached no node. */
+	readonly unresolvedSelectors: CallSite[];
 };
 
 export function detectPythonOutbound(
@@ -77,6 +79,7 @@ export function detectPythonOutbound(
 	const constructions = constructionIndex(modules);
 	const sourcePaths = [...modules.keys()];
 	const consumed = new Set<number>();
+	const unresolvedSelectors: CallSite[] = [];
 	const facts: DraftOutboundFact[] = [];
 	const candidates: CallSite[] = [];
 	for (const view of modules.values()) {
@@ -87,6 +90,7 @@ export function detectPythonOutbound(
 			constructions,
 			request,
 			consumed,
+			unresolvedSelectors,
 		};
 		for (const site of callSitesOf(rootOf(view.file.tree))) {
 			const fact = classify(site, context);
@@ -102,7 +106,13 @@ export function detectPythonOutbound(
 	const unclassified = candidates.filter(
 		(site) => !consumed.has(site.call.startIndex),
 	);
-	return { facts, diagnostics: diagnosticsOf(unclassified, modules) };
+	return {
+		facts,
+		diagnostics: [
+			...diagnosticsOf(unclassified, modules, "external_call_unclassified"),
+			...diagnosticsOf(unresolvedSelectors, modules, "selector_unresolved"),
+		],
+	};
 }
 
 function parseModules(request: PythonOutboundRequest): Map<string, ModuleView> {
@@ -307,6 +317,9 @@ function declaredTier(
 	const pathArg = bindingOf(match, "pathArg");
 	const pathNode =
 		pathArg === null ? null : argumentFor(pathArg, positional, keywords);
+	if (pathArg !== null && pathNode === null) {
+		context.unresolvedSelectors.push(site);
+	}
 	const composed = throughPathVia(pathNode, match, context.consumed);
 	return outboundDraft({
 		provenance: "declared",
@@ -577,6 +590,7 @@ function collectUnclassified(
 function diagnosticsOf(
 	sites: readonly CallSite[],
 	modules: ReadonlyMap<string, ModuleView>,
+	code: Diagnostic["code"],
 ): readonly Diagnostic[] {
 	const byCore = new Map<string, Evidence[]>();
 	const shapes = new Map<string, CallShape>();
@@ -597,7 +611,7 @@ function diagnosticsOf(
 		]);
 	}
 	return [...byCore.entries()]
-		.map(([key, evidence]) => diagnosticOf(key, evidence, shapes))
+		.map(([key, evidence]) => diagnosticOf(key, evidence, shapes, code))
 		.sort((left, right) =>
 			left.canonical_callee < right.canonical_callee ? -1 : 1,
 		);
@@ -607,12 +621,13 @@ function diagnosticOf(
 	key: string,
 	evidence: readonly Evidence[],
 	shapes: ReadonlyMap<string, CallShape>,
+	code: Diagnostic["code"],
 ): Diagnostic {
 	const distinct = orderEvidence([
 		...new Map(evidence.map((entry) => [jcs(entry), entry])).values(),
 	]);
 	return {
-		code: "external_call_unclassified",
+		code,
 		canonical_callee: key.split(" ")[0] ?? "",
 		canonical_call_shape: shapes.get(key) ?? { arity: 0, receiver_type: null },
 		evidence: distinct,

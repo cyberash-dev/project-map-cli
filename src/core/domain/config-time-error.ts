@@ -3,6 +3,7 @@ export const CONFIG_TIME_ERROR_CODES = [
 	"monorepo_root_unresolved",
 	"invalid_selector",
 	"duplicate_module_id",
+	"schema_violation",
 ] as const;
 
 export type ConfigTimeErrorCode = (typeof CONFIG_TIME_ERROR_CODES)[number];
