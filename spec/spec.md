@@ -147,7 +147,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: 3e04d385fd36ab4398eb4ecd281352ce045f3f9b
+    reference: 2692a7e06286152bfd4222ea6c68239ce54ae399
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -159,14 +159,14 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: c20ab6f61e609c08d4aed28572811536e97ad5a863902dbc73efff362fe6e25a
-baseline_commit_sha: 3e04d385fd36ab4398eb4ecd281352ce045f3f9b
+freshness_token: ef9b14c782618caf3f3fc89e706fbf029db4884ff50caf0b123f0d8e82212db9
+baseline_commit_sha: 2692a7e06286152bfd4222ea6c68239ce54ae399
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from e36dec17 to 3e04d385 across the first four phases of
+  Refreshed from e36dec17 to 2692a7e0 across the first five phases of
   the detection rework. The first two phases added twenty-two modules,
   each claimed by project-map:IMP-006, project-map:IMP-007 or
   project-map:IMP-008, plus the configuration keys those phases add and
@@ -194,6 +194,15 @@ notes: |
   a required field unresolved, which the check now sees inside a
   template. Neither is observable on an artifact built before this
   phase, because nothing emitted a template.
+  The fifth phase adds nine modules claimed by project-map:IMP-010,
+  whose targets were approved before the code rather than after it, so
+  the debt count never moved off 52. Its crossings outside those nine
+  are the configuration surface project-map:CTR-005 already declared for
+  sinks, the key project-map:DLT-012 adds to it, and two indexes that
+  now hold nodes rather than folded strings because a class constant is
+  not always a string. Approving before implementing left the gate red
+  between the two commits; the earlier phases approved after, and that
+  is the order to keep.
   Refreshed from c82417cd to e36dec17 earlier. That refresh crossed the
   footprint of CTR-001, CTR-002, INV-001 and INV-002; every crossing was
   authored as project-map:DLT-001 or project-map:DLT-002, or was
