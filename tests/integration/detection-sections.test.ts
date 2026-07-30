@@ -79,6 +79,67 @@ describe("the reworked detection renders under its own section ids", () => {
 		expect(await documentOf(workspace.dir)).toContain("## Outbound operations");
 	});
 
+	/* @covers project-map:CTR-003 */
+	it("renders a closed-enum coverage value as code", async () => {
+		await withSections(workspace.dir, ["detection_coverage"]);
+
+		await runCli(workspace.dir, ["build"]);
+
+		expect(await documentOf(workspace.dir)).toMatch(
+			/\| `inbound`\s+\| `unmeasured`\s+\|/,
+		);
+	});
+
+	/* @covers project-map:DLT-015 */
+	it("renders an identifier as code rather than escaping it as prose", async () => {
+		await withSections(workspace.dir, ["metadata", "outbound_operations"]);
+
+		await runCli(workspace.dir, ["build"]);
+
+		const document = await documentOf(workspace.dir);
+		expect(document).toContain("`OrdersClient.create_order`");
+		expect(document).not.toContain("create\\_order");
+	});
+
+	/* @covers project-map:DLT-015 */
+	it("keeps the underscores of a dunder member out of emphasis", async () => {
+		await withSections(workspace.dir, ["metadata", "outbound_operations"]);
+
+		await runCli(workspace.dir, ["build"]);
+
+		expect(await documentOf(workspace.dir)).toContain(
+			"`OrdersClient.__call__`",
+		);
+	});
+
+	/* @covers project-map:CTR-003 */
+	it("renders an absent outbound value as an empty cell", async () => {
+		const configPath = path.join(workspace.dir, ".project-map.yaml");
+		const config = await readFile(configPath, "utf8");
+		await writeFile(
+			configPath,
+			config.replace(
+				'        target: { kind: class_const, selector: "BASE_URL" }\n',
+				"",
+			),
+			"utf8",
+		);
+		await withSections(workspace.dir, ["outbound_operations"]);
+
+		await runCli(workspace.dir, ["build"]);
+
+		expect(await documentOf(workspace.dir)).not.toContain("| ``");
+	});
+
+	/* @covers project-map:DLT-015 */
+	it("leaves the legacy sections rendering prose cells", async () => {
+		await withSections(workspace.dir, ["metadata", "interactions"]);
+
+		await runCli(workspace.dir, ["build"]);
+
+		expect(await documentOf(workspace.dir)).not.toContain("`OrdersClient`");
+	});
+
 	/* @covers project-map:DLT-007 */
 	it("exits 5 on a section id outside the accepted set", async () => {
 		await withSections(workspace.dir, ["metadata", "inbound_routes"]);

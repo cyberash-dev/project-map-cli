@@ -66,9 +66,22 @@ export function inlineBulletList(items: readonly string[]): List {
 	return bulletList([...items]);
 }
 
+/**
+ * A cell holding a token the tool produced rather than prose. Inline code is
+ * the honest node for one: the serializer neither escapes inside it nor reads
+ * an underscore as emphasis, so a member named `__init__` survives as itself.
+ */
+export type CodeCell = { readonly code: string };
+
+export type Cell = string | CodeCell;
+
+export function codeCell(value: string): CodeCell {
+	return { code: value };
+}
+
 export function table(
 	headers: readonly string[],
-	rows: readonly (readonly string[])[],
+	rows: readonly (readonly Cell[])[],
 	align: readonly Alignment[] = [],
 ): Table {
 	const tableRows: TableRow[] = [];
@@ -85,7 +98,10 @@ export function table(
 	return { type: "table", align: [...align], children: tableRows };
 }
 
-function tableCell(value: string): TableCell {
+function tableCell(value: Cell): TableCell {
+	if (typeof value !== "string") {
+		return { type: "tableCell", children: [inlineCode(value.code)] };
+	}
 	const escaped = value.replace(/\|/g, "\\|").replace(/\n/g, " ");
 	return { type: "tableCell", children: [text(escaped)] };
 }

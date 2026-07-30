@@ -27,6 +27,9 @@ class OrdersClient(BaseClient):
         self.retry(1)
         return await self.trace('/ping')
 
+    async def __call__(self, body):
+        return await self.post(url='/callable', json=body)
+
     def _stamp(self, body):
         self.retry(2)
         self.retry(3)

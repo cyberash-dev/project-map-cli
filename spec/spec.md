@@ -323,7 +323,7 @@ lifecycle:
     scope: first-time-approval
 partition_id: project-map
 name: project-map/map-document
-version: "1.1.0"
+version: "1.2.0"
 boundary_type: generated_published_artifact
 members:
   - project-map:CTR-003
@@ -794,6 +794,11 @@ schema: |
   "Outbound operations" over owner, method, route, destination and
   resolution; `detection_coverage` an H2 "Detection coverage" over the
   coverage measures and, where any exist, the diagnostics.
+  In those three sections a cell carrying a name, a value or a
+  closed-enum member is inline code, and a cell carrying a count is
+  prose. Emphasis is not parsed inside code, so a member whose name
+  begins and ends with an underscore renders as the name it was
+  declared with. Cells of the other sections are prose.
   The metadata section renders an H2 "Generation metadata" and a
   two-column table whose rows appear in this order: Tool version,
   Config hash, Scanned files, Excluded, Build duration, Language,

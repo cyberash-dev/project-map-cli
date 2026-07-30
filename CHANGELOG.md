@@ -50,6 +50,13 @@ Surfaces: `project-map/cli` 1.2.0 · `project-map/map-document` 1.1.0 ·
 
 ### Changed
 
+- **The detection sections render their cells as inline code.** A name, a value
+  or a closed-enum member is a token the analyzer produced, not prose, and in
+  prose the serializer escapes every underscore: one validation service carried
+  3023 such escapes over 2.54% of its document. Suppressing the escapes is not
+  an option — a Python member named `__init__` would be read as emphasis and
+  lose the underscores it is named with — so the cells move to the node that
+  carries them literally. The legacy sections are untouched.
 - `build --check` additionally compares the facts artifact when `output.facts`
   is configured.
 - A configuration carrying an unknown top-level key now exits 5 instead of

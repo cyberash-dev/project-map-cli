@@ -58,8 +58,8 @@ describe("the candidate universe a diagnostic may come from", () => {
 	it("counts the outbound facts it classified and the ones it resolved", async () => {
 		const coverage = await coverageOf(workspace.dir);
 
-		expect(coverage["outbound_classified"]).toBe(6);
-		expect(coverage["outbound_resolved"]).toBe(5);
+		expect(coverage["outbound_classified"]).toBe(7);
+		expect(coverage["outbound_resolved"]).toBe(6);
 		expect(coverage["outbound_in_library"]).toBe(1);
 	});
 });

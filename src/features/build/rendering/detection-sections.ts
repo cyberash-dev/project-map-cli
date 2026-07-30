@@ -8,7 +8,7 @@ import { isEndpointFact } from "../../../core/domain/facts/fact.js";
 import type { ValueIr } from "../../../core/domain/facts/value-ir.js";
 import type { DetectionSectionId } from "../../../core/domain/project-map.js";
 import type { FactSet } from "../../detect/detect.use-case.js";
-import { heading, paragraph, table, text } from "./mdast-helpers.js";
+import { codeCell, heading, paragraph, table, text } from "./mdast-helpers.js";
 
 /**
  * The reworked detection rendered under its own section ids. A hole keeps its
@@ -44,11 +44,11 @@ function renderInbound(facts: readonly EndpointFact[]): RootContent[] {
 		table(
 			["Method", "Route", "Resolution", "Provenance", "Contracts"],
 			facts.map((fact) => [
-				render(methodOf(fact)),
-				render(pathOf(fact)),
-				fact.resolution,
-				[...fact.provenance].join(", "),
-				fact.contract_refs.map((ref) => ref.contract_id).join(", "),
+				codeCell(render(methodOf(fact))),
+				codeCell(render(pathOf(fact))),
+				codeCell(fact.resolution),
+				codeCell([...fact.provenance].join(", ")),
+				codeCell(fact.contract_refs.map((ref) => ref.contract_id).join(", ")),
 			]),
 		),
 	];
@@ -65,11 +65,11 @@ function renderOutbound(
 		table(
 			["Owner", "Method", "Route", "Destination", "Resolution"],
 			facts.map((fact) => [
-				fact.owner_operation,
-				render(methodOf(fact)),
-				render(pathOf(fact)),
-				destinationOf(fact),
-				fact.resolution,
+				codeCell(fact.owner_operation),
+				codeCell(render(methodOf(fact))),
+				codeCell(render(pathOf(fact))),
+				codeCell(destinationOf(fact)),
+				codeCell(fact.resolution),
 			]),
 		),
 	];
@@ -77,12 +77,12 @@ function renderOutbound(
 
 function renderCoverage(facts: FactSet): RootContent[] {
 	const rows = Object.entries(facts.coverage).map(([key, value]) => [
-		key,
-		String(value),
+		codeCell(key),
+		typeof value === "string" ? codeCell(value) : String(value),
 	]);
 	const diagnostics = facts.diagnostics.map((entry) => [
-		entry.code,
-		entry.canonical_callee,
+		codeCell(entry.code),
+		codeCell(entry.canonical_callee),
 		String(entry.count),
 	]);
 	return [

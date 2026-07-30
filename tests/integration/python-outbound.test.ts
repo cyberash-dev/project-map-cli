@@ -203,7 +203,7 @@ describe("the declared path-composing member", () => {
 	it("emits every claimed site, unresolved fields included", async () => {
 		const operations = await operationsOf(workspace.dir);
 
-		expect(operations).toHaveLength(7);
+		expect(operations).toHaveLength(8);
 		expect(
 			operations.find((entry) => entry.owner === "GeneratedCaller.fetch"),
 		).toMatchObject({

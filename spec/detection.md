@@ -2022,7 +2022,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-002
-    intended_version: "1.1.0"
+    intended_version: "1.2.0"
 as_is: |
   project-map:CTR-003 fixes the SectionId set at nine values, and the
   configuration defaults `sections` to that whole set. Accepted set and
@@ -2122,7 +2122,7 @@ surface_impact:
   - id: project-map:SUR-001
     intended_version: "1.2.0"
   - id: project-map:SUR-002
-    intended_version: "1.1.0"
+    intended_version: "1.2.0"
 as_is: |
   project-map:DLT-008 widened the predicate of project-map:POL-001 to
   admit the facts artifact and its sidecar, and declared that the
@@ -2349,7 +2349,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-002
-    intended_version: "1.1.0"
+    intended_version: "1.2.0"
 as_is: |
   project-map:DLT-009 declares `surface_impact` on project-map:SUR-002
   at 1.0.0. It was approved and its bump was applied, and
@@ -2447,6 +2447,72 @@ tests_new_behavior: |
   anchor spans the member access in the consumer and whose display_name
   is the member identifier, while the same run keeps an endpoint whose
   handler lies outside the unit typed unknown.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-015
+type: Delta
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: the detection sections render their cells as code, not as prose
+target_id: project-map:CTR-003
+kind: extend
+baseline_version: project-map:BL-001
+compatibility_action: ignore
+surface_impact:
+  - id: project-map:SUR-002
+    intended_version: "1.2.0"
+as_is: |
+  project-map:CTR-003 fixes which columns the three detection sections
+  render but not the markup of a cell, and every cell is emitted as
+  markdown prose. The serializer therefore escapes each underscore,
+  because in prose an underscore can open emphasis: a document of one
+  validation service carries 3023 such escapes across 2.54% of its
+  bytes, and an identifier a reader greps for is spelled
+  `\_maybe\_update\_split\_purchase` rather than as it appears in the
+  source.
+  The escapes are not removable by suppressing them. A Python member
+  named `__init__` rendered without them is read as strong emphasis, and
+  `_private_` as emphasis, so the document would silently drop the
+  underscores from the names it exists to report.
+to_be: |
+  Every cell of `inbound_endpoints`, `outbound_operations` and
+  `detection_coverage` that carries a name, a value or a closed-enum
+  member is emitted as inline code. A cell carrying a count stays prose.
+  Inline code is the honest node for these cells: each is a token the
+  analyzer produced, never prose. It also removes the hazard rather than
+  trading it, because emphasis is not parsed inside code, so
+  `__init__` renders as itself.
+  The legacy sections are untouched. Their bytes are committed in
+  consumer repositories, project-map:CON-001 binds their ids to the
+  prior extractors for this major version, and the same reasoning would
+  make their change disruptive without making it more correct.
+  project-map:SUR-002 takes a minor bump from 1.1.0 to 1.2.0: the
+  document's structure, its section ids and its heading texts are
+  unchanged, and only the markup of cells inside three sections moves.
+  Every `surface_impact` declaration on project-map:SUR-002 belonging to
+  a finalized Delta names 1.2.0 from here, superseding the pin
+  project-map:DLT-013 set at 1.1.0. That record's own reasoning applies
+  unchanged: re-pinning one version beats adding a record per superseded
+  declaration.
+migration_note: |
+  A consumer that renders the three sections sees its committed document
+  reported out of date once and rebuilds. No consumer that omits them is
+  affected, and the three ids belong to no default section list.
+  A consumer parsing the document keeps working: unescaping a value that
+  carries no backslash is the identity.
+tests_old_behavior: |
+  The obligation of project-map:CON-001 keeps a configuration naming no
+  section rendering the legacy nine unchanged, which is where the prose
+  cells and their escaping remain observable.
+tests_new_behavior: |
+  A fixture whose declaration carries an underscore renders that name in
+  a detection section as inline code with no escape, and a member named
+  `__init__` survives a round trip through the document as the four
+  underscores it was written with rather than as emphasis.
 ---
 ```
 
