@@ -2455,7 +2455,13 @@ tests_new_behavior: |
 id: project-map:DLT-015
 type: Delta
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-30T11:16:20.241Z
+    change_request: detection section cell markup
+    scope: first-time-approval
 partition_id: project-map
 title: the detection sections render their cells as code, not as prose
 target_id: project-map:CTR-003
