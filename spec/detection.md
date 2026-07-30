@@ -2527,7 +2527,13 @@ tests_new_behavior: |
 id: project-map:DLT-016
 type: Delta
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-07-30T12:26:55.673Z
+    change_request: entity identity and legacy cell markup
+    scope: first-time-approval
 partition_id: project-map
 title: an entity is reported as the declaration it is, not as its bare name
 target_id: project-map:CTR-003
