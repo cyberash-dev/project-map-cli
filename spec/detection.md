@@ -2022,7 +2022,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-002
-    intended_version: "1.2.0"
+    intended_version: "1.3.0"
 as_is: |
   project-map:CTR-003 fixes the SectionId set at nine values, and the
   configuration defaults `sections` to that whole set. Accepted set and
@@ -2122,7 +2122,7 @@ surface_impact:
   - id: project-map:SUR-001
     intended_version: "1.2.0"
   - id: project-map:SUR-002
-    intended_version: "1.2.0"
+    intended_version: "1.3.0"
 as_is: |
   project-map:DLT-008 widened the predicate of project-map:POL-001 to
   admit the facts artifact and its sidecar, and declared that the
@@ -2349,7 +2349,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-002
-    intended_version: "1.2.0"
+    intended_version: "1.3.0"
 as_is: |
   project-map:DLT-009 declares `surface_impact` on project-map:SUR-002
   at 1.0.0. It was approved and its bump was applied, and
@@ -2470,7 +2470,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-002
-    intended_version: "1.2.0"
+    intended_version: "1.3.0"
 as_is: |
   project-map:CTR-003 fixes which columns the three detection sections
   render but not the markup of a cell, and every cell is emitted as
@@ -2519,6 +2519,72 @@ tests_new_behavior: |
   a detection section as inline code with no escape, and a member named
   `__init__` survives a round trip through the document as the four
   underscores it was written with rather than as emphasis.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-016
+type: Delta
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: an entity is reported as the declaration it is, not as its bare name
+target_id: project-map:CTR-003
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: migrate
+surface_impact:
+  - id: project-map:SUR-002
+    intended_version: "1.3.0"
+as_is: |
+  The entities and enums sections identify a declaration by its bare
+  name. In a service-sized repository that name is not unique: one
+  validation service declares seventeen Go structs called `Config`, so
+  its document carries six identical `### ` + "`Config`" + ` headings
+  that a reader can tell apart only by the source line beneath them, and
+  seventeen names in total lose twenty-six entries that way.
+  The Go adapter compounds it. Methods are collected into a map keyed on
+  the bare receiver type across every file, so each of those `Config`
+  types is reported with the union of the methods of all of them. The
+  document names members the type does not have, and repeats a member
+  two packages both declare. A method cannot be declared outside the
+  package of its receiver, so the key was always wrong.
+  A field type is emitted as written, so an anonymous struct spanning
+  lines reaches the document with its indentation encoded as `&#x9;`,
+  and a Go pointer type is escaped as `\*` because the field bullet is
+  prose.
+to_be: |
+  A declaration whose bare name no other declaration claims is reported
+  as that name. Where two or more claim it, each is qualified by the
+  shortest suffix of its declaring directory that tells it apart, so
+  `logic/bunker/config.go` reads `bunker.Config`. The qualifier is a
+  pure function of the extracted set and adds nothing where nothing
+  collides.
+  A Go method is attributed to the receiver's package, so a type is
+  reported with its own members and no others.
+  A field type is folded onto one line, and a field bullet is inline
+  code: a name and a type are tokens, and in prose the serializer
+  escapes the pointer marker.
+  project-map:SUR-002 takes a minor bump from 1.2.0 to 1.3.0. Every
+  `surface_impact` declaration on it belonging to a finalized Delta
+  names 1.3.0 from here, superseding the pin project-map:DLT-015 set.
+migration_note: |
+  A consumer rebuilds once. A heading that was ambiguous changes; one
+  that was not is untouched, so a document whose names never collided is
+  unchanged apart from the field bullets.
+  The method lists that change were wrong before: they reported members
+  of types in other packages.
+tests_old_behavior: |
+  No test preserved the old behavior, because the old behavior was the
+  defect: `as_is` records it. The existing obligations of
+  project-map:CTR-003 keep the section headings, the metadata rows and
+  the ordering of project-map:INV-002 unchanged.
+tests_new_behavior: |
+  A fixture declaring one type name in two packages renders two distinct
+  headings, attributes each method only to the package declaring its
+  receiver, renders a pointer field without an escape, and folds an
+  anonymous struct onto one line with no encoded tab.
 ---
 ```
 

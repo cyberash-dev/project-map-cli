@@ -12,6 +12,12 @@ import {
 import type { ExtractionContext } from "../../../extraction-context.js";
 import type { ILanguageAdapter } from "../../../extractor.port.js";
 
+function receiverKey(relPath: string, typeName: string): string {
+	const lastSlash = relPath.lastIndexOf("/");
+	const directory = lastSlash < 0 ? "" : relPath.slice(0, lastSlash);
+	return `${directory}\u0000${typeName}`;
+}
+
 export class GoEntitiesAdapter implements ILanguageAdapter<Entity[]> {
 	readonly language = "go" as const;
 
@@ -34,10 +40,14 @@ export class GoEntitiesAdapter implements ILanguageAdapter<Entity[]> {
 				if (!recvType) {
 					continue;
 				}
-				if (!methodsByReceiver.has(recvType)) {
-					methodsByReceiver.set(recvType, []);
+				/* A Go method lives in the package of its receiver, so the package
+				 * belongs in the key: without it every `Config` in the repository
+				 * collects the methods of all the others. */
+				const key = receiverKey(file.relPath, recvType);
+				if (!methodsByReceiver.has(key)) {
+					methodsByReceiver.set(key, []);
 				}
-				methodsByReceiver.get(recvType)?.push(name.text);
+				methodsByReceiver.get(key)?.push(name.text);
 			}
 		}
 
@@ -64,7 +74,8 @@ export class GoEntitiesAdapter implements ILanguageAdapter<Entity[]> {
 						continue;
 					}
 					const fields = extractGoFields(bodyNode);
-					const methods = methodsByReceiver.get(name) ?? [];
+					const methods =
+						methodsByReceiver.get(receiverKey(file.relPath, name)) ?? [];
 					if (methods.length === 0 && fields.length < 2) {
 						continue;
 					}
@@ -105,6 +116,15 @@ function extractGoReceiverType(receiver: SyntaxNode): string | null {
 	return null;
 }
 
+/**
+ * An anonymous struct spans lines, and its indentation reaches the document as
+ * an encoded tab. A field type is read as a name, so the whitespace inside one
+ * carries nothing worth keeping.
+ */
+function oneLine(type: string | null): string | null {
+	return type === null ? null : type.replace(/\s+/g, " ").trim();
+}
+
 function extractGoFields(structType: SyntaxNode): Field[] {
 	const fields: Field[] = [];
 	const fieldList = structType.namedChildren.find(
@@ -128,7 +148,7 @@ function extractGoFields(structType: SyntaxNode): Field[] {
 			if (n[0] !== (n[0] ?? "").toUpperCase()) {
 				continue;
 			}
-			fields.push({ name: n, type: typeNode ? typeNode.text : null });
+			fields.push({ name: n, type: oneLine(typeNode?.text ?? null) });
 		}
 	}
 	return fields.slice(0, 12);

@@ -1,1001 +1,1027 @@
 {
-	"metadata": {
-		"toolVersion": "1.0.0",
-		"generatedAt": "2026-07-29T14:35:13.003Z",
-		"revision": "769694c",
-		"configHash": "sha256:fb6fe77557176478",
-		"scannedFiles": 136,
-		"excludedFiles": 0,
-		"buildDurationMs": 965,
-		"language": "typescript",
-		"frameworks": [],
-		"overview": null,
-		"errors": []
-	},
-	"project": {
-		"name": "project-map-cli",
-		"language": "typescript",
-		"frameworks": []
-	},
-	"contexts": [
-		{
-			"path": "src/features",
-			"fileCount": 94,
-			"role": "Vertical slice features"
-		},
-		{
-			"path": "src/core",
-			"fileCount": 15,
-			"role": "Core domain"
-		},
-		{
-			"path": "src/infrastructure",
-			"fileCount": 15,
-			"role": "Infrastructure adapters"
-		}
-	],
-	"entities": [
-		{
-			"name": "SyntaxNode",
-			"source": {
-				"file": "src/infrastructure/parser/ts-utils.ts",
-				"line": 1
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "type",
-					"type": "string"
-				},
-				{
-					"name": "text",
-					"type": "string"
-				},
-				{
-					"name": "startPosition",
-					"type": "{ row: number; column: number }"
-				},
-				{
-					"name": "endPosition",
-					"type": "{ row: number; column: number }"
-				},
-				{
-					"name": "startIndex",
-					"type": "number"
-				},
-				{
-					"name": "endIndex",
-					"type": "number"
-				},
-				{
-					"name": "namedChildren",
-					"type": "SyntaxNode[]"
-				},
-				{
-					"name": "children",
-					"type": "SyntaxNode[]"
-				},
-				{
-					"name": "childCount",
-					"type": "number"
-				},
-				{
-					"name": "namedChildCount",
-					"type": "number"
-				},
-				{
-					"name": "parent",
-					"type": "SyntaxNode | null"
-				}
-			],
-			"methods": ["childForFieldName", "descendantForPosition"],
-			"referencedFrom": 33,
-			"importance": 37.3
-		},
-		{
-			"name": "ExtractionContext",
-			"source": {
-				"file": "src/features/build/extraction-context.ts",
-				"line": 26
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "config",
-					"type": "ResolvedConfig"
-				},
-				{
-					"name": "projectRoot",
-					"type": "string"
-				},
-				{
-					"name": "language",
-					"type": "Language"
-				},
-				{
-					"name": "files",
-					"type": "readonly ParsedFile[]"
-				},
-				{
-					"name": "filesByPath",
-					"type": "ReadonlyMap<string, ParsedFile>"
-				},
-				{
-					"name": "parser",
-					"type": "ISourceParser"
-				},
-				{
-					"name": "reader",
-					"type": "IFileReader"
-				},
-				{
-					"name": "symbols",
-					"type": "SymbolIndex"
-				},
-				{
-					"name": "logger",
-					"type": "ILogger"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 28,
-			"importance": 30.7
-		},
-		{
-			"name": "ParsedFile",
-			"source": {
-				"file": "src/core/ports/parser.port.ts",
-				"line": 3
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "relPath",
-					"type": "string"
-				},
-				{
-					"name": "absPath",
-					"type": "string"
-				},
-				{
-					"name": "language",
-					"type": "Language"
-				},
-				{
-					"name": "content",
-					"type": "string"
-				},
-				{
-					"name": "tree",
-					"type": "unknown"
-				},
-				{
-					"name": "parseErrors",
-					"type": "number"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 18,
-			"importance": 19.8
-		},
-		{
-			"name": "SourceLocation",
-			"source": {
-				"file": "src/core/domain/project-map.ts",
-				"line": 12
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "file",
-					"type": "string"
-				},
-				{
-					"name": "line",
-					"type": "number"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 19,
-			"importance": 19.6
-		},
-		{
-			"name": "Entity",
-			"source": {
-				"file": "src/core/domain/project-map.ts",
-				"line": 22
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "name",
-					"type": "string"
-				},
-				{
-					"name": "source",
-					"type": "SourceLocation"
-				},
-				{
-					"name": "inherits",
-					"type": "readonly string[]"
-				},
-				{
-					"name": "fields",
-					"type": "readonly Field[]"
-				},
-				{
-					"name": "methods",
-					"type": "readonly string[]"
-				},
-				{
-					"name": "referencedFrom",
-					"type": "number"
-				},
-				{
-					"name": "importance",
-					"type": "number"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 10,
-			"importance": 12.1
-		},
-		{
-			"name": "ResolvedConfig",
-			"source": {
-				"file": "src/core/ports/config.port.ts",
-				"line": 187
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "project",
-					"type": "{\n\t\treadonly name: string;\n\t\treadonly language: Language;\n\t\treadonly frameworks: readonly Framework[];\n\t}"
-				},
-				{
-					"name": "root",
-					"type": "string"
-				},
-				{
-					"name": "respectGitignore",
-					"type": "boolean"
-				},
-				{
-					"name": "exclude",
-					"type": "readonly string[]"
-				},
-				{
-					"name": "sections",
-					"type": "readonly SectionId[]"
-				},
-				{
-					"name": "overview",
-					"type": "OverviewConfig"
-				},
-				{
-					"name": "contexts",
-					"type": "ContextsConfig"
-				},
-				{
-					"name": "entities",
-					"type": "EntitiesConfig"
-				},
-				{
-					"name": "enums",
-					"type": "EnumsConfig"
-				},
-				{
-					"name": "endpoints",
-					"type": "EndpointsConfig"
-				},
-				{
-					"name": "storage",
-					"type": "StorageConfig"
-				},
-				{
-					"name": "interactions",
-					"type": "InteractionsConfig"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 8,
-			"importance": 11.6
-		},
-		{
-			"name": "OutboundOperationFact",
-			"source": {
-				"file": "src/core/domain/facts/fact.ts",
-				"line": 87
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "id",
-					"type": "string"
-				},
-				{
-					"name": "kind",
-					"type": "\"outbound_operation\""
-				},
-				{
-					"name": "mechanism",
-					"type": "Mechanism"
-				},
-				{
-					"name": "operation",
-					"type": "Operation"
-				},
-				{
-					"name": "owner_operation",
-					"type": "string"
-				},
-				{
-					"name": "call_site",
-					"type": "SourceAnchor"
-				},
-				{
-					"name": "module_id",
-					"type": "string | null"
-				},
-				{
-					"name": "callee_operation",
-					"type": "| SymbolValue\n\t\t| { readonly kind: \"unknown\"; readonly reason: string }\n\t\t| null"
-				},
-				{
-					"name": "contract_ref",
-					"type": "ContractRef | null"
-				},
-				{
-					"name": "provenance",
-					"type": "readonly Provenance[]"
-				},
-				{
-					"name": "resolution",
-					"type": "Resolution"
-				},
-				{
-					"name": "evidence",
-					"type": "readonly Evidence[]"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 7,
-			"importance": 10.6
-		},
-		{
-			"name": "ISourceParser",
-			"source": {
-				"file": "src/core/ports/parser.port.ts",
-				"line": 12
-			},
-			"inherits": [],
-			"fields": [],
-			"methods": ["supports", "parse", "languages"],
-			"referencedFrom": 9,
-			"importance": 10.5
-		},
-		{
-			"name": "Endpoint",
-			"source": {
-				"file": "src/core/domain/project-map.ts",
-				"line": 44
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "method",
-					"type": "HttpMethod"
-				},
-				{
-					"name": "path",
-					"type": "string"
-				},
-				{
-					"name": "handler",
-					"type": "string"
-				},
-				{
-					"name": "source",
-					"type": "SourceLocation"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 9,
-			"importance": 10.2
-		},
-		{
-			"name": "ILogger",
-			"source": {
-				"file": "src/core/ports/logger.port.ts",
-				"line": 3
-			},
-			"inherits": [],
-			"fields": [],
-			"methods": ["debug", "info", "warn", "error"],
-			"referencedFrom": 8,
-			"importance": 10
-		},
-		{
-			"name": "EnumType",
-			"source": {
-				"file": "src/core/domain/project-map.ts",
-				"line": 32
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "name",
-					"type": "string"
-				},
-				{
-					"name": "source",
-					"type": "SourceLocation"
-				},
-				{
-					"name": "members",
-					"type": "readonly string[]"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 9,
-			"importance": 9.9
-		},
-		{
-			"name": "IFileReader",
-			"source": {
-				"file": "src/core/ports/filesystem.port.ts",
-				"line": 17
-			},
-			"inherits": [],
-			"fields": [],
-			"methods": ["read", "exists"],
-			"referencedFrom": 8,
-			"importance": 9
-		},
-		{
-			"name": "SourceAnchor",
-			"source": {
-				"file": "src/core/domain/facts/anchor.ts",
-				"line": 7
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "path",
-					"type": "string"
-				},
-				{
-					"name": "start_byte",
-					"type": "number"
-				},
-				{
-					"name": "end_byte",
-					"type": "number"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 8,
-			"importance": 8.9
-		},
-		{
-			"name": "AnalysisUnit",
-			"source": {
-				"file": "src/core/ports/analysis-unit.port.ts",
-				"line": 18
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "repositoryIdentity",
-					"type": "string"
-				},
-				{
-					"name": "sources",
-					"type": "readonly UnitSource[]"
-				},
-				{
-					"name": "configDocuments",
-					"type": "readonly UnitDocument[]"
-				},
-				{
-					"name": "specs",
-					"type": "readonly UnitDocument[]"
-				},
-				{
-					"name": "registryVersion",
-					"type": "string"
-				},
-				{
-					"name": "digest",
-					"type": "string"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 7,
-			"importance": 8.8
-		},
-		{
-			"name": "Diagnostic",
-			"source": {
-				"file": "src/core/domain/facts/diagnostic.ts",
-				"line": 29
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "code",
-					"type": "DiagnosticCode"
-				},
-				{
-					"name": "canonical_callee",
-					"type": "string"
-				},
-				{
-					"name": "canonical_call_shape",
-					"type": "CallShape"
-				},
-				{
-					"name": "evidence",
-					"type": "readonly Evidence[]"
-				},
-				{
-					"name": "count",
-					"type": "number"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 7,
-			"importance": 8.5
-		},
-		{
-			"name": "EndpointFact",
-			"source": {
-				"file": "src/core/domain/facts/fact.ts",
-				"line": 73
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "id",
-					"type": "string"
-				},
-				{
-					"name": "kind",
-					"type": "\"endpoint\""
-				},
-				{
-					"name": "mechanism",
-					"type": "Mechanism"
-				},
-				{
-					"name": "operation",
-					"type": "Operation"
-				},
-				{
-					"name": "handler",
-					"type": "| SymbolValue\n\t\t| { readonly kind: \"unknown\"; readonly reason: string }"
-				},
-				{
-					"name": "contract_refs",
-					"type": "readonly ContractRef[]"
-				},
-				{
-					"name": "provenance",
-					"type": "readonly Provenance[]"
-				},
-				{
-					"name": "resolution",
-					"type": "Resolution"
-				},
-				{
-					"name": "evidence",
-					"type": "readonly Evidence[]"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 5,
-			"importance": 7.699999999999999
-		},
-		{
-			"name": "Interaction",
-			"source": {
-				"file": "src/core/domain/project-map.ts",
-				"line": 65
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "directory",
-					"type": "string"
-				},
-				{
-					"name": "clientClass",
-					"type": "string"
-				},
-				{
-					"name": "baseUrlFrom",
-					"type": "string | null"
-				},
-				{
-					"name": "methods",
-					"type": "readonly string[]"
-				},
-				{
-					"name": "usedBy",
-					"type": "readonly string[]"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 6,
-			"importance": 7.5
-		},
-		{
-			"name": "Worker",
-			"source": {
-				"file": "src/core/domain/project-map.ts",
-				"line": 73
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "name",
-					"type": "string"
-				},
-				{
-					"name": "source",
-					"type": "SourceLocation"
-				},
-				{
-					"name": "subscribesTo",
-					"type": "readonly string[]"
-				},
-				{
-					"name": "handler",
-					"type": "string | null"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 6,
-			"importance": 7.2
-		},
-		{
-			"name": "Table",
-			"source": {
-				"file": "src/core/domain/project-map.ts",
-				"line": 51
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "table",
-					"type": "string"
-				},
-				{
-					"name": "model",
-					"type": "string"
-				},
-				{
-					"name": "source",
-					"type": "SourceLocation"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 6,
-			"importance": 6.9
-		},
-		{
-			"name": "ProjectMap",
-			"source": {
-				"file": "src/core/domain/project-map.ts",
-				"line": 99
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "metadata",
-					"type": "GenerationMetadata"
-				},
-				{
-					"name": "project",
-					"type": "{\n\t\treadonly name: string;\n\t\treadonly language: Language;\n\t\treadonly frameworks: readonly Framework[];\n\t}"
-				},
-				{
-					"name": "contexts",
-					"type": "readonly BoundedContext[]"
-				},
-				{
-					"name": "entities",
-					"type": "readonly Entity[]"
-				},
-				{
-					"name": "enums",
-					"type": "readonly EnumType[]"
-				},
-				{
-					"name": "endpoints",
-					"type": "readonly Endpoint[]"
-				},
-				{
-					"name": "storage",
-					"type": "{\n\t\treadonly tables: readonly Table[];\n\t\treadonly migrations: readonly Migration[];\n\t}"
-				},
-				{
-					"name": "interactions",
-					"type": "readonly Interaction[]"
-				},
-				{
-					"name": "workers",
-					"type": "readonly Worker[]"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 3,
-			"importance": 5.699999999999999
-		},
-		{
-			"name": "Field",
-			"source": {
-				"file": "src/core/domain/project-map.ts",
-				"line": 17
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "name",
-					"type": "string"
-				},
-				{
-					"name": "type",
-					"type": "string | null"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 5,
-			"importance": 5.6
-		},
-		{
-			"name": "Migration",
-			"source": {
-				"file": "src/core/domain/project-map.ts",
-				"line": 57
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "revision",
-					"type": "string"
-				},
-				{
-					"name": "downRevision",
-					"type": "string | null"
-				},
-				{
-					"name": "tables",
-					"type": "readonly string[]"
-				},
-				{
-					"name": "summary",
-					"type": "string"
-				},
-				{
-					"name": "source",
-					"type": "SourceLocation"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 4,
-			"importance": 5.5
-		},
-		{
-			"name": "PythonImportIndex",
-			"source": {
-				"file": "src/features/detect/index/python/imports.ts",
-				"line": 8
-			},
-			"inherits": [],
-			"fields": [],
-			"methods": ["originOf", "moduleOf", "isShadowedLocally"],
-			"referencedFrom": 4,
-			"importance": 5.5
-		},
-		{
-			"name": "IFileWriter",
-			"source": {
-				"file": "src/core/ports/filesystem.port.ts",
-				"line": 22
-			},
-			"inherits": [],
-			"fields": [],
-			"methods": ["write", "ensureDir"],
-			"referencedFrom": 4,
-			"importance": 5
-		},
-		{
-			"name": "BoundedContext",
-			"source": {
-				"file": "src/core/domain/project-map.ts",
-				"line": 38
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "path",
-					"type": "string"
-				},
-				{
-					"name": "fileCount",
-					"type": "number"
-				},
-				{
-					"name": "role",
-					"type": "string"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 4,
-			"importance": 4.9
-		},
-		{
-			"name": "FactSet",
-			"source": {
-				"file": "src/features/detect/detect.use-case.ts",
-				"line": 20
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "facts",
-					"type": "readonly DetectionFact[]"
-				},
-				{
-					"name": "diagnostics",
-					"type": "readonly Diagnostic[]"
-				},
-				{
-					"name": "coverage",
-					"type": "Readonly<Record<string, string | number>>"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 4,
-			"importance": 4.9
-		},
-		{
-			"name": "DeclaredSink",
-			"source": {
-				"file": "src/core/ports/config.port.ts",
-				"line": 149
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "baseType",
-					"type": "string"
-				},
-				{
-					"name": "call",
-					"type": "readonly SinkCall[]"
-				},
-				{
-					"name": "pathArg",
-					"type": "Selector | null"
-				},
-				{
-					"name": "method",
-					"type": "Selector | null"
-				},
-				{
-					"name": "target",
-					"type": "Selector | null"
-				},
-				{
-					"name": "pathVia",
-					"type": "PathVia | null"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 3,
-			"importance": 4.8
-		},
-		{
-			"name": "UnitDocument",
-			"source": {
-				"file": "src/core/ports/analysis-unit.port.ts",
-				"line": 8
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "locator",
-					"type": "string"
-				},
-				{
-					"name": "text",
-					"type": "string"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 4,
-			"importance": 4.6
-		},
-		{
-			"name": "BuildProjectMapUseCase",
-			"source": {
-				"file": "src/features/build/build.use-case.ts",
-				"line": 73
-			},
-			"inherits": [],
-			"fields": [],
-			"methods": [
-				"constructor",
-				"execute",
-				"buildExtractionContext",
-				"runExtractors",
-				"assembleMap",
-				"parseAll",
-				"loadOverview"
-			],
-			"referencedFrom": 1,
-			"importance": 4.5
-		},
-		{
-			"name": "DeclaredRouter",
-			"source": {
-				"file": "src/core/ports/config.port.ts",
-				"line": 123
-			},
-			"inherits": [],
-			"fields": [
-				{
-					"name": "dsl",
-					"type": "string"
-				},
-				{
-					"name": "pathArg",
-					"type": "Selector"
-				},
-				{
-					"name": "prefixFrom",
-					"type": "Selector | null"
-				},
-				{
-					"name": "verbFrom",
-					"type": "VerbSource | null"
-				},
-				{
-					"name": "identityPreserving",
-					"type": "readonly IdentityPreserving[]"
-				}
-			],
-			"methods": [],
-			"referencedFrom": 3,
-			"importance": 4.5
-		}
-	],
-	"enums": [
-		{
-			"name": "UserStatus",
-			"source": {
-				"file": "tests/fixtures/typescript-express-minimal/domain/entities/user.ts",
-				"line": 3
-			},
-			"members": ["Active", "Suspended", "Deleted"]
-		}
-	],
-	"endpoints": [],
-	"storage": {
-		"tables": [
-			{
-				"table": "users",
-				"model": "User",
-				"source": {
-					"file": "tests/fixtures/typescript-express-minimal/domain/entities/user.ts",
-					"line": 10
-				}
-			}
-		],
-		"migrations": []
-	},
-	"interactions": [],
-	"workers": []
+  "metadata": {
+    "toolVersion": "1.0.0",
+    "generatedAt": "2026-07-30T11:50:47.752Z",
+    "revision": "50f3876",
+    "configHash": "sha256:fb6fe77557176478",
+    "scannedFiles": 137,
+    "excludedFiles": 0,
+    "buildDurationMs": 1008,
+    "language": "typescript",
+    "frameworks": [],
+    "overview": null,
+    "errors": []
+  },
+  "project": {
+    "name": "project-map-cli",
+    "language": "typescript",
+    "frameworks": []
+  },
+  "contexts": [
+    {
+      "path": "src/features",
+      "fileCount": 95,
+      "role": "Vertical slice features"
+    },
+    {
+      "path": "src/core",
+      "fileCount": 15,
+      "role": "Core domain"
+    },
+    {
+      "path": "src/infrastructure",
+      "fileCount": 15,
+      "role": "Infrastructure adapters"
+    }
+  ],
+  "entities": [
+    {
+      "name": "SyntaxNode",
+      "source": {
+        "file": "src/infrastructure/parser/ts-utils.ts",
+        "line": 1
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "type",
+          "type": "string"
+        },
+        {
+          "name": "text",
+          "type": "string"
+        },
+        {
+          "name": "startPosition",
+          "type": "{ row: number; column: number }"
+        },
+        {
+          "name": "endPosition",
+          "type": "{ row: number; column: number }"
+        },
+        {
+          "name": "startIndex",
+          "type": "number"
+        },
+        {
+          "name": "endIndex",
+          "type": "number"
+        },
+        {
+          "name": "namedChildren",
+          "type": "SyntaxNode[]"
+        },
+        {
+          "name": "children",
+          "type": "SyntaxNode[]"
+        },
+        {
+          "name": "childCount",
+          "type": "number"
+        },
+        {
+          "name": "namedChildCount",
+          "type": "number"
+        },
+        {
+          "name": "parent",
+          "type": "SyntaxNode | null"
+        }
+      ],
+      "methods": [
+        "childForFieldName",
+        "descendantForPosition"
+      ],
+      "referencedFrom": 33,
+      "importance": 37.3
+    },
+    {
+      "name": "ExtractionContext",
+      "source": {
+        "file": "src/features/build/extraction-context.ts",
+        "line": 26
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "config",
+          "type": "ResolvedConfig"
+        },
+        {
+          "name": "projectRoot",
+          "type": "string"
+        },
+        {
+          "name": "language",
+          "type": "Language"
+        },
+        {
+          "name": "files",
+          "type": "readonly ParsedFile[]"
+        },
+        {
+          "name": "filesByPath",
+          "type": "ReadonlyMap<string, ParsedFile>"
+        },
+        {
+          "name": "parser",
+          "type": "ISourceParser"
+        },
+        {
+          "name": "reader",
+          "type": "IFileReader"
+        },
+        {
+          "name": "symbols",
+          "type": "SymbolIndex"
+        },
+        {
+          "name": "logger",
+          "type": "ILogger"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 28,
+      "importance": 30.7
+    },
+    {
+      "name": "SourceLocation",
+      "source": {
+        "file": "src/core/domain/project-map.ts",
+        "line": 12
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "file",
+          "type": "string"
+        },
+        {
+          "name": "line",
+          "type": "number"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 20,
+      "importance": 20.6
+    },
+    {
+      "name": "ParsedFile",
+      "source": {
+        "file": "src/core/ports/parser.port.ts",
+        "line": 3
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "relPath",
+          "type": "string"
+        },
+        {
+          "name": "absPath",
+          "type": "string"
+        },
+        {
+          "name": "language",
+          "type": "Language"
+        },
+        {
+          "name": "content",
+          "type": "string"
+        },
+        {
+          "name": "tree",
+          "type": "unknown"
+        },
+        {
+          "name": "parseErrors",
+          "type": "number"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 18,
+      "importance": 19.8
+    },
+    {
+      "name": "Entity",
+      "source": {
+        "file": "src/core/domain/project-map.ts",
+        "line": 22
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "source",
+          "type": "SourceLocation"
+        },
+        {
+          "name": "inherits",
+          "type": "readonly string[]"
+        },
+        {
+          "name": "fields",
+          "type": "readonly Field[]"
+        },
+        {
+          "name": "methods",
+          "type": "readonly string[]"
+        },
+        {
+          "name": "referencedFrom",
+          "type": "number"
+        },
+        {
+          "name": "importance",
+          "type": "number"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 10,
+      "importance": 12.1
+    },
+    {
+      "name": "ResolvedConfig",
+      "source": {
+        "file": "src/core/ports/config.port.ts",
+        "line": 187
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "project",
+          "type": "{\n\t\treadonly name: string;\n\t\treadonly language: Language;\n\t\treadonly frameworks: readonly Framework[];\n\t}"
+        },
+        {
+          "name": "root",
+          "type": "string"
+        },
+        {
+          "name": "respectGitignore",
+          "type": "boolean"
+        },
+        {
+          "name": "exclude",
+          "type": "readonly string[]"
+        },
+        {
+          "name": "sections",
+          "type": "readonly SectionId[]"
+        },
+        {
+          "name": "overview",
+          "type": "OverviewConfig"
+        },
+        {
+          "name": "contexts",
+          "type": "ContextsConfig"
+        },
+        {
+          "name": "entities",
+          "type": "EntitiesConfig"
+        },
+        {
+          "name": "enums",
+          "type": "EnumsConfig"
+        },
+        {
+          "name": "endpoints",
+          "type": "EndpointsConfig"
+        },
+        {
+          "name": "storage",
+          "type": "StorageConfig"
+        },
+        {
+          "name": "interactions",
+          "type": "InteractionsConfig"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 8,
+      "importance": 11.6
+    },
+    {
+      "name": "OutboundOperationFact",
+      "source": {
+        "file": "src/core/domain/facts/fact.ts",
+        "line": 87
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "kind",
+          "type": "\"outbound_operation\""
+        },
+        {
+          "name": "mechanism",
+          "type": "Mechanism"
+        },
+        {
+          "name": "operation",
+          "type": "Operation"
+        },
+        {
+          "name": "owner_operation",
+          "type": "string"
+        },
+        {
+          "name": "call_site",
+          "type": "SourceAnchor"
+        },
+        {
+          "name": "module_id",
+          "type": "string | null"
+        },
+        {
+          "name": "callee_operation",
+          "type": "| SymbolValue\n\t\t| { readonly kind: \"unknown\"; readonly reason: string }\n\t\t| null"
+        },
+        {
+          "name": "contract_ref",
+          "type": "ContractRef | null"
+        },
+        {
+          "name": "provenance",
+          "type": "readonly Provenance[]"
+        },
+        {
+          "name": "resolution",
+          "type": "Resolution"
+        },
+        {
+          "name": "evidence",
+          "type": "readonly Evidence[]"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 7,
+      "importance": 10.6
+    },
+    {
+      "name": "ISourceParser",
+      "source": {
+        "file": "src/core/ports/parser.port.ts",
+        "line": 12
+      },
+      "inherits": [],
+      "fields": [],
+      "methods": [
+        "supports",
+        "parse",
+        "languages"
+      ],
+      "referencedFrom": 9,
+      "importance": 10.5
+    },
+    {
+      "name": "Endpoint",
+      "source": {
+        "file": "src/core/domain/project-map.ts",
+        "line": 44
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "method",
+          "type": "HttpMethod"
+        },
+        {
+          "name": "path",
+          "type": "string"
+        },
+        {
+          "name": "handler",
+          "type": "string"
+        },
+        {
+          "name": "source",
+          "type": "SourceLocation"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 9,
+      "importance": 10.2
+    },
+    {
+      "name": "ILogger",
+      "source": {
+        "file": "src/core/ports/logger.port.ts",
+        "line": 3
+      },
+      "inherits": [],
+      "fields": [],
+      "methods": [
+        "debug",
+        "info",
+        "warn",
+        "error"
+      ],
+      "referencedFrom": 8,
+      "importance": 10
+    },
+    {
+      "name": "EnumType",
+      "source": {
+        "file": "src/core/domain/project-map.ts",
+        "line": 32
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "source",
+          "type": "SourceLocation"
+        },
+        {
+          "name": "members",
+          "type": "readonly string[]"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 9,
+      "importance": 9.9
+    },
+    {
+      "name": "IFileReader",
+      "source": {
+        "file": "src/core/ports/filesystem.port.ts",
+        "line": 17
+      },
+      "inherits": [],
+      "fields": [],
+      "methods": [
+        "read",
+        "exists"
+      ],
+      "referencedFrom": 8,
+      "importance": 9
+    },
+    {
+      "name": "SourceAnchor",
+      "source": {
+        "file": "src/core/domain/facts/anchor.ts",
+        "line": 7
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "path",
+          "type": "string"
+        },
+        {
+          "name": "start_byte",
+          "type": "number"
+        },
+        {
+          "name": "end_byte",
+          "type": "number"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 8,
+      "importance": 8.9
+    },
+    {
+      "name": "AnalysisUnit",
+      "source": {
+        "file": "src/core/ports/analysis-unit.port.ts",
+        "line": 18
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "repositoryIdentity",
+          "type": "string"
+        },
+        {
+          "name": "sources",
+          "type": "readonly UnitSource[]"
+        },
+        {
+          "name": "configDocuments",
+          "type": "readonly UnitDocument[]"
+        },
+        {
+          "name": "specs",
+          "type": "readonly UnitDocument[]"
+        },
+        {
+          "name": "registryVersion",
+          "type": "string"
+        },
+        {
+          "name": "digest",
+          "type": "string"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 7,
+      "importance": 8.8
+    },
+    {
+      "name": "Diagnostic",
+      "source": {
+        "file": "src/core/domain/facts/diagnostic.ts",
+        "line": 29
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "code",
+          "type": "DiagnosticCode"
+        },
+        {
+          "name": "canonical_callee",
+          "type": "string"
+        },
+        {
+          "name": "canonical_call_shape",
+          "type": "CallShape"
+        },
+        {
+          "name": "evidence",
+          "type": "readonly Evidence[]"
+        },
+        {
+          "name": "count",
+          "type": "number"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 7,
+      "importance": 8.5
+    },
+    {
+      "name": "EndpointFact",
+      "source": {
+        "file": "src/core/domain/facts/fact.ts",
+        "line": 73
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "kind",
+          "type": "\"endpoint\""
+        },
+        {
+          "name": "mechanism",
+          "type": "Mechanism"
+        },
+        {
+          "name": "operation",
+          "type": "Operation"
+        },
+        {
+          "name": "handler",
+          "type": "| SymbolValue\n\t\t| { readonly kind: \"unknown\"; readonly reason: string }"
+        },
+        {
+          "name": "contract_refs",
+          "type": "readonly ContractRef[]"
+        },
+        {
+          "name": "provenance",
+          "type": "readonly Provenance[]"
+        },
+        {
+          "name": "resolution",
+          "type": "Resolution"
+        },
+        {
+          "name": "evidence",
+          "type": "readonly Evidence[]"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 5,
+      "importance": 7.699999999999999
+    },
+    {
+      "name": "Interaction",
+      "source": {
+        "file": "src/core/domain/project-map.ts",
+        "line": 65
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "directory",
+          "type": "string"
+        },
+        {
+          "name": "clientClass",
+          "type": "string"
+        },
+        {
+          "name": "baseUrlFrom",
+          "type": "string | null"
+        },
+        {
+          "name": "methods",
+          "type": "readonly string[]"
+        },
+        {
+          "name": "usedBy",
+          "type": "readonly string[]"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 6,
+      "importance": 7.5
+    },
+    {
+      "name": "Worker",
+      "source": {
+        "file": "src/core/domain/project-map.ts",
+        "line": 73
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "source",
+          "type": "SourceLocation"
+        },
+        {
+          "name": "subscribesTo",
+          "type": "readonly string[]"
+        },
+        {
+          "name": "handler",
+          "type": "string | null"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 6,
+      "importance": 7.2
+    },
+    {
+      "name": "Table",
+      "source": {
+        "file": "src/core/domain/project-map.ts",
+        "line": 51
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "table",
+          "type": "string"
+        },
+        {
+          "name": "model",
+          "type": "string"
+        },
+        {
+          "name": "source",
+          "type": "SourceLocation"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 6,
+      "importance": 6.9
+    },
+    {
+      "name": "ProjectMap",
+      "source": {
+        "file": "src/core/domain/project-map.ts",
+        "line": 99
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "metadata",
+          "type": "GenerationMetadata"
+        },
+        {
+          "name": "project",
+          "type": "{\n\t\treadonly name: string;\n\t\treadonly language: Language;\n\t\treadonly frameworks: readonly Framework[];\n\t}"
+        },
+        {
+          "name": "contexts",
+          "type": "readonly BoundedContext[]"
+        },
+        {
+          "name": "entities",
+          "type": "readonly Entity[]"
+        },
+        {
+          "name": "enums",
+          "type": "readonly EnumType[]"
+        },
+        {
+          "name": "endpoints",
+          "type": "readonly Endpoint[]"
+        },
+        {
+          "name": "storage",
+          "type": "{\n\t\treadonly tables: readonly Table[];\n\t\treadonly migrations: readonly Migration[];\n\t}"
+        },
+        {
+          "name": "interactions",
+          "type": "readonly Interaction[]"
+        },
+        {
+          "name": "workers",
+          "type": "readonly Worker[]"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 3,
+      "importance": 5.699999999999999
+    },
+    {
+      "name": "Field",
+      "source": {
+        "file": "src/core/domain/project-map.ts",
+        "line": 17
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "type",
+          "type": "string | null"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 5,
+      "importance": 5.6
+    },
+    {
+      "name": "Migration",
+      "source": {
+        "file": "src/core/domain/project-map.ts",
+        "line": 57
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "revision",
+          "type": "string"
+        },
+        {
+          "name": "downRevision",
+          "type": "string | null"
+        },
+        {
+          "name": "tables",
+          "type": "readonly string[]"
+        },
+        {
+          "name": "summary",
+          "type": "string"
+        },
+        {
+          "name": "source",
+          "type": "SourceLocation"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 4,
+      "importance": 5.5
+    },
+    {
+      "name": "PythonImportIndex",
+      "source": {
+        "file": "src/features/detect/index/python/imports.ts",
+        "line": 8
+      },
+      "inherits": [],
+      "fields": [],
+      "methods": [
+        "originOf",
+        "moduleOf",
+        "isShadowedLocally"
+      ],
+      "referencedFrom": 4,
+      "importance": 5.5
+    },
+    {
+      "name": "IFileWriter",
+      "source": {
+        "file": "src/core/ports/filesystem.port.ts",
+        "line": 22
+      },
+      "inherits": [],
+      "fields": [],
+      "methods": [
+        "write",
+        "ensureDir"
+      ],
+      "referencedFrom": 4,
+      "importance": 5
+    },
+    {
+      "name": "BoundedContext",
+      "source": {
+        "file": "src/core/domain/project-map.ts",
+        "line": 38
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "path",
+          "type": "string"
+        },
+        {
+          "name": "fileCount",
+          "type": "number"
+        },
+        {
+          "name": "role",
+          "type": "string"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 4,
+      "importance": 4.9
+    },
+    {
+      "name": "FactSet",
+      "source": {
+        "file": "src/features/detect/detect.use-case.ts",
+        "line": 20
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "facts",
+          "type": "readonly DetectionFact[]"
+        },
+        {
+          "name": "diagnostics",
+          "type": "readonly Diagnostic[]"
+        },
+        {
+          "name": "coverage",
+          "type": "Readonly<Record<string, string | number>>"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 4,
+      "importance": 4.9
+    },
+    {
+      "name": "DeclaredSink",
+      "source": {
+        "file": "src/core/ports/config.port.ts",
+        "line": 149
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "baseType",
+          "type": "string"
+        },
+        {
+          "name": "call",
+          "type": "readonly SinkCall[]"
+        },
+        {
+          "name": "pathArg",
+          "type": "Selector | null"
+        },
+        {
+          "name": "method",
+          "type": "Selector | null"
+        },
+        {
+          "name": "target",
+          "type": "Selector | null"
+        },
+        {
+          "name": "pathVia",
+          "type": "PathVia | null"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 3,
+      "importance": 4.8
+    },
+    {
+      "name": "UnitDocument",
+      "source": {
+        "file": "src/core/ports/analysis-unit.port.ts",
+        "line": 8
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "locator",
+          "type": "string"
+        },
+        {
+          "name": "text",
+          "type": "string"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 4,
+      "importance": 4.6
+    },
+    {
+      "name": "BuildProjectMapUseCase",
+      "source": {
+        "file": "src/features/build/build.use-case.ts",
+        "line": 73
+      },
+      "inherits": [],
+      "fields": [],
+      "methods": [
+        "constructor",
+        "execute",
+        "buildExtractionContext",
+        "runExtractors",
+        "assembleMap",
+        "parseAll",
+        "loadOverview"
+      ],
+      "referencedFrom": 1,
+      "importance": 4.5
+    },
+    {
+      "name": "DeclaredRouter",
+      "source": {
+        "file": "src/core/ports/config.port.ts",
+        "line": 123
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "dsl",
+          "type": "string"
+        },
+        {
+          "name": "pathArg",
+          "type": "Selector"
+        },
+        {
+          "name": "prefixFrom",
+          "type": "Selector | null"
+        },
+        {
+          "name": "verbFrom",
+          "type": "VerbSource | null"
+        },
+        {
+          "name": "identityPreserving",
+          "type": "readonly IdentityPreserving[]"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 3,
+      "importance": 4.5
+    }
+  ],
+  "enums": [
+    {
+      "name": "UserStatus",
+      "source": {
+        "file": "tests/fixtures/typescript-express-minimal/domain/entities/user.ts",
+        "line": 3
+      },
+      "members": [
+        "Active",
+        "Suspended",
+        "Deleted"
+      ]
+    }
+  ],
+  "endpoints": [],
+  "storage": {
+    "tables": [
+      {
+        "table": "users",
+        "model": "User",
+        "source": {
+          "file": "tests/fixtures/typescript-express-minimal/domain/entities/user.ts",
+          "line": 10
+        }
+      }
+    ],
+    "migrations": []
+  },
+  "interactions": [],
+  "workers": []
 }

@@ -1,0 +1,12 @@
+project:
+  name: entities-go
+  language: go
+
+sections:
+  - entities
+  - enums
+  - metadata
+
+output:
+  markdown: PROJECT_MAP.md
+  json: null

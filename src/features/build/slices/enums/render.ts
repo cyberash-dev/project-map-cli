@@ -6,17 +6,19 @@ import {
 	inlineCode,
 	paragraph,
 } from "../../rendering/mdast-helpers.js";
+import { qualifiedNames } from "../../rendering/qualified-name.js";
 
 export function renderEnums(enums: readonly EnumType[]): Root["children"] {
 	if (enums.length === 0) {
 		return [];
 	}
 	const children: RootContent[] = [heading(2, "Enums")];
-	for (const e of enums) {
+	const displayNames = qualifiedNames(enums);
+	for (const [index, e] of enums.entries()) {
 		const h: Heading = {
 			type: "heading",
 			depth: 3,
-			children: [inlineCode(e.name)],
+			children: [inlineCode(displayNames[index] ?? e.name)],
 		};
 		children.push(h);
 		children.push(paragraph([inlineCode(`${e.source.file}:${e.source.line}`)]));

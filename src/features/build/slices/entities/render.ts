@@ -6,17 +6,19 @@ import {
 	inlineCode,
 	text,
 } from "../../rendering/mdast-helpers.js";
+import { qualifiedNames } from "../../rendering/qualified-name.js";
 
 export function renderEntities(entities: readonly Entity[]): Root["children"] {
 	if (entities.length === 0) {
 		return [];
 	}
 	const children: RootContent[] = [heading(2, "Domain entities")];
-	for (const e of entities) {
+	const displayNames = qualifiedNames(entities);
+	for (const [index, e] of entities.entries()) {
 		const h: Heading = {
 			type: "heading",
 			depth: 3,
-			children: [inlineCode(e.name)],
+			children: [inlineCode(displayNames[index] ?? e.name)],
 		};
 		children.push(h);
 
@@ -51,7 +53,10 @@ export function renderEntities(entities: readonly Entity[]): Root["children"] {
 			});
 			children.push(
 				bulletList(
-					e.fields.map((f) => (f.type ? `${f.name}: ${f.type}` : f.name)),
+					e.fields.map((f) => ({
+						type: "paragraph" as const,
+						children: [inlineCode(f.type ? `${f.name}: ${f.type}` : f.name)],
+					})),
 				),
 			);
 		}

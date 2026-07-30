@@ -57,6 +57,15 @@ Surfaces: `project-map/cli` 1.2.0 · `project-map/map-document` 1.1.0 ·
   an option — a Python member named `__init__` would be read as emphasis and
   lose the underscores it is named with — so the cells move to the node that
   carries them literally. The legacy sections are untouched.
+- **An entity or enum whose bare name another declaration also claims is now
+  headed by that name qualified with its package.** One validation service
+  declares seventeen Go structs called `Config`, and its document carried six
+  identical headings. Go methods were keyed on the bare receiver type across
+  the whole repository, so each of those types was reported with the union of
+  the methods of all of them — members it does not have. A method now stays
+  with the package that declares its receiver. Field bullets render as inline
+  code, and a multi-line field type is folded onto one line instead of reaching
+  the document as an encoded tab.
 - `build --check` additionally compares the facts artifact when `output.facts`
   is configured.
 - A configuration carrying an unknown top-level key now exits 5 instead of

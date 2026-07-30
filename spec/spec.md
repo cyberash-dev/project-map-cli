@@ -330,7 +330,7 @@ lifecycle:
     scope: first-time-approval
 partition_id: project-map
 name: project-map/map-document
-version: "1.2.0"
+version: "1.3.0"
 boundary_type: generated_published_artifact
 members:
   - project-map:CTR-003
@@ -801,6 +801,11 @@ schema: |
   "Outbound operations" over owner, method, route, destination and
   resolution; `detection_coverage` an H2 "Detection coverage" over the
   coverage measures and, where any exist, the diagnostics.
+  A declaration whose bare name another declaration also claims is
+  headed by that name qualified with the shortest suffix of its
+  declaring directory that tells the two apart; a name nothing else
+  claims is headed by itself. A field bullet is inline code and its type
+  is folded onto one line.
   In those three sections a cell carrying a name, a value or a
   closed-enum member is inline code, and a cell carrying a count is
   prose. Emphasis is not parsed inside code, so a member whose name
