@@ -75,8 +75,9 @@ export type CodeCell = { readonly code: string };
 
 export type Cell = string | CodeCell;
 
-export function codeCell(value: string): CodeCell {
-	return { code: value };
+/** An absent value has no token to quote, so it stays an empty cell. */
+export function codeCell(value: string): Cell {
+	return value.length === 0 ? value : { code: value };
 }
 
 export function table(
