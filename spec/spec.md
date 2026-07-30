@@ -149,7 +149,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: 55ecfb20472c9285c43acf3fcd0b59c47f2ca151
+    reference: 98f725673763d373855d2a19d2df81b85771d8f8
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -161,14 +161,14 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 521f6c61965660f7d06be0822d7d95b5267baebc160986c7a99a578e913ac3c5
-baseline_commit_sha: 55ecfb20472c9285c43acf3fcd0b59c47f2ca151
+freshness_token: 9b2d662ad0c73f7af37967848551464a0095d82073b5730f541390e33fb209b3
+baseline_commit_sha: 98f725673763d373855d2a19d2df81b85771d8f8
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from e36dec17 to 55ecfb20 across every phase of the
+  Refreshed from e36dec17 to 98f72567 across every phase of the
   detection rework and the 1.0.0 release.
   The first two phases added twenty-two modules, each claimed by project-map:IMP-006, project-map:IMP-007 or
   project-map:IMP-008, plus the configuration keys those phases add and
@@ -255,6 +255,15 @@ notes: |
   records but does not authorize the release. The test closes part of the
   obligation of project-map:CTR-001, which states every command over an
   invocation while the rest of the suite invokes the program in process.
+  eca64c55, c596588e and e37b638c close a defect the map document
+  carried since before this partition existed: an entity was reported by
+  its bare name. One validation service declares seventeen Go structs
+  called `Config`, so six of its headings were indistinguishable, and
+  the Go adapter keyed its method map on the bare receiver type across
+  every file, reporting each of those types with the members of all of
+  them. project-map:DLT-016 authorizes the qualified heading, the
+  package-scoped method key, the folded field type and the inline-code
+  bullets, and carries project-map:SUR-002 to 1.3.0.
   a02a03c5 and 005929ee move the cells of the three detection sections
   from prose to inline code, which project-map:DLT-015 authorizes and
   which carries project-map:SUR-002 to 1.2.0. The change is not
@@ -1351,6 +1360,7 @@ binding:
   section_ids: src/core/domain/project-map.ts
   document_assembly: src/features/build/rendering/markdown.ts
   detection_sections: src/features/build/rendering/detection-sections.ts
+  qualified_names: src/features/build/rendering/qualified-name.ts
   json_emission: src/features/build/rendering/json.ts
   table_helpers: src/features/build/rendering/mdast-helpers.ts
   clock: src/infrastructure/clock/system.ts
