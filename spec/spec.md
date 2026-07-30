@@ -255,6 +255,13 @@ notes: |
   records but does not authorize the release. The test closes part of the
   obligation of project-map:CTR-001, which states every command over an
   invocation while the rest of the suite invokes the program in process.
+  a02a03c5 and 005929ee move the cells of the three detection sections
+  from prose to inline code, which project-map:DLT-015 authorizes and
+  which carries project-map:SUR-002 to 1.2.0. The change is not
+  cosmetic: emitted as prose a cell went through the serializer's
+  emphasis escaping, and suppressing that escaping would have read a
+  Python member named `__init__` as strong emphasis and dropped the
+  underscores from the name. The legacy sections keep prose cells.
   d2b04006 closed the sixth phase: the join key both halves of a
   shared-library operation carry, the container that proves a receiver's
   type, the narrowed candidate universe and the coverage denominators.
