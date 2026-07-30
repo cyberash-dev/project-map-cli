@@ -22,7 +22,14 @@ export function renderEnums(enums: readonly EnumType[]): Root["children"] {
 		};
 		children.push(h);
 		children.push(paragraph([inlineCode(`${e.source.file}:${e.source.line}`)]));
-		children.push(bulletList(e.members.map((m) => m)));
+		children.push(
+			bulletList(
+				e.members.map((m) => ({
+					type: "paragraph" as const,
+					children: [inlineCode(m)],
+				})),
+			),
+		);
 	}
 	return children;
 }

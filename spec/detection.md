@@ -2565,7 +2565,10 @@ to_be: |
   reported with its own members and no others.
   A field type is folded onto one line, and a field bullet is inline
   code: a name and a type are tokens, and in prose the serializer
-  escapes the pointer marker.
+  escapes the pointer marker. An enum member is a token by the same
+  reading and is inline code too; the sections this Delta already
+  re-heads should not spell half their content one way and half the
+  other.
   project-map:SUR-002 takes a minor bump from 1.2.0 to 1.3.0. Every
   `surface_impact` declaration on it belonging to a finalized Delta
   names 1.3.0 from here, superseding the pin project-map:DLT-015 set.
@@ -2583,8 +2586,9 @@ tests_old_behavior: |
 tests_new_behavior: |
   A fixture declaring one type name in two packages renders two distinct
   headings, attributes each method only to the package declaring its
-  receiver, renders a pointer field without an escape, and folds an
-  anonymous struct onto one line with no encoded tab.
+  receiver, renders a pointer field and an enum member without an
+  escape, and folds an anonymous struct onto one line with no encoded
+  tab.
 ---
 ```
 

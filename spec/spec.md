@@ -804,8 +804,8 @@ schema: |
   A declaration whose bare name another declaration also claims is
   headed by that name qualified with the shortest suffix of its
   declaring directory that tells the two apart; a name nothing else
-  claims is headed by itself. A field bullet is inline code and its type
-  is folded onto one line.
+  claims is headed by itself. A field bullet and an enum member are
+  inline code, and a field type is folded onto one line.
   In those three sections a cell carrying a name, a value or a
   closed-enum member is inline code, and a cell carrying a count is
   prose. Emphasis is not parsed inside code, so a member whose name

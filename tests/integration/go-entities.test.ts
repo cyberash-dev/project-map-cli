@@ -48,6 +48,13 @@ describe("two declarations claiming one name", () => {
 		expect(document).toContain("### `config.Kind`");
 		expect(document).toContain("### `bunker.Kind`");
 	});
+
+	/* @covers project-map:DLT-016 */
+	it("renders an enum member as code rather than as prose", async () => {
+		const document = await documentOf(workspace.dir);
+
+		expect(document).toContain("- `KindPrimary`");
+	});
 });
 
 describe("a field whose type is not a plain name", () => {
