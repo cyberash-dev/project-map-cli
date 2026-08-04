@@ -158,7 +158,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: b749c3041557e6c3786c3fd5d59d271268106b67
+    reference: 3a3dfb231f7c661e339d5f648326c51c14ebeb7a
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -170,15 +170,15 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 0d8972425616270c07d841fab775961a372a0a064d0361503a8a227269f54fb0
-baseline_commit_sha: b749c3041557e6c3786c3fd5d59d271268106b67
+freshness_token: 8c2c06181ac584b97d881424493c3f9b53ade4c1a82735aa62a1913f48ef991e
+baseline_commit_sha: 3a3dfb231f7c661e339d5f648326c51c14ebeb7a
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from e36dec17 to b749c304 across the detection rework, the
-  1.0.0 release, and the first half of phase G.
+  Refreshed from e36dec17 to 3a3dfb23 across the detection rework, the
+  1.0.0 release, and phase G so far.
   The first two phases added twenty-two modules, each claimed by project-map:IMP-006, project-map:IMP-007 or
   project-map:IMP-008, plus the configuration keys those phases add and
   one line in src/cli/commands.ts that threads `output.facts` through
@@ -269,6 +269,15 @@ notes: |
   and were unclaimed only because no binding named them. The count moved
   from 52 to 37 with no code change, and project-map:BL-001's partition
   record moved with it.
+  ea16bea6 and 2b99053e close the enums slice. Its identity was keyed on the
+  place values were written rather than on the type: a Go enum split
+  across two `const` blocks was two entries carrying a fraction of its
+  members each, and a Python enum nested in a class was reported by its
+  simple name, so four exception classes each declaring a `ReasonCode`
+  became four entries spelled alike. project-map:BEH-015 is the first
+  normative statement about the section and project-map:DLT-018 carries
+  project-map:SUR-002 to 1.4.0. The slice's seven modules left the debt
+  with it, 37 to 30.
   5d262f32 adds the ratchet. project-map:BEH-014, project-map:CTR-010 and
   project-map:DLT-017 carry `--strict`, the baseline it reads, and exit
   code 6; project-map:SUR-001 moves to 1.3.0. The baseline is read after
