@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { existsSync } from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -17,7 +18,16 @@ const REPO_ROOT = path.resolve(
  * the file's mode is observable.
  */
 describe.skipIf(process.platform === "win32")("the emitted binary", () => {
+	/*
+	 * Builds only where nothing has: `npm run build` regenerates a file under
+	 * src/, and doing that while the rest of the suite is running mutates the
+	 * tree the other files are read from. CI and the local convention both
+	 * build before testing, so this is the fresh-checkout path alone.
+	 */
 	beforeAll(async () => {
+		if (existsSync(path.join(REPO_ROOT, "dist/cli/index.js"))) {
+			return;
+		}
 		await run("npm", ["run", "build"], { cwd: REPO_ROOT });
 	});
 

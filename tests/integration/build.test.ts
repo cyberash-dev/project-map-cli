@@ -1,7 +1,15 @@
-import { readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import {
+	afterAll,
+	beforeAll,
+	describe,
+	expect,
+	it,
+	onTestFinished,
+} from "vitest";
 import { ALL_LANGUAGES } from "../../src/core/domain/language.js";
 import type { ProjectMap } from "../../src/core/domain/project-map.js";
 import type { ResolvedConfig } from "../../src/core/ports/config.port.js";
@@ -259,3 +267,38 @@ it.skip("reads artifact", async () => {
 	const s = await readFile(p, "utf8");
 	expect(s.length).toBeGreaterThan(0);
 });
+
+describe("the document and the checkout location", () => {
+	/* @covers project-map:INV-001 */
+	it("renders identically from another absolute path", async () => {
+		const elsewhere = await mkdtemp(path.join(tmpdir(), "project-map-where-"));
+		onTestFinished(async () => {
+			await rm(elsewhere, { recursive: true, force: true });
+		});
+		await cp(FIXTURE, elsewhere, { recursive: true });
+
+		const here = await documentAt(FIXTURE);
+		const there = await documentAt(elsewhere);
+
+		expect(stripTimestamps(there)).toEqual(stripTimestamps(here));
+	});
+});
+
+async function documentAt(root: string): Promise<string> {
+	const logger = new ConsoleLogger(false);
+	const config = await new CosmiconfigLoader().load(root, null);
+	if (!config) {
+		throw new Error("config missing");
+	}
+	const useCase = new BuildProjectMapUseCase({
+		config,
+		walker: new GlobbyWalker(),
+		reader: new NodeFileReader(),
+		parser: new TreeSitterParserRegistry(ALL_LANGUAGES, logger),
+		clock: new SystemClock(),
+		logger,
+		revision: new GitRevisionProvider(),
+		toolVersion: "test",
+	});
+	return renderMarkdown((await useCase.execute(root)).map, config);
+}

@@ -8,7 +8,7 @@ import { TreeSitterParserRegistry } from "../../src/infrastructure/parser/tree-s
 
 function indexOf(source: string) {
 	const parser = new TreeSitterParserRegistry(["go"], new ConsoleLogger(false));
-	const parsed = parser.parse("go", source, "m.go", "/tmp/m.go");
+	const parsed = parser.parse("go", source, "m.go");
 	if (parsed === null) {
 		throw new Error("parse failed");
 	}

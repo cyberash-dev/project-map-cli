@@ -1,6 +1,4 @@
-import * as os from "node:os";
 import * as path from "node:path";
-import pLimit from "p-limit";
 import { extensionsFor } from "../../core/domain/language.js";
 import type {
 	BoundedContext,
@@ -12,8 +10,9 @@ import type {
 	Worker,
 } from "../../core/domain/project-map.js";
 import type { ResolvedConfig } from "../../core/ports/config.port.js";
+import type { UnitSource } from "../../core/ports/analysis-unit.port.js";
+import { readSourceSet } from "../../infrastructure/analysis-unit/read-sources.js";
 import type {
-	DiscoveredFile,
 	IFileReader,
 	IFileWalker,
 } from "../../core/ports/filesystem.port.js";
@@ -77,17 +76,21 @@ export class BuildProjectMapUseCase {
 		const include = extensionsFor(config.project.language).map(
 			(ext) => `**/*${ext}`,
 		);
-		const discovered = await this.deps.walker.walk({
-			root: projectRoot,
-			include,
-			exclude: config.exclude,
-			respectGitignore: config.respectGitignore,
+		const discovered = await readSourceSet({
+			walker: this.deps.walker,
+			reader: this.deps.reader,
+			selection: {
+				root: projectRoot,
+				include,
+				exclude: config.exclude,
+				respectGitignore: config.respectGitignore,
+			},
 		});
 		this.deps.logger.info(
 			`scanned ${discovered.length} ${config.project.language} file(s) under ${projectRoot}`,
 		);
 
-		const parsed = await this.parseAll(discovered, config.project.language);
+		const parsed = this.parseAll(discovered, config.project.language);
 		this.deps.logger.info(`parsed ${parsed.length} file(s) successfully`);
 
 		const ctx = this.buildExtractionContext(projectRoot, parsed);
@@ -208,38 +211,31 @@ export class BuildProjectMapUseCase {
 		};
 	}
 
-	private async parseAll(
-		discovered: readonly DiscoveredFile[],
+	/**
+	 * Parses what the source set holds. Nothing here reads the filesystem or
+	 * sees an absolute path: extraction is a function of the text alone, the
+	 * same discipline project-map:POL-003 gives detection.
+	 */
+	private parseAll(
+		sources: readonly UnitSource[],
 		language: ResolvedConfig["project"]["language"],
-	): Promise<ParsedFile[]> {
+	): ParsedFile[] {
 		if (!this.deps.parser.supports(language)) {
 			this.deps.logger.warn(
 				`no parser registered for ${language}; extractors will see no files`,
 			);
 			return [];
 		}
-		const limit = pLimit(Math.max(1, os.cpus().length));
-		const tasks = discovered.map((f) =>
-			limit(async () => {
-				try {
-					const content = await this.deps.reader.read(f.absPath);
-					return this.deps.parser.parse(
-						language,
-						content,
-						f.relPath,
-						f.absPath,
-					);
-				} catch (err) {
-					const message = err instanceof Error ? err.message : String(err);
-					this.deps.logger.warn(
-						`read/parse failed for ${f.relPath}: ${message}`,
-					);
-					return null;
-				}
-			}),
-		);
-		const results = await Promise.all(tasks);
-		return results.filter((p): p is ParsedFile => p !== null);
+		const parsed: ParsedFile[] = [];
+		for (const source of sources) {
+			const file = this.deps.parser.parse(language, source.text, source.path);
+			if (file === null) {
+				this.deps.logger.warn(`parse failed for ${source.path}`);
+				continue;
+			}
+			parsed.push(file);
+		}
+		return parsed;
 	}
 
 	private async loadOverview(projectRoot: string): Promise<string | null> {

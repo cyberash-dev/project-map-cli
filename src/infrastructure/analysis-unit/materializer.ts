@@ -16,6 +16,7 @@ import type {
 	IFileWalker,
 } from "../../core/ports/filesystem.port.js";
 import { jcs } from "../../features/detect/canonical/jcs.js";
+import { readSourceSet } from "./read-sources.js";
 
 const UNIT_SCHEMA = "project-map/analysis-unit/1";
 const REPO_TAG = "repo:";
@@ -75,20 +76,16 @@ export class FilesystemAnalysisUnitMaterializer implements IAnalysisUnitMaterial
 		const exclude =
 			declared.exclude.length > 0 ? declared.exclude : config.exclude;
 
-		const discovered = await this.deps.walker.walk({
-			root: projectRoot,
-			include,
-			exclude,
-			respectGitignore: config.respectGitignore,
+		return readSourceSet({
+			walker: this.deps.walker,
+			reader: this.deps.reader,
+			selection: {
+				root: projectRoot,
+				include,
+				exclude,
+				respectGitignore: config.respectGitignore,
+			},
 		});
-		const sources: UnitSource[] = [];
-		for (const file of discovered) {
-			sources.push({
-				path: file.relPath,
-				text: await this.deps.reader.read(file.absPath),
-			});
-		}
-		return sources;
 	}
 
 	private async readDeclarations(

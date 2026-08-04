@@ -66,12 +66,7 @@ function parseModules(request: PythonDslRequest): Map<string, ModuleView> {
 		if (!source.path.endsWith(".py")) {
 			continue;
 		}
-		const file = request.parser.parse(
-			"python",
-			source.text,
-			source.path,
-			source.path,
-		);
+		const file = request.parser.parse("python", source.text, source.path);
 		if (file === null) {
 			continue;
 		}

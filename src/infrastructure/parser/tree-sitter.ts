@@ -65,7 +65,6 @@ export class TreeSitterParserRegistry implements ISourceParser {
 		language: Language,
 		content: string,
 		relPath: string,
-		absPath: string,
 	): ParsedFile | null {
 		const handle = this.grammars.get(language);
 		if (!handle) {
@@ -76,7 +75,6 @@ export class TreeSitterParserRegistry implements ISourceParser {
 			const parseErrors = countErrors(tree.rootNode);
 			return {
 				relPath,
-				absPath,
 				language,
 				content,
 				tree,

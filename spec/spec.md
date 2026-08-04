@@ -1470,6 +1470,7 @@ binding:
   workers_python: src/features/build/slices/workers/adapters/python.ts
   workers_typescript: src/features/build/slices/workers/adapters/typescript.ts
   file_discovery: src/infrastructure/filesystem/globby-walker.ts
+  source_reader: src/infrastructure/analysis-unit/read-sources.ts
   extraction_context: src/features/build/extraction-context.ts
   extractor_port: src/features/build/extractor.port.ts
   parser_port: src/core/ports/parser.port.ts
@@ -1846,11 +1847,12 @@ tests:
 ## 19. Out of scope
 
 - Adoption of this tool inside any consumer repository.
-- The detection rework described in `docs/detection-rework-plan.md`.
-  Its normative records are authored against this baseline in
-  `spec/detection.md`, a sandbox file whose records stay `proposed`
-  until the phase that implements them promotes each one into this
-  document. Nothing in that file governs the current implementation.
+- Adoption of the reworked detection by any consumer repository, which
+  needs an `openapi` or `detect` block written against that
+  repository's own shapes. `spec/detection.md` is the sandbox the
+  rework was authored in; its records are approved and govern the
+  implementation, and it stays a sandbox only so that the next
+  proposed record does not fail the gate before its code lands.
 - Inside that rework, these items are deferred for want of an oracle in
   either validation service, and each keeps a reserved name so that
   adding it later is not a breaking change:
@@ -1859,14 +1861,14 @@ tests:
     fixture ship without any queue fact;
   - Swagger 2.0 ingest and its `basePath` composition branch, which
     reports the document unreadable;
-  - `openapi.consumes` and generated-client outbound operations, whose
-    configuration validates and emits no fact;
   - the per-call-site comment marker, whose `marker_invalid` code and
     exit-code slot are reserved;
   - cross-root `$ref` traversal through a `monorepo:` locator, whose
     tag parses and raises `monorepo_root_unresolved`;
   - expansion of an optional path segment, which stays a typed hole;
   - Java, Kotlin, gRPC, and GraphQL detection.
-- The unclassified ratchet, its suppression baseline, the removal of the
-  legacy `endpoints` and `interactions` adapters, and the migration of
-  the remaining extraction slices onto the analysis unit.
+- Built-in adapters. Every fact the reworked detection emits comes from
+  configuration, so a repository that declares none reports none, and
+  TypeScript, JavaScript and Java have no endpoint detection at all
+  since project-map:DLT-019 removed the prior extractors. Closing that
+  is the work §11 phase 2 names.

@@ -50,12 +50,7 @@ export function detectGoRouterRoutes(request: GoRouterRequest): GoRouterResult {
 		if (!source.path.endsWith(".go")) {
 			continue;
 		}
-		const file = request.parser.parse(
-			"go",
-			source.text,
-			source.path,
-			source.path,
-		);
+		const file = request.parser.parse("go", source.text, source.path);
 		if (file === null) {
 			continue;
 		}

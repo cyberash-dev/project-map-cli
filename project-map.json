@@ -1,12 +1,12 @@
 {
   "metadata": {
     "toolVersion": "1.0.0",
-    "generatedAt": "2026-08-04T13:50:06.867Z",
-    "revision": "2a06995",
+    "generatedAt": "2026-08-04T15:17:52.517Z",
+    "revision": "e6430ea",
     "configHash": "sha256:7bf0af6e8f857370",
-    "scannedFiles": 127,
+    "scannedFiles": 128,
     "excludedFiles": 0,
-    "buildDurationMs": 944,
+    "buildDurationMs": 987,
     "language": "typescript",
     "frameworks": [],
     "overview": null,
@@ -24,14 +24,14 @@
       "role": "Vertical slice features"
     },
     {
+      "path": "src/infrastructure",
+      "fileCount": 16,
+      "role": "Infrastructure adapters"
+    },
+    {
       "path": "src/core",
       "fileCount": 15,
       "role": "Core domain"
-    },
-    {
-      "path": "src/infrastructure",
-      "fileCount": 15,
-      "role": "Infrastructure adapters"
     }
   ],
   "entities": [
@@ -157,10 +157,6 @@
           "type": "string"
         },
         {
-          "name": "absPath",
-          "type": "string"
-        },
-        {
           "name": "language",
           "type": "Language"
         },
@@ -179,7 +175,7 @@
       ],
       "methods": [],
       "referencedFrom": 16,
-      "importance": 17.8
+      "importance": 17.5
     },
     {
       "name": "SourceLocation",
@@ -369,7 +365,7 @@
       "name": "ISourceParser",
       "source": {
         "file": "src/core/ports/parser.port.ts",
-        "line": 12
+        "line": 11
       },
       "inherits": [],
       "fields": [],
@@ -380,6 +376,21 @@
       ],
       "referencedFrom": 9,
       "importance": 10.5
+    },
+    {
+      "name": "IFileReader",
+      "source": {
+        "file": "src/core/ports/filesystem.port.ts",
+        "line": 17
+      },
+      "inherits": [],
+      "fields": [],
+      "methods": [
+        "read",
+        "exists"
+      ],
+      "referencedFrom": 9,
+      "importance": 10
     },
     {
       "name": "ILogger",
@@ -455,21 +466,6 @@
       "methods": [],
       "referencedFrom": 8,
       "importance": 9.5
-    },
-    {
-      "name": "IFileReader",
-      "source": {
-        "file": "src/core/ports/filesystem.port.ts",
-        "line": 17
-      },
-      "inherits": [],
-      "fields": [],
-      "methods": [
-        "read",
-        "exists"
-      ],
-      "referencedFrom": 8,
-      "importance": 9
     },
     {
       "name": "SourceAnchor",
@@ -871,10 +867,31 @@
       "importance": 4.6
     },
     {
+      "name": "UnitSource",
+      "source": {
+        "file": "src/core/ports/analysis-unit.port.ts",
+        "line": 3
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "path",
+          "type": "string"
+        },
+        {
+          "name": "text",
+          "type": "string"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 4,
+      "importance": 4.6
+    },
+    {
       "name": "BuildProjectMapUseCase",
       "source": {
         "file": "src/features/build/build.use-case.ts",
-        "line": 69
+        "line": 68
       },
       "inherits": [],
       "fields": [],
@@ -938,27 +955,6 @@
       "methods": [],
       "referencedFrom": 3,
       "importance": 4.5
-    },
-    {
-      "name": "FilesystemAnalysisUnitMaterializer",
-      "source": {
-        "file": "src/infrastructure/analysis-unit/materializer.ts",
-        "line": 35
-      },
-      "inherits": [
-        "IAnalysisUnitMaterializer"
-      ],
-      "fields": [],
-      "methods": [
-        "constructor",
-        "materialize",
-        "readSources",
-        "readDeclarations",
-        "readSpecs",
-        "resolveLocator"
-      ],
-      "referencedFrom": 1,
-      "importance": 4
     }
   ],
   "enums": [

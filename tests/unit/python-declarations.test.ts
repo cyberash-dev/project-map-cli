@@ -11,7 +11,7 @@ function indexOf(source: string) {
 		["python"],
 		new ConsoleLogger(false),
 	);
-	const parsed = parser.parse("python", source, "m.py", "/tmp/m.py");
+	const parsed = parser.parse("python", source, "m.py");
 	if (parsed === null) {
 		throw new Error("parse failed");
 	}
