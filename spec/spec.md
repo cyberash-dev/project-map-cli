@@ -160,7 +160,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: 3a3dfb231f7c661e339d5f648326c51c14ebeb7a
+    reference: a46e23b59c9a89ed20fed0b48f4169945159f8d1
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -172,14 +172,14 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 8c2c06181ac584b97d881424493c3f9b53ade4c1a82735aa62a1913f48ef991e
-baseline_commit_sha: 3a3dfb231f7c661e339d5f648326c51c14ebeb7a
+freshness_token: 1eaa69179c0c609f7c2f8bad4630652c5fd89846194fb0dc9962a39f63778fac
+baseline_commit_sha: a46e23b59c9a89ed20fed0b48f4169945159f8d1
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from e36dec17 to 3a3dfb23 across the detection rework, the
+  Refreshed from e36dec17 to a46e23b5 across the detection rework, the
   1.0.0 release, and phase G so far.
   The first two phases added twenty-two modules, each claimed by project-map:IMP-006, project-map:IMP-007 or
   project-map:IMP-008, plus the configuration keys those phases add and
@@ -271,6 +271,19 @@ notes: |
   and were unclaimed only because no binding named them. The count moved
   from 52 to 37 with no code change, and project-map:BL-001's partition
   record moved with it.
+  637aae77 rebinds the legacy section ids. `endpoints` renders the
+  inbound facts and `interactions` the outbound operations, each under
+  the heading it already had; `inbound_endpoints` and
+  `outbound_operations` leave the accepted set, and the twelve modules
+  of the prior extractors are deleted with the ids that reached them.
+  project-map:DLT-019 carries project-map:SUR-002 to 2.0.0 and
+  project-map:CON-001 is deprecated at that sunset. The debt fell 30 to
+  18.
+  The reworked detection carries no built-in adapter, so a repository
+  configuring neither `openapi` nor `detect` renders both sections
+  empty, and TypeScript, JavaScript and Java lose endpoint reporting
+  until built-in adapters land. The owner accepted that knowingly; the
+  Delta records it rather than the migration note softening it.
   ea16bea6 and 2b99053e close the enums slice. Its identity was keyed on the
   place values were written rather than on the type: a Go enum split
   across two `const` blocks was two entries carrying a fraction of its
