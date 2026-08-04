@@ -35,6 +35,13 @@ import {
 } from "../core/domain/project-map.js";
 import type { FactSet } from "../features/detect/detect.use-case.js";
 import { type CheckOutcome, checkFactsArtifact } from "./facts-check.js";
+import { jcs } from "../features/detect/canonical/jcs.js";
+import {
+	type BaselineEntry,
+	isRatchetClean,
+	ratchet,
+} from "../features/detect/merge/ratchet.js";
+import { parseBaseline } from "./unclassified-baseline.js";
 
 const require = createRequire(import.meta.url);
 
@@ -69,6 +76,7 @@ type BuildOptions = {
 	readonly only?: string;
 	readonly json?: string | boolean;
 	readonly check: boolean;
+	readonly strict: boolean;
 	readonly verbose: boolean;
 };
 
@@ -155,6 +163,11 @@ function registerBuildCommand(program: Command): void {
 			"write nothing; exit 1 on drift, 3 on a fingerprint mismatch, 4 on a mandatory diagnostic",
 			false,
 		)
+		.option(
+			"--strict",
+			"ratchet on unclassified sites the baseline does not list",
+			false,
+		)
 		.option("--verbose", "verbose logging", false);
 
 	command.action(async () => {
@@ -225,7 +238,55 @@ async function build(opts: BuildOptions): Promise<void> {
 			container.logger.info(`wrote ${jsonPath}`);
 		}
 		await emitFacts(container, effectiveConfig, projectRoot, detection);
+		if (opts.strict) {
+			await runRatchet(container, effectiveConfig, projectRoot, detection);
+		}
 	}
+}
+
+/**
+ * The verdict of project-map:BEH-014. It runs after every write, because the
+ * flag adds an exit code and changes no byte the run would otherwise produce.
+ */
+async function runRatchet(
+	container: Container,
+	config: ResolvedConfig,
+	projectRoot: string,
+	detection: Detection | null,
+): Promise<void> {
+	const baseline = await readBaseline(container, config, projectRoot);
+	const verdict = ratchet(detection?.factSet.diagnostics ?? [], baseline);
+	if (isRatchetClean(verdict)) {
+		return;
+	}
+	for (const entry of verdict.stale) {
+		process.stderr.write(`baseline entry suppresses nothing: ${jcs(entry)}\n`);
+	}
+	if (verdict.unlisted.length > 0) {
+		process.stdout.write(
+			`${jcs({ schema_version: "1", suppressed: verdict.unlisted })}\n`,
+		);
+	}
+	process.exitCode = 6;
+}
+
+async function readBaseline(
+	container: Container,
+	config: ResolvedConfig,
+	projectRoot: string,
+): Promise<readonly BaselineEntry[]> {
+	const declared = config.detect.unclassifiedBaseline;
+	if (declared === null) {
+		return [];
+	}
+	const resolved = path.resolve(projectRoot, declared);
+	if (!(await container.reader.exists(resolved))) {
+		throw new ConfigTimeError(
+			"schema_violation",
+			`${resolved} is declared as the unclassified baseline and does not exist`,
+		);
+	}
+	return parseBaseline(await container.reader.read(resolved), resolved);
 }
 
 type Detection = {

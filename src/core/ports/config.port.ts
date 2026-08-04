@@ -182,6 +182,8 @@ export type DetectConfig = {
 		readonly registry: readonly ClientRegistry[];
 		readonly moduleIds: readonly ModuleIdMapping[];
 	};
+	/** Path of the baseline of project-map:CTR-010; null when none is set. */
+	readonly unclassifiedBaseline: string | null;
 };
 
 export type ResolvedConfig = {

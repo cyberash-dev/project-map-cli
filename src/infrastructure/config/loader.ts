@@ -220,6 +220,7 @@ function resolveOpenApi(raw: ConfigFile): OpenApiConfig {
 
 function resolveDetect(raw: ConfigFile): DetectConfig {
 	return {
+		unclassifiedBaseline: raw.detect.unclassified_baseline,
 		inbound: {
 			routers: raw.detect.inbound.routers.map((entry) => ({
 				dsl: entry.dsl,

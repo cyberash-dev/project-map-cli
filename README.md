@@ -185,7 +185,21 @@ project-map version
 | 5    | a config-time error, raised before any build runs                             |
 
 3 outranks 1: a fingerprint difference accounts for every byte difference
-downstream of it. 4 is independent of the committed bytes.
+downstream of it. 4 is independent of the committed bytes. 6 is reachable only
+with `--strict`.
+
+### Adopting detection on a repository that already has diagnostics
+
+`--strict` ratchets: it fails on a diagnostic the baseline does not list, and
+on a baseline entry that matches nothing. Record the starting point once —
+
+```sh
+project-map build --strict > .project-map/unclassified-baseline.json
+```
+
+— then point `detect.unclassified_baseline` at that file. The baseline holds
+diagnostic cores rather than source anchors, so editing a line above a covered
+site does not churn it, and it never reaches the emitted artifact.
 
 ## Configuration (`.project-map.yaml`)
 

@@ -191,6 +191,7 @@ export const ConfigFileSchema = z
 			.default({ serves: [], consumes: [] }),
 		detect: z
 			.object({
+				unclassified_baseline: z.string().min(1).nullable().default(null),
 				inbound: z
 					.object({
 						routers: z
@@ -237,6 +238,7 @@ export const ConfigFileSchema = z
 					.default({ sinks: [], registry: [], module_ids: [] }),
 			})
 			.default({
+				unclassified_baseline: null,
 				inbound: { routers: [] },
 				outbound: { sinks: [], registry: [], module_ids: [] },
 			}),

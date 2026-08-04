@@ -324,7 +324,7 @@ lifecycle:
     scope: first-time-approval
 partition_id: project-map
 name: project-map/cli
-version: "1.2.0"
+version: "1.3.0"
 boundary_type: cli
 members:
   - project-map:CTR-001
@@ -624,6 +624,7 @@ schema: |
       --only <sections>        comma-separated SectionId list
       --json [path]            bare flag resolves to "project-map.json"
       --check                  default false
+      --strict                 default false
       --verbose                default false
   project-map facts
       --config <path>
@@ -649,7 +650,8 @@ postconditions: |
   performs network access (project-map:POL-002).
 external_identifiers: |
   Command names: init, build, facts, version, install-git-hook,
-  claude install, watch. Option names as listed in schema. Option values that are closed
+  claude install, watch. Option names as listed in schema, `--strict`
+  included. Option values that are closed
   enumerations: --type ∈ {pre-push, pre-commit}; --scope ∈ {project, user}.
   Process exit codes as listed in error_taxonomy.
 compatibility_rules: |
@@ -674,8 +676,15 @@ error_taxonomy: |
      selector_unresolved or marker_invalid (BEH-006). It is independent
      of the committed bytes.
   5  a config-time error, raised before any build runs: a configuration
-     that violates the schema of project-map:CTR-002, and every code of
-     project-map:CTR-004.
+     that violates the schema of project-map:CTR-002, every code of
+     project-map:CTR-004, and a declared unclassified baseline that is
+     absent or will not parse.
+  6  under --strict, detection emitted a diagnostic the baseline of
+     project-map:CTR-010 does not list, or that baseline lists one no
+     diagnostic matches (BEH-014). It is reachable only with the flag,
+     and sits below 3 and 4: those name a fact about the artifact and
+     about the configuration, while 6 names a verdict about a policy the
+     repository set for itself.
 applicability:
   invariant_to_all_axes: true
 concurrency_model:

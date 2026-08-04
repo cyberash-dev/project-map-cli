@@ -1,12 +1,12 @@
 {
   "metadata": {
     "toolVersion": "1.0.0",
-    "generatedAt": "2026-07-30T12:19:41.822Z",
-    "revision": "cdc933c",
-    "configHash": "sha256:fb6fe77557176478",
-    "scannedFiles": 137,
+    "generatedAt": "2026-08-04T10:52:34.557Z",
+    "revision": "b601aa1",
+    "configHash": "sha256:7bf0af6e8f857370",
+    "scannedFiles": 139,
     "excludedFiles": 0,
-    "buildDurationMs": 965,
+    "buildDurationMs": 1014,
     "language": "typescript",
     "frameworks": [],
     "overview": null,
@@ -20,7 +20,7 @@
   "contexts": [
     {
       "path": "src/features",
-      "fileCount": 95,
+      "fileCount": 96,
       "role": "Vertical slice features"
     },
     {
@@ -247,7 +247,7 @@
       "name": "ResolvedConfig",
       "source": {
         "file": "src/core/ports/config.port.ts",
-        "line": 187
+        "line": 189
       },
       "inherits": [],
       "fields": [
@@ -453,6 +453,39 @@
       "importance": 9.9
     },
     {
+      "name": "Diagnostic",
+      "source": {
+        "file": "src/core/domain/facts/diagnostic.ts",
+        "line": 29
+      },
+      "inherits": [],
+      "fields": [
+        {
+          "name": "code",
+          "type": "DiagnosticCode"
+        },
+        {
+          "name": "canonical_callee",
+          "type": "string"
+        },
+        {
+          "name": "canonical_call_shape",
+          "type": "CallShape"
+        },
+        {
+          "name": "evidence",
+          "type": "readonly Evidence[]"
+        },
+        {
+          "name": "count",
+          "type": "number"
+        }
+      ],
+      "methods": [],
+      "referencedFrom": 8,
+      "importance": 9.5
+    },
+    {
       "name": "IFileReader",
       "source": {
         "file": "src/core/ports/filesystem.port.ts",
@@ -528,39 +561,6 @@
       "methods": [],
       "referencedFrom": 7,
       "importance": 8.8
-    },
-    {
-      "name": "Diagnostic",
-      "source": {
-        "file": "src/core/domain/facts/diagnostic.ts",
-        "line": 29
-      },
-      "inherits": [],
-      "fields": [
-        {
-          "name": "code",
-          "type": "DiagnosticCode"
-        },
-        {
-          "name": "canonical_callee",
-          "type": "string"
-        },
-        {
-          "name": "canonical_call_shape",
-          "type": "CallShape"
-        },
-        {
-          "name": "evidence",
-          "type": "readonly Evidence[]"
-        },
-        {
-          "name": "count",
-          "type": "number"
-        }
-      ],
-      "methods": [],
-      "referencedFrom": 7,
-      "importance": 8.5
     },
     {
       "name": "EndpointFact",
@@ -961,36 +961,19 @@
       "importance": 4.5
     },
     {
-      "name": "DeclaredRouter",
+      "name": "ConfigTimeError",
       "source": {
-        "file": "src/core/ports/config.port.ts",
-        "line": 123
+        "file": "src/core/domain/config-time-error.ts",
+        "line": 15
       },
-      "inherits": [],
-      "fields": [
-        {
-          "name": "dsl",
-          "type": "string"
-        },
-        {
-          "name": "pathArg",
-          "type": "Selector"
-        },
-        {
-          "name": "prefixFrom",
-          "type": "Selector | null"
-        },
-        {
-          "name": "verbFrom",
-          "type": "VerbSource | null"
-        },
-        {
-          "name": "identityPreserving",
-          "type": "readonly IdentityPreserving[]"
-        }
+      "inherits": [
+        "Error"
       ],
-      "methods": [],
-      "referencedFrom": 3,
+      "fields": [],
+      "methods": [
+        "constructor"
+      ],
+      "referencedFrom": 4,
       "importance": 4.5
     }
   ],

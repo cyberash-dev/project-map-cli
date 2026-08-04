@@ -780,6 +780,69 @@ test_obligation:
 ---
 ```
 
+```yaml
+---
+id: project-map:BEH-014
+type: Behavior
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: build --strict — ratchet on what the baseline does not cover
+given: a configuration whose detection emits diagnostics
+when: build runs with --strict
+then: |
+  The build proceeds exactly as it would without the flag: the same
+  artifact, the same document, the same write set. The flag adds a
+  verdict and nothing else.
+  Every diagnostic whose core the baseline lists is suppressed. A
+  diagnostic the baseline does not list is new, and the run exits 6. A
+  baseline entry matching no diagnostic is stale, and the run exits 6
+  for that alone, so a baseline cannot rot into a blanket suppression.
+  On a non-zero verdict the run writes the cores it would have needed,
+  canonically serialized, to stdout, so a reader can redirect them into
+  the baseline file rather than transcribe them.
+  With no baseline configured, --strict ratchets against the empty set:
+  a repository with any diagnostic exits 6 until it records one.
+  --strict never suppresses a mandatory check diagnostic. Those fail
+  check mode on their own terms per project-map:BEH-006, and a baseline
+  that lists one is stale by this rule.
+negative_cases:
+  - the same build without --strict, which exits on its own terms and
+    reads no baseline
+  - a baseline listing a mandatory check diagnostic, which is stale
+    rather than effective
+out_of_scope:
+  - writing the baseline file, which no command does
+  - suppressing a fact; the baseline reaches diagnostics alone
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-001
+  - project-map:POL-003
+test_obligation:
+  predicate: |
+    A fixture whose diagnostics the baseline covers exits 0 under
+    --strict; the same fixture with one entry removed exits 6 and prints
+    that core; a baseline carrying an entry no diagnostic matches exits
+    6; and the artifact is byte-identical across all three.
+  test_template: integration
+  boundary_classes:
+    - a covered diagnostic, a new one, and a stale entry
+    - a baseline configured against none configured
+    - a mandatory check diagnostic listed in the baseline
+  failure_scenarios:
+    - --strict altering a byte of the artifact or the document
+    - a stale entry passing silently
+    - a mandatory check diagnostic suppressed by the baseline
+---
+```
+
 ---
 
 ## 7. Data contracts
@@ -931,6 +994,9 @@ schema: |
   `prefix_from`, `verb_from`, and `identity_preserving[]`.
   `detect.queue[]` carries a producer or consumer shape and a `topic`
   selector.
+  `detect.unclassified_baseline` is a path defaulting to null, whose
+  document project-map:CTR-010 fixes. It names a suppression list read
+  only under `--strict` and reaching no emitted byte.
   `call[]` entries are objects `{member, path_arg?, method?, target?}`;
   a per-member key overrides the sink-level binding of the same name for
   that member alone. A bare string is sugar for `{member: <name>}`.
@@ -1413,6 +1479,84 @@ test_obligation:
     - a tarball carrying sources or fixtures
     - a bin target that is not executable
     - an engines range the emitted code does not satisfy
+---
+```
+
+```yaml
+---
+id: project-map:CTR-010
+type: Contract
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: the unclassified baseline and what it suppresses
+surface_ref: project-map:SUR-003
+schema: |
+  The baseline is a file the repository commits, named by
+  `detect.unclassified_baseline`, a path defaulting to null.
+  It is a JSON document `{schema_version, suppressed[]}` serialized by
+  the canonicalization of project-map:CTR-008, so two authors of the
+  same set write the same bytes.
+  Each `suppressed[]` entry is the core of a diagnostic and nothing
+  else: `{code, canonical_callee, canonical_call_shape}`. Source anchors
+  are deliberately absent. An anchor moves whenever a line above it
+  moves, and a baseline keyed on anchors would churn on every unrelated
+  edit; a core survives until the site itself changes shape.
+  An entry suppresses every diagnostic sharing its core, however many
+  anchors that diagnostic aggregates.
+  The baseline is not part of the analysis unit. It is read after the
+  fact set is canonical and it never enters the artifact, so for one
+  configuration the bytes of `facts.json` are identical whatever the
+  file holds and whether or not it exists.
+  Declaring the key is a configuration change like any other: it enters
+  the configuration digest, and therefore the analysis-unit digest, once
+  — the same as adding a sink or a served specification. What the rule
+  forbids is the file's CONTENT reaching the artifact, which is where a
+  suppression list could otherwise rewrite the facts it suppresses.
+preconditions: detection produced a canonical fact set
+postconditions: |
+  For one configuration, the artifact of project-map:GA-002 is
+  byte-identical across every content the baseline file may hold.
+external_identifiers: |
+  The configuration key `detect.unclassified_baseline`; the document
+  keys `schema_version` and `suppressed`; the entry keys `code`,
+  `canonical_callee` and `canonical_call_shape`.
+compatibility_rules: |
+  Renaming a key, or adding a component to the core an entry carries, is
+  a major bump of project-map:SUR-003: an existing baseline stops
+  matching. Adding an optional key that preserves matching is a minor
+  bump.
+error_taxonomy: |
+  A baseline file that is absent, unreadable, or fails to parse is a
+  config-time error raised before any build, exiting 5. An empty
+  `suppressed[]` is valid and suppresses nothing.
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-001
+  - project-map:POL-003
+test_obligation:
+  predicate: |
+    Two builds of one configuration whose baseline files differ in
+    content produce byte-identical artifacts; an entry matching a
+    diagnostic core suppresses every anchor that diagnostic carries; an
+    unreadable baseline exits 5.
+  test_template: integration
+  boundary_classes:
+    - a baseline covering every core against one covering none
+    - an entry matching one core against an entry matching none
+    - a diagnostic carrying one anchor against several
+  failure_scenarios:
+    - the baseline's content changing a byte of the artifact
+    - an entry keyed on an anchor rather than a core
+    - a malformed baseline reported as a diagnostic rather than a
+      config-time error
 ---
 ```
 
@@ -1968,7 +2112,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "1.2.0"
+    intended_version: "1.3.0"
 as_is: |
   project-map:CTR-002 lists fourteen top-level configuration keys, none
   of which names a repository identity or bounds an analysis unit. The
@@ -2029,7 +2173,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "1.2.0"
+    intended_version: "1.3.0"
 as_is: |
   project-map:CTR-002 accepts no `openapi` and no `detect` section.
   Detection anchors cannot be declared, so an in-house wrapper is
@@ -2080,7 +2224,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "1.2.0"
+    intended_version: "1.3.0"
 as_is: |
   project-map:CTR-001 declares exit code 0 for success, 1 for a check
   drift, and 2 for no discoverable configuration. A configuration error
@@ -2230,7 +2374,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "1.2.0"
+    intended_version: "1.3.0"
   - id: project-map:SUR-002
     intended_version: "1.3.0"
 as_is: |
@@ -2289,7 +2433,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "1.2.0"
+    intended_version: "1.3.0"
 as_is: |
   project-map:DLT-004 declares `surface_impact`
   project-map:SUR-001@0.4.0. It was approved and its bump was applied,
@@ -2339,7 +2483,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "1.2.0"
+    intended_version: "1.3.0"
 as_is: |
   project-map:DLT-004, project-map:DLT-005, project-map:DLT-009 and
   project-map:DLT-010 each declare `surface_impact` on
@@ -2396,7 +2540,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "1.2.0"
+    intended_version: "1.3.0"
 as_is: |
   project-map:CTR-005 declares `detect.outbound.sinks[]` with
   `base_type`, `call[]`, `path_arg`, `method`, and `target`, and fixes
@@ -2708,6 +2852,60 @@ tests_new_behavior: |
 ---
 ```
 
+```yaml
+---
+id: project-map:DLT-017
+type: Delta
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: the command surface gains the strict flag and its verdict code
+target_id: project-map:CTR-001
+kind: extend
+baseline_version: project-map:BL-001
+compatibility_action: ignore
+surface_impact:
+  - id: project-map:SUR-001
+    intended_version: "1.3.0"
+as_is: |
+  project-map:CTR-001 declares `build` with `--config`, `--out`,
+  `--only`, `--json`, `--check` and `--verbose`, and exit codes 0
+  through 5. A repository adopting detection has no way to accept the
+  diagnostics it starts with while refusing new ones: every code the
+  taxonomy carries is either about the artifact's bytes or about a
+  config-time error.
+to_be: |
+  `build` additionally accepts `--strict`, default false, and
+  `.project-map.yaml` additionally accepts
+  `detect.unclassified_baseline`, a path defaulting to null whose schema
+  project-map:CTR-010 fixes.
+  Exit code 6 joins the taxonomy: under `--strict`, detection emitted a
+  diagnostic the baseline does not list, or the baseline lists one no
+  diagnostic matches. It is reachable only with the flag, so no
+  invocation that exits 0 through 5 today changes.
+  6 sits below 3 and 4 in precedence. Those two name a fact about the
+  artifact and about the configuration, which hold whether or not a
+  baseline exists; 6 names a verdict about a policy the repository set
+  for itself.
+  project-map:SUR-001 takes a minor bump from 1.2.0 to 1.3.0: an added
+  flag and an added key, each defaulting to the prior behavior. Every
+  `surface_impact` declaration on it belonging to a finalized Delta
+  names 1.3.0 from here, superseding the pin project-map:DLT-011 set.
+migration_note: |
+  Nothing changes for an invocation that does not pass `--strict`. A
+  configuration that names no baseline validates as before.
+tests_old_behavior: |
+  The existing obligation of project-map:CTR-001 keeps each documented
+  argv yielding its documented exit code, and keeps a build without the
+  flag reading no baseline.
+tests_new_behavior: |
+  A build with `--strict` over a fixture whose baseline covers its
+  diagnostics exits 0; removing one entry exits 6; an entry matching
+  nothing exits 6; and a build without the flag over the same fixture
+  exits on its own terms.
+---
+```
+
 ---
 
 ## 16. Implementation bindings
@@ -2722,12 +2920,18 @@ partition_id: project-map
 target_ids:
   - project-map:BEH-012
   - project-map:BEH-013
+  - project-map:BEH-014
+  - project-map:CTR-010
   - project-map:DLT-014
+  - project-map:DLT-017
 binding:
   shared_library: src/features/detect/outbound/library.ts
   client_registry: src/features/detect/outbound/registry.ts
   diagnostics: src/features/detect/merge/diagnostics.ts
   coverage: src/features/detect/merge/coverage.ts
+  ratchet: src/features/detect/merge/ratchet.ts
+  baseline_reader: src/cli/unclassified-baseline.ts
+  command_surface: src/cli/commands.ts
   sink_boundary: src/features/detect/outbound/sinks.ts
   transport_halves: src/features/detect/outbound/transports.ts
   hierarchy_index: src/features/detect/index/python/hierarchy.ts
@@ -2756,5 +2960,10 @@ verification_method: |
   tests/integration/go-chi-routes.test.ts covers the router half of the
   universe: a member call on a proven router that names no route, merged
   across two anchors, against a receiver that is not a router.
+  tests/integration/strict-ratchet.test.ts drives the verdict: a
+  baseline covering every core, one covering all but one, one carrying
+  an entry nothing matches, none configured at all, a file that will not
+  parse, and the artifact compared across two baselines that differ in
+  content.
 ---
 ```
