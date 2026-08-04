@@ -850,6 +850,73 @@ test_obligation:
 ---
 ```
 
+```yaml
+---
+id: project-map:BEH-015
+type: Behavior
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: build — what the enums section reports
+given: a source tree in a supported language
+when: the enums section is rendered
+then: |
+  One entry is reported per enumerated TYPE, carrying its name, the
+  source location of its declaration, and its member names in
+  declaration order. A type declaring no member is not reported.
+  What counts as an enumerated type is per language and is decided by
+  the declaration, never by a name:
+  Python — a class whose bases include one the configuration lists in
+  `enums.base_classes`, compared on the last dotted segment so an
+  aliased import matches. Members are the class-level assignments whose
+  target is a plain identifier not starting with an underscore.
+  TypeScript and JavaScript — an `enum` declaration; members are its
+  assignments and bare identifiers.
+  Java and Kotlin — an `enum` declaration and its constants.
+  Go — a `const` block whose specs carry a named type. The entry is
+  keyed on that type within its package, so two blocks typing one
+  enum report one entry carrying the members of both, in the order the
+  blocks appear. A repository that splits an enum across blocks gets the
+  enum, not one entry per block.
+  Entries are ordered by name, and where a name has more than one
+  claimant each is headed as project-map:DLT-016 fixes.
+negative_cases:
+  - a Python class whose base is not listed, which is not an enum
+    however it is named
+  - a Go const block whose specs carry no type, which names no enum
+  - an enumerated type declaring no member
+out_of_scope:
+  - member values; the section reports names alone
+  - an enum a language expresses as a union of literal types
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-001
+  - project-map:POL-002
+test_obligation:
+  predicate: |
+    A Go fixture splitting one typed enum across two const blocks
+    reports one entry carrying every member of both; a Python class
+    whose base is an aliased listed base is reported and one whose base
+    is unlisted is not; an enumerated type with no member is absent.
+  test_template: integration
+  boundary_classes:
+    - one const block against two typing the same enum
+    - a listed base reached directly and through an alias
+    - a type declaring no member
+  failure_scenarios:
+    - two entries for one Go type split across blocks
+    - a class recognized by its name rather than by its base
+    - member order differing from declaration order
+---
+```
+
 ---
 
 ## 7. Data contracts
@@ -2289,7 +2356,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-002
-    intended_version: "1.3.0"
+    intended_version: "1.4.0"
 as_is: |
   project-map:CTR-003 fixes the SectionId set at nine values, and the
   configuration defaults `sections` to that whole set. Accepted set and
@@ -2389,7 +2456,7 @@ surface_impact:
   - id: project-map:SUR-001
     intended_version: "1.3.0"
   - id: project-map:SUR-002
-    intended_version: "1.3.0"
+    intended_version: "1.4.0"
 as_is: |
   project-map:DLT-008 widened the predicate of project-map:POL-001 to
   admit the facts artifact and its sidecar, and declared that the
@@ -2616,7 +2683,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-002
-    intended_version: "1.3.0"
+    intended_version: "1.4.0"
 as_is: |
   project-map:DLT-009 declares `surface_impact` on project-map:SUR-002
   at 1.0.0. It was approved and its bump was applied, and
@@ -2737,7 +2804,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-002
-    intended_version: "1.3.0"
+    intended_version: "1.4.0"
 as_is: |
   project-map:CTR-003 fixes which columns the three detection sections
   render but not the markup of a cell, and every cell is emitted as
@@ -2809,7 +2876,7 @@ baseline_version: project-map:BL-001
 compatibility_action: migrate
 surface_impact:
   - id: project-map:SUR-002
-    intended_version: "1.3.0"
+    intended_version: "1.4.0"
 as_is: |
   The entities and enums sections identify a declaration by its bare
   name. In a service-sized repository that name is not unique: one
@@ -2922,6 +2989,54 @@ tests_new_behavior: |
   diagnostics exits 0; removing one entry exits 6; an entry matching
   nothing exits 6; and a build without the flag over the same fixture
   exits on its own terms.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-018
+type: Delta
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: a Go enum split across const blocks is reported once
+target_id: project-map:GA-001
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: migrate
+surface_impact:
+  - id: project-map:SUR-002
+    intended_version: "1.4.0"
+as_is: |
+  The Go adapter reports one entry per `const` block rather than per
+  enumerated type. A repository that splits an enum across two blocks —
+  a common shape where a type gains values over time — is reported
+  twice, each entry carrying a fraction of the members. One validation
+  service reports `models.PollingPath` twice and another reports
+  `core/exceptions.ReasonCode` four times; the qualified headings of
+  project-map:DLT-016 cannot tell them apart, because they name one type
+  in one package and differ only in which members they happened to see.
+to_be: |
+  The entry is keyed on the declared type within its package, as
+  project-map:BEH-015 fixes. Two blocks typing one enum report one entry
+  carrying the members of both in the order the blocks appear.
+  project-map:SUR-002 takes a minor bump from 1.3.0 to 1.4.0: the
+  document's structure is unchanged and only the grouping of rows a Go
+  repository already had moves. Every `surface_impact` declaration on it
+  belonging to a finalized Delta names 1.4.0 from here, superseding the
+  pin project-map:DLT-016 set.
+migration_note: |
+  A consumer rebuilds once. A repository whose every Go enum lives in a
+  single block is unchanged. One that splits an enum sees the two
+  entries become one, which is the entry it should always have had.
+tests_old_behavior: |
+  No test preserved the old grouping, because it was the defect: `as_is`
+  records it. The existing obligation of project-map:CTR-003 keeps the
+  section heading and the ordering of project-map:INV-002 unchanged.
+tests_new_behavior: |
+  A fixture splitting one typed enum across two const blocks reports one
+  entry carrying every member of both, and a fixture whose blocks type
+  two different enums still reports two.
 ---
 ```
 

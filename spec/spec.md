@@ -10,10 +10,10 @@ Status of this document: onboarding in progress. The partition's
 observable behavior is not yet claimed by an approved normative ID.
 It shrinks per PR; it does not reach zero in one change.
 
-Accounting for the current value: 129 modules under `src/`, of which 92
+Accounting for the current value: 131 modules under `src/`, of which 101
 are claimed by an `Implementation binding` in §16 whose `target_ids` are
-approved. The remaining 37 are the seven per-slice extraction adapter
-sets and the symbol index that ranks their output; their observable
+approved. The remaining 30 are six per-slice extraction adapter sets and
+the symbol index that ranks their output; their observable
 behavior is lifted in later change sets. The count is derived from the
 §16 footprint rather than assessed by hand, so it moves only when a
 binding gains or loses a path, or when a target is approved.
@@ -24,7 +24,8 @@ the ports behind the clock, the revision and the writer, and the use
 cases behind `init` and `version` — and were unclaimed only because no
 binding named them. Naming them moved the count from 52 to 37 and
 changed no code. What remains is the extraction whose observable output
-no normative ID describes.
+no normative ID describes, less the enums slice, whose seven modules
+project-map:BEH-015 now governs.
 
 All six approved phases of the detection rework are inside the 70. Each
 one briefly raised the count while its records were still `proposed`,
@@ -123,7 +124,7 @@ default_policy_set:
   - project-map:POL-002
 id_namespace: project-map
 unmodeled_budget:
-  current: 37
+  current: 30
   baseline_at: "2026-07-27"
   baseline_value: 72
   trend: monotonic_non_increasing
@@ -362,7 +363,7 @@ lifecycle:
     scope: first-time-approval
 partition_id: project-map
 name: project-map/map-document
-version: "1.3.0"
+version: "1.4.0"
 boundary_type: generated_published_artifact
 members:
   - project-map:CTR-003
@@ -1387,7 +1388,9 @@ lifecycle:
   status: proposed
 partition_id: project-map
 target_ids:
+  - project-map:BEH-015
   - project-map:CTR-003
+  - project-map:DLT-018
   - project-map:DLT-007
   - project-map:GA-001
   - project-map:INV-001
@@ -1395,6 +1398,13 @@ binding:
   section_ids: src/core/domain/project-map.ts
   document_assembly: src/features/build/rendering/markdown.ts
   detection_sections: src/features/build/rendering/detection-sections.ts
+  enums_extract: src/features/build/slices/enums/extract.ts
+  enums_render: src/features/build/slices/enums/render.ts
+  enums_go: src/features/build/slices/enums/adapters/go.ts
+  enums_python: src/features/build/slices/enums/adapters/python.ts
+  enums_typescript: src/features/build/slices/enums/adapters/typescript.ts
+  enums_java: src/features/build/slices/enums/adapters/java.ts
+  enums_kotlin: src/features/build/slices/enums/adapters/kotlin.ts
   qualified_names: src/features/build/rendering/qualified-name.ts
   json_emission: src/features/build/rendering/json.ts
   table_helpers: src/features/build/rendering/mdast-helpers.ts

@@ -9,7 +9,7 @@ each release.
 First stable release. The map document is unchanged for a repository that does
 not opt in, and a second artifact joins it.
 
-Surfaces: `project-map/cli` 1.3.0 · `project-map/map-document` 1.3.0 ·
+Surfaces: `project-map/cli` 1.3.0 · `project-map/map-document` 1.4.0 ·
 `project-map/detection-facts` 1.1.0 (new) · `project-map/package` 1.0.0 (new).
 
 ### Added
@@ -68,6 +68,10 @@ Surfaces: `project-map/cli` 1.3.0 · `project-map/map-document` 1.3.0 ·
   an option — a Python member named `__init__` would be read as emphasis and
   lose the underscores it is named with — so the cells move to the node that
   carries them literally. The legacy sections are untouched.
+- **A Go enum split across `const` blocks is one entry, not one per block.** The
+  adapter keyed entries on the block rather than on the declared type, so an
+  enum that gained values over time was reported twice, each entry carrying a
+  fraction of its members.
 - **An entity or enum whose bare name another declaration also claims is now
   headed by that name qualified with its package.** One validation service
   declares seventeen Go structs called `Config`, and its document carried six

@@ -12,3 +12,12 @@ const (
 	KindPrimary Kind = "primary"
 	KindReplica Kind = "replica"
 )
+
+const (
+	KindArchive Kind = "archive"
+)
+
+const (
+	StatusOpen Status = "open"
+	StatusShut Status = "shut"
+)

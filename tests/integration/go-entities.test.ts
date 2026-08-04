@@ -84,3 +84,38 @@ describe("a field whose type is not a plain name", () => {
 		expect(document).toContain('TVM: struct { SRC string `yaml:"src"` }');
 	});
 });
+
+describe("an enum split across const blocks", () => {
+	let workspace: Workspace;
+
+	beforeEach(async () => {
+		workspace = await createWorkspace("go-entities-minimal");
+		await runCli(workspace.dir, ["build"]);
+	});
+	afterEach(async () => {
+		await workspace.dispose();
+	});
+
+	/* @covers project-map:BEH-015 */
+	/* @covers project-map:DLT-018 */
+	it("reports one entry carrying the members of every block", async () => {
+		const document = await documentOf(workspace.dir);
+		const headings = document
+			.split("\n")
+			.filter((line) => line.startsWith("### `config.Kind`"));
+
+		expect(headings).toHaveLength(1);
+		const entry = document.slice(document.indexOf("### `config.Kind`"));
+		expect(entry).toContain("- `KindPrimary`");
+		expect(entry).toContain("- `KindArchive`");
+	});
+
+	/* @covers project-map:BEH-015 */
+	it("keeps two blocks typing different enums apart", async () => {
+		const document = await documentOf(workspace.dir);
+
+		expect(document).toContain("### `Status`");
+		expect(document).toContain("### `config.Kind`");
+		expect(document).toContain("- `StatusOpen`");
+	});
+});

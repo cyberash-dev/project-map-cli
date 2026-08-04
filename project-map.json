@@ -1,12 +1,12 @@
 {
   "metadata": {
     "toolVersion": "1.0.0",
-    "generatedAt": "2026-08-04T10:52:34.557Z",
-    "revision": "b601aa1",
+    "generatedAt": "2026-08-04T12:28:42.820Z",
+    "revision": "bd01d2c",
     "configHash": "sha256:7bf0af6e8f857370",
     "scannedFiles": 139,
     "excludedFiles": 0,
-    "buildDurationMs": 1014,
+    "buildDurationMs": 1037,
     "language": "typescript",
     "frameworks": [],
     "overview": null,
@@ -92,8 +92,8 @@
         "childForFieldName",
         "descendantForPosition"
       ],
-      "referencedFrom": 33,
-      "importance": 37.3
+      "referencedFrom": 34,
+      "importance": 38.3
     },
     {
       "name": "ExtractionContext",
