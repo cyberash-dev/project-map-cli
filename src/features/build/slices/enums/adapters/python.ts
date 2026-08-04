@@ -56,12 +56,32 @@ export class PythonEnumsAdapter implements ILanguageAdapter<EnumType[]> {
 					file: file.relPath,
 					line: line1Based(cls),
 				};
-				enums.push({ name, source, members });
+				enums.push({ name: qualifiedName(cls, name), source, members });
 			}
 		}
 		enums.sort((a, b) => a.name.localeCompare(b.name));
 		return Promise.resolve(enums);
 	}
+}
+
+/**
+ * A class nested in another is named by the chain that reaches it: four
+ * exception classes may each declare a `ReasonCode`, and reporting them all as
+ * `ReasonCode` reports one type that does not exist.
+ */
+function qualifiedName(cls: SyntaxNode, name: string): string {
+	const owners: string[] = [];
+	let cursor = cls.parent ?? null;
+	while (cursor !== null) {
+		if (cursor.type === "class_definition") {
+			const owner = childText(cursor, "name");
+			if (owner) {
+				owners.unshift(owner);
+			}
+		}
+		cursor = cursor.parent ?? null;
+	}
+	return [...owners, name].join(".");
 }
 
 function readMembers(cls: SyntaxNode): string[] {

@@ -1,12 +1,12 @@
 {
   "metadata": {
     "toolVersion": "1.0.0",
-    "generatedAt": "2026-08-04T12:28:42.820Z",
-    "revision": "bd01d2c",
+    "generatedAt": "2026-08-04T12:42:01.993Z",
+    "revision": "ea16bea",
     "configHash": "sha256:7bf0af6e8f857370",
     "scannedFiles": 139,
     "excludedFiles": 0,
-    "buildDurationMs": 1037,
+    "buildDurationMs": 994,
     "language": "typescript",
     "frameworks": [],
     "overview": null,

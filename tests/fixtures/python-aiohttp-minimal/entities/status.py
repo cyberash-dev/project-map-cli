@@ -8,3 +8,15 @@ class TransactionStatus(Enum):
     CHARGED = "CHARGED"
     FAILED = "FAILED"
     REFUNDED = "REFUNDED"
+
+
+class PaymentError(Exception):
+    class ReasonCode(Enum):
+        DECLINED = "DECLINED"
+        EXPIRED = "EXPIRED"
+
+
+class RefundError(Exception):
+    class ReasonCode(Enum):
+        TOO_LATE = "TOO_LATE"
+        NOT_FOUND = "NOT_FOUND"

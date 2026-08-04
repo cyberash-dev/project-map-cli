@@ -869,7 +869,10 @@ then: |
   Python — a class whose bases include one the configuration lists in
   `enums.base_classes`, compared on the last dotted segment so an
   aliased import matches. Members are the class-level assignments whose
-  target is a plain identifier not starting with an underscore.
+  target is a plain identifier not starting with an underscore. A class
+  nested in another is named by the chain that reaches it, because that
+  chain is its name: four exception classes may each declare a
+  `ReasonCode`, and they are four types.
   TypeScript and JavaScript — an `enum` declaration; members are its
   assignments and bare identifiers.
   Java and Kotlin — an `enum` declaration and its constants.
@@ -902,16 +905,18 @@ policy_refs:
 test_obligation:
   predicate: |
     A Go fixture splitting one typed enum across two const blocks
-    reports one entry carrying every member of both; a Python class
-    whose base is an aliased listed base is reported and one whose base
-    is unlisted is not; an enumerated type with no member is absent.
+    reports one entry carrying every member of both; two Python classes
+    each nesting an enum of one name report two entries named by their
+    owners; a class whose base is unlisted is not reported.
   test_template: integration
   boundary_classes:
     - one const block against two typing the same enum
     - a listed base reached directly and through an alias
+    - a nested enum against a module-level one
     - a type declaring no member
   failure_scenarios:
     - two entries for one Go type split across blocks
+    - two nested enums of different owners sharing one entry
     - a class recognized by its name rather than by its base
     - member order differing from declaration order
 ---
@@ -3019,7 +3024,8 @@ as_is: |
 to_be: |
   The entry is keyed on the declared type within its package, as
   project-map:BEH-015 fixes. Two blocks typing one enum report one entry
-  carrying the members of both in the order the blocks appear.
+  carrying the members of both in the order the blocks appear, and a
+  Python enum nested in a class is named by the chain that reaches it.
   project-map:SUR-002 takes a minor bump from 1.3.0 to 1.4.0: the
   document's structure is unchanged and only the grouping of rows a Go
   repository already had moves. Every `surface_impact` declaration on it
@@ -3027,16 +3033,18 @@ to_be: |
   pin project-map:DLT-016 set.
 migration_note: |
   A consumer rebuilds once. A repository whose every Go enum lives in a
-  single block is unchanged. One that splits an enum sees the two
-  entries become one, which is the entry it should always have had.
+  single block and whose every Python enum sits at module level is
+  unchanged. One that splits an enum sees its entries become one; one
+  that nests an enum sees it gain its owner's name.
 tests_old_behavior: |
   No test preserved the old grouping, because it was the defect: `as_is`
   records it. The existing obligation of project-map:CTR-003 keeps the
   section heading and the ordering of project-map:INV-002 unchanged.
 tests_new_behavior: |
   A fixture splitting one typed enum across two const blocks reports one
-  entry carrying every member of both, and a fixture whose blocks type
-  two different enums still reports two.
+  entry carrying every member of both; a fixture whose blocks type two
+  different enums still reports two; and two Python classes each nesting
+  an enum of one name report two entries named by their owners.
 ---
 ```
 
