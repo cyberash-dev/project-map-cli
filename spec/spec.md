@@ -10,13 +10,21 @@ Status of this document: onboarding in progress. The partition's
 observable behavior is not yet claimed by an approved normative ID.
 It shrinks per PR; it does not reach zero in one change.
 
-Accounting for the current value: 122 modules under `src/`, of which 70
+Accounting for the current value: 129 modules under `src/`, of which 92
 are claimed by an `Implementation binding` in §16 whose `target_ids` are
-approved. The remaining 52 are the per-slice extraction adapters and the
-ports they sit behind; their observable behavior is lifted in later
-change sets. The count is derived from the §16 footprint rather than
-assessed by hand, so it moves only when a binding gains or loses a path,
-or when a target is approved.
+approved. The remaining 37 are the seven per-slice extraction adapter
+sets and the symbol index that ranks their output; their observable
+behavior is lifted in later change sets. The count is derived from the
+§16 footprint rather than assessed by hand, so it moves only when a
+binding gains or loses a path, or when a target is approved.
+
+Fifteen of the modules that were counted as debt implemented behavior an
+approved ID already governed — the parser the extractors dispatch to,
+the ports behind the clock, the revision and the writer, and the use
+cases behind `init` and `version` — and were unclaimed only because no
+binding named them. Naming them moved the count from 52 to 37 and
+changed no code. What remains is the extraction whose observable output
+no normative ID describes.
 
 All six approved phases of the detection rework are inside the 70. Each
 one briefly raised the count while its records were still `proposed`,
@@ -115,7 +123,7 @@ default_policy_set:
   - project-map:POL-002
 id_namespace: project-map
 unmodeled_budget:
-  current: 52
+  current: 37
   baseline_at: "2026-07-27"
   baseline_value: 72
   trend: monotonic_non_increasing
@@ -1320,6 +1328,8 @@ binding:
   composition_root: src/cli/container.ts
   entrypoint: src/cli/index.ts
   command_surface: src/cli/commands.ts
+  init_command: src/features/init/init.use-case.ts
+  version_command: src/features/version/version.use-case.ts
 authority: code_annotation
 verification_method: |
   tests/integration/cli-contract.test.ts and
@@ -1343,6 +1353,7 @@ binding:
   schema: src/infrastructure/config/schema.ts
   defaults: src/infrastructure/config/defaults.ts
   digest: src/infrastructure/config/canonical-json.ts
+  language_identifiers: src/core/domain/language.ts
 authority: code_annotation
 verification_method: |
   tests/integration/config-hash.test.ts asserts the digest reacts to a
@@ -1369,7 +1380,9 @@ binding:
   qualified_names: src/features/build/rendering/qualified-name.ts
   json_emission: src/features/build/rendering/json.ts
   table_helpers: src/features/build/rendering/mdast-helpers.ts
+  clock_port: src/core/ports/clock.port.ts
   clock: src/infrastructure/clock/system.ts
+  revision_port: src/core/ports/revision.port.ts
   revision: src/infrastructure/revision/git.ts
 authority: code_annotation
 verification_method: |
@@ -1394,6 +1407,14 @@ binding:
   extractor_set: src/features/build/extractor-set.ts
   entity_ranking: src/features/build/slices/entities/extract.ts
   file_discovery: src/infrastructure/filesystem/globby-walker.ts
+  extraction_context: src/features/build/extraction-context.ts
+  extractor_port: src/features/build/extractor.port.ts
+  parser_port: src/core/ports/parser.port.ts
+  parser: src/infrastructure/parser/tree-sitter.ts
+  grammars: src/infrastructure/parser/grammars.ts
+  tree_helpers: src/infrastructure/parser/ts-utils.ts
+  logger_port: src/core/ports/logger.port.ts
+  logger: src/infrastructure/logger/console.ts
 authority: code_annotation
 verification_method: |
   tests/integration/determinism-conformance.test.ts injects failing
@@ -1420,6 +1441,8 @@ binding:
   claude_hook_install: src/features/install-hooks/install-claude-hook.use-case.ts
   claude_skill_install: src/features/install-hooks/install-claude-skill.use-case.ts
   scope_validation: src/cli/commands.ts
+  writer_port: src/core/ports/filesystem.port.ts
+  claude_skill_body: src/features/install-hooks/claude-skill.template.ts
 authority: code_annotation
 verification_method: |
   Write-set assertions compare the workspace file listing before and
