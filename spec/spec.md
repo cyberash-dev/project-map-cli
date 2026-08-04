@@ -24,6 +24,7 @@ to 37; project-map:BEH-015 governed the enums slice, 37 to 30;
 project-map:DLT-019 deleted the twelve modules of the prior endpoints
 and interactions extractors, 30 to 18; and project-map:BEH-016 governed
 the four slices that remained.
+
 ---
 
 ## 1. Context
