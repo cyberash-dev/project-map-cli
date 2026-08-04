@@ -22,10 +22,10 @@ export function renderDetectionSection(
 	if (facts === null) {
 		return [];
 	}
-	if (id === "inbound_endpoints") {
+	if (id === "endpoints") {
 		return renderInbound(facts.facts.filter(isEndpointFact));
 	}
-	if (id === "outbound_operations") {
+	if (id === "interactions") {
 		return renderOutbound(facts.facts.filter(isOutbound));
 	}
 	return renderCoverage(facts);
@@ -40,7 +40,7 @@ function renderInbound(facts: readonly EndpointFact[]): RootContent[] {
 		return [];
 	}
 	return [
-		heading(2, "Inbound endpoints"),
+		heading(2, "HTTP endpoints"),
 		table(
 			["Method", "Route", "Resolution", "Provenance", "Contracts"],
 			facts.map((fact) => [
@@ -61,7 +61,7 @@ function renderOutbound(
 		return [];
 	}
 	return [
-		heading(2, "Outbound operations"),
+		heading(2, "External dependencies"),
 		table(
 			["Owner", "Method", "Route", "Destination", "Resolution"],
 			facts.map((fact) => [

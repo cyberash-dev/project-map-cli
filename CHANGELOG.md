@@ -9,7 +9,7 @@ each release.
 First stable release. The map document is unchanged for a repository that does
 not opt in, and a second artifact joins it.
 
-Surfaces: `project-map/cli` 1.3.0 · `project-map/map-document` 1.4.0 ·
+Surfaces: `project-map/cli` 1.3.0 · `project-map/map-document` 2.0.0 ·
 `project-map/detection-facts` 1.1.0 (new) · `project-map/package` 1.0.0 (new).
 
 ### Added
@@ -87,14 +87,19 @@ Surfaces: `project-map/cli` 1.3.0 · `project-map/map-document` 1.4.0 ·
   crashing.
 - The config hash covers the whole validated document.
 
-### Unchanged on purpose
+### Removed
 
-- The legacy `endpoints` and `interactions` sections keep rendering the prior
-  extractors' output. Both outputs are available on one repository so a consumer
-  can compare them on its own sources before switching. Rebinding the legacy ids
-  to the reworked detectors is a later major version.
-- A repository that names no `sections` key renders exactly the document it
-  rendered before.
+- **The prior `endpoints` and `interactions` extractors.** Their ids now render
+  the reworked detection: `endpoints` the inbound facts under "HTTP endpoints",
+  `interactions` the outbound operations under "External dependencies". The
+  opt-in ids `inbound_endpoints` and `outbound_operations` are gone with them; a
+  configuration naming either exits 5.
+  The reworked detection carries no built-in adapter — every fact comes from
+  `openapi.serves`, `detect.inbound.routers` or `detect.outbound.sinks` — so a
+  repository that configures none sees both sections empty, and TypeScript,
+  JavaScript and Java lose endpoint reporting until built-in adapters land. The
+  prior extractors reported decoys at a rate that had consumers disabling both
+  sections; what is removed is output no one relied on.
 
 ### Upgrading
 

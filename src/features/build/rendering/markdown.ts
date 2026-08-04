@@ -11,10 +11,8 @@ import type { ResolvedConfig } from "../../../core/ports/config.port.js";
 import type { FactSet } from "../../detect/detect.use-case.js";
 import { renderDetectionSection } from "./detection-sections.js";
 import { renderContexts } from "../slices/contexts/render.js";
-import { renderEndpoints } from "../slices/endpoints/render.js";
 import { renderEntities } from "../slices/entities/render.js";
 import { renderEnums } from "../slices/enums/render.js";
-import { renderInteractions } from "../slices/interactions/render.js";
 import { renderStorage } from "../slices/storage/render.js";
 import { renderWorkers } from "../slices/workers/render.js";
 import { heading, paragraph, table, text } from "./mdast-helpers.js";
@@ -84,12 +82,8 @@ function renderSection(
 			return renderEntities(map.entities);
 		case "enums":
 			return renderEnums(map.enums);
-		case "endpoints":
-			return renderEndpoints(map.endpoints);
 		case "storage":
 			return renderStorage(map.storage);
-		case "interactions":
-			return renderInteractions(map.interactions);
 		case "workers":
 			return renderWorkers(map.workers);
 		case "metadata":

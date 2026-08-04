@@ -1971,13 +1971,15 @@ test_obligation:
 id: project-map:CON-001
 type: Constraint
 lifecycle:
-  status: approved
+  status: deprecated
   approval_record:
     owner_role: tech-lead
     approver_identity: cyberash
     timestamp: 2026-07-29T10:17:34.313Z
     change_request: detection rework phase B tail
     scope: first-time-approval
+sunset_version: project-map:SUR-002@2.0.0
+replacement_id: project-map:DLT-019
 partition_id: project-map
 title: the legacy detection sections stay bound to the legacy extractors
 rule: |
@@ -1993,6 +1995,10 @@ rule: |
   saw before.
   Rebinding the legacy ids to the reworked detectors, and deleting the
   legacy adapters, is a later major version.
+  That version is project-map:SUR-002 2.0.0, which project-map:DLT-019
+  carries. This Constraint held for the whole of major 1 and is retired
+  with it: the comparison it existed to make possible was made on both
+  validation services.
 rationale: |
   Consumers disabled `endpoints` and `interactions` because the prior
   extractors emit false positives. Keeping both outputs available on one
@@ -2007,19 +2013,15 @@ data_scope: all_data
 policy_refs:
   - project-map:POL-001
 test_obligation:
-  predicate: |
-    A configuration that names no section renders the legacy nine
-    sections and none of the three new ones; a configuration naming a
-    new id renders it alongside the legacy output.
-  test_template: integration
-  boundary_classes:
-    - no `sections` key
-    - a `sections` list naming a new id
-    - a `sections` list naming both a legacy id and its reworked counterpart
-  failure_scenarios:
-    - a new section appearing in a document whose configuration is
-      unchanged
-    - a legacy id rendering the reworked output
+  not_applicable: true
+  reason: |
+    The Constraint is deprecated at its own sunset, project-map:SUR-002
+    2.0.0, which project-map:DLT-019 carries. Its predicate named a
+    legacy id rendering the prior output beside its reworked
+    counterpart; both halves of that pair are gone, so no test can hold
+    it without asserting behavior the tool no longer has. The fixture
+    that carried it now asserts the replacement, that a legacy id
+    renders the reworked output, under project-map:DLT-019.
 ---
 ```
 
@@ -2367,7 +2369,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-002
-    intended_version: "1.4.0"
+    intended_version: "2.0.0"
 as_is: |
   project-map:CTR-003 fixes the SectionId set at nine values, and the
   configuration defaults `sections` to that whole set. Accepted set and
@@ -2467,7 +2469,7 @@ surface_impact:
   - id: project-map:SUR-001
     intended_version: "1.3.0"
   - id: project-map:SUR-002
-    intended_version: "1.4.0"
+    intended_version: "2.0.0"
 as_is: |
   project-map:DLT-008 widened the predicate of project-map:POL-001 to
   admit the facts artifact and its sidecar, and declared that the
@@ -2694,7 +2696,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-002
-    intended_version: "1.4.0"
+    intended_version: "2.0.0"
 as_is: |
   project-map:DLT-009 declares `surface_impact` on project-map:SUR-002
   at 1.0.0. It was approved and its bump was applied, and
@@ -2815,7 +2817,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-002
-    intended_version: "1.4.0"
+    intended_version: "2.0.0"
 as_is: |
   project-map:CTR-003 fixes which columns the three detection sections
   render but not the markup of a cell, and every cell is emitted as
@@ -2887,7 +2889,7 @@ baseline_version: project-map:BL-001
 compatibility_action: migrate
 surface_impact:
   - id: project-map:SUR-002
-    intended_version: "1.4.0"
+    intended_version: "2.0.0"
 as_is: |
   The entities and enums sections identify a declaration by its bare
   name. In a service-sized repository that name is not unique: one
@@ -3023,7 +3025,7 @@ baseline_version: project-map:BL-001
 compatibility_action: migrate
 surface_impact:
   - id: project-map:SUR-002
-    intended_version: "1.4.0"
+    intended_version: "2.0.0"
 as_is: |
   The Go adapter reports one entry per `const` block rather than per
   enumerated type. A repository that splits an enum across two blocks —
@@ -3057,6 +3059,88 @@ tests_new_behavior: |
   entry carrying every member of both; a fixture whose blocks type two
   different enums still reports two; and two Python classes each nesting
   an enum of one name report two entries named by their owners.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-019
+type: Delta
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: the legacy section ids are rebound to the reworked detectors
+target_id: project-map:CTR-003
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: reject
+surface_impact:
+  - id: project-map:SUR-002
+    intended_version: "2.0.0"
+as_is: |
+  `endpoints` and `interactions` render the prior extractors, which
+  recognize a route and a client by the shape of a name. Consumers
+  disabled both: one validation service reported nineteen real routes
+  beside thirty decoys, and the other reported fifty-six clients with no
+  destination on any of them. The reworked detection renders beside them
+  under `inbound_endpoints` and `outbound_operations`, so a repository
+  that wants it carries two sections describing one thing.
+  project-map:CON-001 held the pair to the prior extractors for the
+  current major of project-map:SUR-002 precisely so a consumer could
+  compare the two outputs on its own sources before switching. That
+  comparison has been made on both validation services.
+to_be: |
+  `endpoints` renders the inbound facts of project-map:CTR-006 and
+  `interactions` renders its outbound operations. Both keep the heading
+  they had — "HTTP endpoints" and "External dependencies" — so a reader
+  and an anchor into the document still land where they did.
+  `inbound_endpoints` and `outbound_operations` leave the accepted
+  SectionId set; a configuration naming either is rejected as an unknown
+  id and exits 5. They existed for one release, as the opt-in through
+  which the comparison was made. `detection_coverage` stays: it names a
+  section the prior extractors never had.
+  The prior adapters are deleted with the ids that reached them.
+  project-map:SUR-002 takes a major bump from 1.4.0 to 2.0.0. Two
+  section ids change what they render, two are removed, and a repository
+  that configures no detection loses both sections rather than seeing
+  the prior output — which is the change consumers asked for, and it is
+  breaking however welcome.
+  Every `surface_impact` declaration on the Surface belonging to a
+  finalized Delta names 2.0.0 from here, superseding the pin
+  project-map:DLT-018 set.
+migration_note: |
+  A repository that configured `openapi` or `detect` and listed
+  `inbound_endpoints` or `outbound_operations` renames the id to
+  `endpoints` or `interactions`. A repository that configured neither
+  sees both sections empty and should drop them from `sections` or
+  configure detection; its committed document changes on the first
+  rebuild either way.
+  There is no silent path: an unknown id exits 5 rather than being
+  ignored, so no configuration keeps validating while rendering nothing
+  a reader expected.
+  The reworked detection carries no built-in adapter: every fact comes
+  from `openapi.serves`, `detect.inbound.routers` or
+  `detect.outbound.sinks`. The prior extractors recognized aiohttp,
+  FastAPI, Flask, Express, Fastify, gin, chi, echo and Spring without
+  configuration, so this Delta removes endpoint reporting outright for
+  TypeScript, JavaScript and Java, which have no shape to configure
+  against and no built-in adapter yet. Python and Go repositories
+  recover the section by declaring their router. The owner accepted this
+  knowingly: the prior extractors reported decoys at a rate that had
+  consumers disabling both sections, so what is removed is output no one
+  relied on. Built-in adapters for the uncovered languages are named in
+  §19 and are the work that closes the gap.
+tests_old_behavior: |
+  The obligation project-map:CON-001 carried — a legacy id rendering the
+  prior output beside its reworked counterpart — is retired with the
+  constraint. Its test is replaced rather than dropped: the same fixture
+  now asserts that the legacy id renders the reworked output.
+tests_new_behavior: |
+  A fixture configuring detection and listing `endpoints` renders the
+  inbound facts under "HTTP endpoints"; one listing `interactions`
+  renders the outbound operations under "External dependencies"; a
+  configuration naming `inbound_endpoints` exits 5; and a repository
+  configuring no detection renders neither section.
 ---
 ```
 

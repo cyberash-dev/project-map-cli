@@ -8,17 +8,17 @@ import {
 	type Workspace,
 } from "../support/workspace.js";
 
-const LEGACY_HEADINGS = [
+/** The sections that render without any detection configured. */
+const UNCONDITIONAL_HEADINGS = [
 	"## Bounded contexts",
 	"## Domain entities",
 	"## Enums",
-	"## HTTP endpoints",
 	"## Generation metadata",
 ];
 
 const DETECTION_HEADINGS = [
-	"## Inbound endpoints",
-	"## Outbound operations",
+	"## HTTP endpoints",
+	"## External dependencies",
 	"## Detection coverage",
 ];
 
@@ -60,7 +60,7 @@ describe("the reworked detection renders under its own section ids", () => {
 		await workspace.dispose();
 	});
 
-	/* @covers project-map:CON-001 */
+	/* @covers project-map:DLT-019 */
 	it("renders no detection section for a configuration that names none", async () => {
 		await runCli(workspace.dir, ["build"]);
 
@@ -72,11 +72,13 @@ describe("the reworked detection renders under its own section ids", () => {
 
 	/* @covers project-map:DLT-007 */
 	it("renders a detection section a configuration opts into", async () => {
-		await withSections(workspace.dir, ["metadata", "outbound_operations"]);
+		await withSections(workspace.dir, ["metadata", "interactions"]);
 
 		await runCli(workspace.dir, ["build"]);
 
-		expect(await documentOf(workspace.dir)).toContain("## Outbound operations");
+		expect(await documentOf(workspace.dir)).toContain(
+			"## External dependencies",
+		);
 	});
 
 	/* @covers project-map:CTR-003 */
@@ -92,7 +94,7 @@ describe("the reworked detection renders under its own section ids", () => {
 
 	/* @covers project-map:DLT-015 */
 	it("renders an identifier as code rather than escaping it as prose", async () => {
-		await withSections(workspace.dir, ["metadata", "outbound_operations"]);
+		await withSections(workspace.dir, ["metadata", "interactions"]);
 
 		await runCli(workspace.dir, ["build"]);
 
@@ -103,7 +105,7 @@ describe("the reworked detection renders under its own section ids", () => {
 
 	/* @covers project-map:DLT-015 */
 	it("keeps the underscores of a dunder member out of emphasis", async () => {
-		await withSections(workspace.dir, ["metadata", "outbound_operations"]);
+		await withSections(workspace.dir, ["metadata", "interactions"]);
 
 		await runCli(workspace.dir, ["build"]);
 
@@ -124,25 +126,27 @@ describe("the reworked detection renders under its own section ids", () => {
 			),
 			"utf8",
 		);
-		await withSections(workspace.dir, ["outbound_operations"]);
+		await withSections(workspace.dir, ["interactions"]);
 
 		await runCli(workspace.dir, ["build"]);
 
 		expect(await documentOf(workspace.dir)).not.toContain("| ``");
 	});
 
-	/* @covers project-map:DLT-015 */
-	it("leaves the legacy sections rendering prose cells", async () => {
+	/* @covers project-map:DLT-019 */
+	it("renders the reworked outbound under the legacy id", async () => {
 		await withSections(workspace.dir, ["metadata", "interactions"]);
 
 		await runCli(workspace.dir, ["build"]);
 
-		expect(await documentOf(workspace.dir)).not.toContain("`OrdersClient`");
+		const document = await documentOf(workspace.dir);
+		expect(document).toContain("## External dependencies");
+		expect(document).toContain("`OrdersClient.create_order`");
 	});
 
 	/* @covers project-map:DLT-007 */
 	it("exits 5 on a section id outside the accepted set", async () => {
-		await withSections(workspace.dir, ["metadata", "inbound_routes"]);
+		await withSections(workspace.dir, ["metadata", "inbound_endpoints"]);
 
 		expect(await runCli(workspace.dir, ["build"])).toBe(5);
 	});
@@ -158,12 +162,12 @@ describe("the default section list", () => {
 		await workspace.dispose();
 	});
 
-	/* @covers project-map:DLT-007 */
-	it("renders the legacy sections and none of the new ones", async () => {
+	/* @covers project-map:DLT-019 */
+	it("renders what needs no detection and none of what does", async () => {
 		await runCli(workspace.dir, ["build"]);
 
 		const document = await documentOf(workspace.dir);
-		for (const heading of LEGACY_HEADINGS) {
+		for (const heading of UNCONDITIONAL_HEADINGS) {
 			expect(document).toContain(heading);
 		}
 		for (const heading of DETECTION_HEADINGS) {
@@ -182,19 +186,20 @@ describe("the default section list", () => {
 		);
 	});
 
-	/* @covers project-map:CON-001 */
-	it("keeps the legacy section beside its reworked counterpart", async () => {
+	/* @covers project-map:DLT-019 */
+	it("renders no legacy section where nothing configures detection", async () => {
 		await withIdentity(workspace.dir);
 		await withSections(workspace.dir, [
 			"metadata",
+			"endpoints",
 			"interactions",
-			"outbound_operations",
 		]);
 
 		await runCli(workspace.dir, ["build"]);
 
 		const document = await documentOf(workspace.dir);
-		expect(document).toContain("## External dependencies");
+		expect(document).not.toContain("## HTTP endpoints");
+		expect(document).not.toContain("## External dependencies");
 		expect(document).toContain("## Generation metadata");
 	});
 });

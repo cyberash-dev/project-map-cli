@@ -4,10 +4,8 @@ import pLimit from "p-limit";
 import { extensionsFor } from "../../core/domain/language.js";
 import type {
 	BoundedContext,
-	Endpoint,
 	Entity,
 	EnumType,
-	Interaction,
 	Migration,
 	ProjectMap,
 	Table,
@@ -53,9 +51,7 @@ type ExtractorResults = {
 	readonly contexts: BoundedContext[];
 	readonly entities: Entity[];
 	readonly enums: EnumType[];
-	readonly endpoints: Endpoint[];
 	readonly storage: { tables: Table[]; migrations: Migration[] };
-	readonly interactions: Interaction[];
 	readonly workers: Worker[];
 	readonly errors: ExtractorError[];
 };
@@ -153,15 +149,7 @@ export class BuildProjectMapUseCase {
 			}
 		};
 
-		const [
-			contexts,
-			entities,
-			enums,
-			endpoints,
-			storage,
-			interactions,
-			workers,
-		] = await Promise.all([
+		const [contexts, entities, enums, storage, workers] = await Promise.all([
 			safe<BoundedContext[]>(
 				"contexts",
 				() => extractors.contexts.extract(ctx),
@@ -169,20 +157,10 @@ export class BuildProjectMapUseCase {
 			),
 			safe<Entity[]>("entities", () => extractors.entities.extract(ctx), []),
 			safe<EnumType[]>("enums", () => extractors.enums.extract(ctx), []),
-			safe<Endpoint[]>(
-				"endpoints",
-				() => extractors.endpoints.extract(ctx),
-				[],
-			),
 			safe<{ tables: Table[]; migrations: Migration[] }>(
 				"storage",
 				() => extractors.storage.extract(ctx),
 				{ tables: [], migrations: [] },
-			),
-			safe<Interaction[]>(
-				"interactions",
-				() => extractors.interactions.extract(ctx),
-				[],
 			),
 			safe<Worker[]>("workers", () => extractors.workers.extract(ctx), []),
 		]);
@@ -191,9 +169,7 @@ export class BuildProjectMapUseCase {
 			contexts,
 			entities,
 			enums,
-			endpoints,
 			storage,
-			interactions,
 			workers,
 			/*
 			 * Errors are pushed in promise-completion order, which the
@@ -227,9 +203,7 @@ export class BuildProjectMapUseCase {
 			contexts: results.contexts,
 			entities: results.entities,
 			enums: results.enums,
-			endpoints: results.endpoints,
 			storage: results.storage,
-			interactions: results.interactions,
 			workers: results.workers,
 		};
 	}

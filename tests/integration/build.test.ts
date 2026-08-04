@@ -51,7 +51,7 @@ async function buildMap(
 }
 
 describe("python-aiohttp-minimal fixture", () => {
-	it("extracts entities, enums, endpoints, storage, workers, interactions", async () => {
+	it("extracts entities, enums, storage and workers", async () => {
 		const { map, config } = await buildMap(FIXTURE);
 
 		expect(map.metadata.errors).toEqual([]);
@@ -67,18 +67,10 @@ describe("python-aiohttp-minimal fixture", () => {
 			"FAILED",
 			"REFUNDED",
 		]);
-		expect(
-			map.endpoints.some(
-				(e) => e.method === "POST" && e.path === "/api/v1/transactions",
-			),
-		).toBe(true);
 		expect(map.storage.tables.some((t) => t.table === "transactions")).toBe(
 			true,
 		);
 		expect(map.storage.migrations.length).toBe(2);
-		expect(
-			map.interactions.some((i) => i.clientClass === "PayTransactionsClient"),
-		).toBe(true);
 		expect(map.workers.some((w) => w.name === "TransactionEventWorker")).toBe(
 			true,
 		);
@@ -121,31 +113,6 @@ describe("python-aiohttp-minimal fixture", () => {
 });
 
 describe("typescript-express-minimal fixture", () => {
-	it("extracts express router endpoints and rejects non-framework .get/.post calls", async () => {
-		const { map } = await buildMap(TS_FIXTURE);
-
-		expect(map.metadata.errors).toEqual([]);
-
-		const routerEndpoints = map.endpoints.filter(
-			(e) => e.source.file === "handlers/users.ts",
-		);
-		expect(routerEndpoints).toHaveLength(3);
-		expect(routerEndpoints.find((e) => e.method === "GET")?.path).toBe(
-			"/users",
-		);
-		expect(routerEndpoints.find((e) => e.method === "POST")?.path).toBe(
-			"/users",
-		);
-		expect(routerEndpoints.find((e) => e.method === "DELETE")?.path).toBe(
-			"/users/:id",
-		);
-
-		const noiseEndpoints = map.endpoints.filter(
-			(e) => e.source.file === "handlers/noise.ts",
-		);
-		expect(noiseEndpoints).toEqual([]);
-	});
-
 	it("extracts interfaces and object-type type aliases as entities", async () => {
 		const logger = new ConsoleLogger(false);
 		const loader = new CosmiconfigLoader();

@@ -10,10 +10,10 @@ Status of this document: onboarding in progress. The partition's
 observable behavior is not yet claimed by an approved normative ID.
 It shrinks per PR; it does not reach zero in one change.
 
-Accounting for the current value: 131 modules under `src/`, of which 101
+Accounting for the current value: 119 modules under `src/`, of which 101
 are claimed by an `Implementation binding` in §16 whose `target_ids` are
-approved. The remaining 30 are six per-slice extraction adapter sets and
-the symbol index that ranks their output; their observable
+approved. The remaining 18 are four per-slice extraction adapter sets
+and the symbol index that ranks their output; their observable
 behavior is lifted in later change sets. The count is derived from the
 §16 footprint rather than assessed by hand, so it moves only when a
 binding gains or loses a path, or when a target is approved.
@@ -25,7 +25,9 @@ cases behind `init` and `version` — and were unclaimed only because no
 binding named them. Naming them moved the count from 52 to 37 and
 changed no code. What remains is the extraction whose observable output
 no normative ID describes, less the enums slice, whose seven modules
-project-map:BEH-015 now governs.
+project-map:BEH-015 now governs, and less the twelve modules behind the
+prior endpoints and interactions extractors, which project-map:DLT-019
+deletes with the ids that reached them.
 
 All six approved phases of the detection rework are inside the 70. Each
 one briefly raised the count while its records were still `proposed`,
@@ -124,7 +126,7 @@ default_policy_set:
   - project-map:POL-002
 id_namespace: project-map
 unmodeled_budget:
-  current: 30
+  current: 18
   baseline_at: "2026-07-27"
   baseline_value: 72
   trend: monotonic_non_increasing
@@ -372,7 +374,7 @@ lifecycle:
     scope: first-time-approval
 partition_id: project-map
 name: project-map/map-document
-version: "1.4.0"
+version: "2.0.0"
 boundary_type: generated_published_artifact
 members:
   - project-map:CTR-003
@@ -842,16 +844,16 @@ schema: |
   A section whose collection is empty renders no heading and no body.
   The accepted SectionId set is: overview, contexts, entities, enums,
   endpoints, storage, interactions, workers, metadata,
-  inbound_endpoints, outbound_operations, detection_coverage.
+  detection_coverage.
   The accepted set and the default `sections` list are distinct. The
-  default is the first nine, so a configuration that names no
-  `sections` key renders the document it rendered before.
+  default is the first nine; `detection_coverage` is opt-in, because the
+  prior extractors had no counterpart to it.
   The three detection ids render the facts of project-map:CTR-006:
-  `inbound_endpoints` an H2 "Inbound endpoints" over method, route,
-  resolution, provenance and contracts; `outbound_operations` an H2
-  "Outbound operations" over owner, method, route, destination and
-  resolution; `detection_coverage` an H2 "Detection coverage" over the
-  coverage measures and, where any exist, the diagnostics.
+  `endpoints` an H2 "HTTP endpoints" over method, route, resolution,
+  provenance and contracts; `interactions` an H2 "External dependencies"
+  over owner, method, route, destination and resolution;
+  `detection_coverage` an H2 "Detection coverage" over the coverage
+  measures and, where any exist, the diagnostics.
   A declaration whose bare name another declaration also claims is
   headed by that name qualified with the shortest suffix of its
   declaring directory that tells the two apart; a name nothing else

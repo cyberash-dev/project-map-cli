@@ -1,14 +1,5 @@
 import type { Framework, Language } from "./language.js";
 
-export type HttpMethod =
-	| "GET"
-	| "POST"
-	| "PUT"
-	| "PATCH"
-	| "DELETE"
-	| "HEAD"
-	| "OPTIONS";
-
 export type SourceLocation = {
 	readonly file: string;
 	readonly line: number;
@@ -41,13 +32,6 @@ export type BoundedContext = {
 	readonly role: string;
 };
 
-export type Endpoint = {
-	readonly method: HttpMethod;
-	readonly path: string;
-	readonly handler: string;
-	readonly source: SourceLocation;
-};
-
 export type Table = {
 	readonly table: string;
 	readonly model: string;
@@ -60,14 +44,6 @@ export type Migration = {
 	readonly tables: readonly string[];
 	readonly summary: string;
 	readonly source: SourceLocation;
-};
-
-export type Interaction = {
-	readonly directory: string;
-	readonly clientClass: string;
-	readonly baseUrlFrom: string | null;
-	readonly methods: readonly string[];
-	readonly usedBy: readonly string[];
 };
 
 export type Worker = {
@@ -106,12 +82,10 @@ export type ProjectMap = {
 	readonly contexts: readonly BoundedContext[];
 	readonly entities: readonly Entity[];
 	readonly enums: readonly EnumType[];
-	readonly endpoints: readonly Endpoint[];
 	readonly storage: {
 		readonly tables: readonly Table[];
 		readonly migrations: readonly Migration[];
 	};
-	readonly interactions: readonly Interaction[];
 	readonly workers: readonly Worker[];
 };
 
@@ -132,16 +106,20 @@ export const DEFAULT_SECTION_IDS = [
 	"metadata",
 ] as const;
 
-/** The opt-in sections the reworked detection renders under. */
+/**
+ * The sections the reworked detection renders. `endpoints` and `interactions`
+ * are the ids the prior extractors held: project-map:DLT-019 rebinds them
+ * rather than leaving a repository two names for one thing.
+ */
 export const DETECTION_SECTION_IDS = [
-	"inbound_endpoints",
-	"outbound_operations",
+	"endpoints",
+	"interactions",
 	"detection_coverage",
 ] as const;
 
 export const SECTION_IDS = [
 	...DEFAULT_SECTION_IDS,
-	...DETECTION_SECTION_IDS,
+	"detection_coverage",
 ] as const;
 
 export type SectionId = (typeof SECTION_IDS)[number];

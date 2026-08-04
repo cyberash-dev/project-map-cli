@@ -29,25 +29,23 @@ compares byte for byte.
 
 ### Extractor coverage per language (MVP)
 
-| Extractor      | Python                                             | TS/JS                               | Go                        | Java               | Kotlin |
-| -------------- | -------------------------------------------------- | ----------------------------------- | ------------------------- | ------------------ | ------ |
-| contexts       | full                                               | full                                | full                      | full               | full   |
-| entities       | full                                               | full                                | full                      | full               | full   |
-| enums          | full                                               | full                                | full                      | full               | full   |
-| endpoints      | aiohttp, fastapi, flask                            | express/fastify member calls        | gin/chi/echo member calls | Spring `@*Mapping` | —      |
-| storage (ORM)  | SQLAlchemy declarative                             | TypeORM `@Entity`                   | —                         | —                  | —      |
-| storage (migr) | Alembic                                            | —                                   | —                         | —                  | —      |
-| interactions   | `*/*Client` classes                                | `*/*Client` classes                 | —                         | —                  | —      |
-| workers        | `*Worker` classes + `@celery.task/@dramatiq.actor` | `*Worker/Processor/Handler` classes | —                         | —                  | —      |
+| Extractor      | Python                                             | TS/JS                               | Go   | Java | Kotlin |
+| -------------- | -------------------------------------------------- | ----------------------------------- | ---- | ---- | ------ |
+| contexts       | full                                               | full                                | full | full | full   |
+| entities       | full                                               | full                                | full | full | full   |
+| enums          | full                                               | full                                | full | full | full   |
+| storage (ORM)  | SQLAlchemy declarative                             | TypeORM `@Entity`                   | —    | —    | —      |
+| storage (migr) | Alembic                                            | —                                   | —    | —    | —      |
+| workers        | `*Worker` classes + `@celery.task/@dramatiq.actor` | `*Worker/Processor/Handler` classes | —    | —    | —      |
 
 Slots that are "—" are implemented as ports — adding a new adapter is a
 drop-in in the relevant slice.
 
 ### Structural detection coverage
 
-The reworked detection behind `inbound_endpoints` / `outbound_operations` is
-separate from the table above and recognises code by import provenance and
-declared configuration, never by identifier names.
+The reworked detection behind `endpoints` / `interactions` recognises code by
+import provenance and declared configuration, never by identifier names. It
+replaced the prior name-shaped extractors in 1.0.0.
 
 | Mechanism                | Python                                     | Go                             |
 | ------------------------ | ------------------------------------------ | ------------------------------ |
@@ -278,18 +276,18 @@ Unknown top-level keys are rejected: a typo exits 5 rather than being ignored.
 
 ## Structural detection
 
-Opt-in, and separate from the legacy `endpoints` / `interactions` sections,
-which keep rendering the prior extractors' output for this whole major version.
-A repository that names no new section id sees exactly the document it saw
-before.
+`endpoints` and `interactions` render the reworked detection. There is no
+built-in adapter: every fact comes from `openapi.serves`,
+`detect.inbound.routers` or `detect.outbound.sinks`, so a repository that
+configures none renders both sections empty.
 
 ```yaml
 repository_identity: arcadia/billing/my_service # required once detection is on
 
 sections:
   - metadata
-  - inbound_endpoints # H2 "Inbound endpoints"
-  - outbound_operations # H2 "Outbound operations"
+  - endpoints # H2 "HTTP endpoints" — inbound facts
+  - interactions # H2 "External dependencies" — outbound operations
   - detection_coverage # H2 "Detection coverage"
 
 analysis_unit: # everything detection is allowed to observe
