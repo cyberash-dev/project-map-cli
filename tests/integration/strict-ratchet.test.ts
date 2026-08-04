@@ -134,8 +134,11 @@ describe("the unclassified ratchet", () => {
 
 	/* @covers project-map:BEH-014 */
 	/* @covers project-map:DLT-017 */
-	it("leaves a build without the flag on its own terms", async () => {
-		await withBaseline(workspace.dir, COVERING.slice(1));
+	it("leaves a build without the flag from reading the baseline at all", async () => {
+		await withBaseline(workspace.dir, COVERING);
+		/* A baseline that would fail the run if it were read, so passing
+		 * proves the file was not opened rather than that it satisfied. */
+		await writeFile(path.join(workspace.dir, BASELINE), "{ not json", "utf8");
 
 		expect(await runCli(workspace.dir, ["build"])).toBe(0);
 		expect(await diagnosticsOf(workspace.dir)).toHaveLength(COVERING.length);
