@@ -145,7 +145,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: 1fb4f227eca67cbc370ea0956be5e23b959e0152
+    reference: 6ba2d98f9a39ed67746b20aafb3f503e9dbfe1cb
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -157,14 +157,14 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 0892749946bb59e32b9eb4052b6be6180872a375ceda5d2dd3a74eeba1252973
-baseline_commit_sha: 1fb4f227eca67cbc370ea0956be5e23b959e0152
+freshness_token: a9c5aa27a0fbf82d7b4ad1dd81f94a44ce547d3cd9d13b2d4d5b2bbf823972bd
+baseline_commit_sha: 6ba2d98f9a39ed67746b20aafb3f503e9dbfe1cb
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from e36dec17 to 1fb4f227 across the detection rework, the
+  Refreshed from e36dec17 to 6ba2d98f across the detection rework, the
   1.0.0 release, and the whole of phase G.
   The first two phases added twenty-two modules, each claimed by project-map:IMP-006, project-map:IMP-007 or
   project-map:IMP-008, plus the configuration keys those phases add and
@@ -256,6 +256,16 @@ notes: |
   and were unclaimed only because no binding named them. The count moved
   from 52 to 37 with no code change, and project-map:BL-001's partition
   record moved with it.
+  6ba2d98f closes phase G. Extraction walked and read the filesystem
+  itself while detection read the materialized unit; both now go through
+  one reader, each with its own selection, which project-map:CTR-004
+  keeps apart on purpose. `absPath` leaves the parser port with it — no
+  extractor read it, and it only carried the checkout's location into a
+  layer that must not depend on it. A test builds one fixture from two
+  absolute paths and compares the documents.
+  It also closed the flake that had shadowed the suite: a test built the
+  project in `beforeAll`, regenerating a source file while another test
+  read it.
   25e84d37 governs the four extraction slices that remained, and takes
   the partition's unmodeled budget to zero: every module under src/ now
   sits behind an approved normative ID, where the onboarding started at
