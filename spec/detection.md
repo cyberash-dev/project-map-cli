@@ -933,7 +933,13 @@ test_obligation:
 id: project-map:BEH-016
 type: Behavior
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-04T14:45:41.922Z
+    change_request: "phase G: the remaining extraction slices"
+    scope: first-time-approval
 partition_id: project-map
 title: build — what the entities, contexts, storage and workers sections report
 given: a source tree in a supported language
