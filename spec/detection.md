@@ -855,7 +855,13 @@ test_obligation:
 id: project-map:BEH-015
 type: Behavior
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-04T13:18:20.213Z
+    change_request: "phase G: the enums slice"
+    scope: first-time-approval
 partition_id: project-map
 title: build — what the enums section reports
 given: a source tree in a supported language
@@ -3002,7 +3008,13 @@ tests_new_behavior: |
 id: project-map:DLT-018
 type: Delta
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-04T13:18:20.276Z
+    change_request: "phase G: the enums slice"
+    scope: first-time-approval
 partition_id: project-map
 title: a Go enum split across const blocks is reported once
 target_id: project-map:GA-001
