@@ -9,8 +9,8 @@ each release.
 First stable release. The map document is unchanged for a repository that does
 not opt in, and a second artifact joins it.
 
-Surfaces: `project-map/cli` 1.2.0 · `project-map/map-document` 1.1.0 ·
-`project-map/detection-facts` 1.1.0 (new).
+Surfaces: `project-map/cli` 1.2.0 · `project-map/map-document` 1.3.0 ·
+`project-map/detection-facts` 1.1.0 (new) · `project-map/package` 1.0.0 (new).
 
 ### Added
 
@@ -44,6 +44,11 @@ Surfaces: `project-map/cli` 1.2.0 · `project-map/map-document` 1.1.0 ·
   writes nothing.
 - **`repository_identity`**, a logical name that enters every fact id, so two
   repositories exposing the same route produce different ids.
+- **The installed package is a governed surface.** The command name, the
+  published file allow-list and the `engines.node` range carry semver: renaming
+  the command, dropping an entry from `files` or narrowing the range breaks an
+  installation that worked, and each is now a major bump. The manifest's
+  descriptive fields stay outside it.
 - **Exit codes 3, 4 and 5.** 3: the committed facts artifact names another
   analyzer build or adapter registry. 4: the build raised a mandatory check
   diagnostic. 5: a config-time error, raised before any build runs.

@@ -1713,7 +1713,7 @@ options:
       and tarball contents.
 blocking: no
 owner: cyberash
-default_if_unresolved: leave the npm artifact unmodeled and do not publish it
+default_if_unresolved: model the npm package as a public Surface with Contracts
 notes: |
   Raised while refreshing project-map:BL-001 through 4c6b1d5 and
   extended for the `scripts.build` change in cd58ca4a. Every listed

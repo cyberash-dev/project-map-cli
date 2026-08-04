@@ -77,6 +77,33 @@ notes: |
 ---
 ```
 
+```yaml
+---
+id: project-map:SUR-004
+type: Surface
+lifecycle:
+  status: proposed
+partition_id: project-map
+name: project-map/package
+version: "1.0.0"
+boundary_type: generated_published_artifact
+members:
+  - project-map:CTR-009
+consumer_compat_policy: semver_per_surface
+notes: |
+  The npm package as a consumer installs it. It is a Surface separate
+  from project-map:SUR-001 because the two answer different questions: a
+  consumer of the CLI Surface asks what a command does, and a consumer
+  of this one asks whether the command exists after `npm install` and on
+  which Node it runs.
+  Its boundary type is the published-artifact one: the tarball is built
+  by the release, not written by hand, and a consumer receives it rather
+  than calls it.
+  Version tracks the implementation version at the time this Surface was
+  first authored, which is the 1.0.0 release that raised the question.
+---
+```
+
 ---
 
 ## 6. Requirements
@@ -1303,6 +1330,77 @@ test_obligation:
     - an id that changes with provenance or evidence
     - template parts reordered by the set-array rule
     - a number serialized in a form other than the JCS form
+---
+```
+
+```yaml
+---
+id: project-map:CTR-009
+type: Contract
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: the installed package — entry point, contents, and runtime
+surface_ref: project-map:SUR-004
+schema: |
+  The published package declares three things a consumer depends on and
+  cannot discover any other way.
+  `bin` maps the command name `project-map` to the emitted entry point.
+  The mapped file is executable and carries a Node shebang, so a shell
+  runs it directly and a package manager can link it.
+  `files` is the allow-list of what the tarball carries: `dist`, plus
+  `README.md`, `CHANGELOG.md` and `LICENSE`. `package.json` is included
+  by npm unconditionally and is not listed. Nothing outside the list
+  ships, so a consumer receives no source, no test and no fixture.
+  `engines.node` declares the runtime range the emitted code requires.
+  Every other field of the manifest — the description, the keywords, the
+  repository and homepage links — is descriptive. It carries no
+  guarantee, and changing it is not a change to this Surface.
+preconditions: the package was built by the declared build script
+postconditions: |
+  Installing the package puts a runnable `project-map` on the path and
+  writes no file outside the declared allow-list.
+external_identifiers: |
+  The command name `project-map` in `bin`; the key names `bin`, `files`
+  and `engines`; each entry of the `files` allow-list; the `engines.node`
+  range expression.
+compatibility_rules: |
+  Renaming the command, removing an entry from `files`, or narrowing the
+  `engines.node` range is a major bump of project-map:SUR-004: each
+  breaks an installation that worked. Adding an entry to `files` or
+  widening the range is a minor bump. A change to a descriptive field is
+  neither.
+error_taxonomy: |
+  A package whose `bin` target is absent or not executable is a build
+  defect, not a runtime error: it fails at install or on first
+  invocation, before any command runs, so no exit code of
+  project-map:CTR-001 describes it.
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: not_applicable
+  read_consistency: not_applicable
+  idempotency: not_applicable
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-001
+  - project-map:POL-002
+test_obligation:
+  predicate: |
+    The manifest declares the command name, the allow-list and the
+    engines range spelled above; the emitted entry point runs directly;
+    and a packing dry run carries every allow-listed path and nothing
+    from src or tests.
+  test_template: integration
+  boundary_classes:
+    - the entry point invoked directly rather than through node
+    - an allow-listed path against one outside the list
+    - the manifest read as published rather than as authored
+  failure_scenarios:
+    - a tarball carrying sources or fixtures
+    - a bin target that is not executable
+    - an engines range the emitted code does not satisfy
 ---
 ```
 
