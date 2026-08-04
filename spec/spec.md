@@ -5,41 +5,25 @@ Single source of truth for the externally observable behavior of
 (brownfield): the `Brownfield baseline` in §4 records the as-is state,
 and as-is facts become normative only where §5–§13 reference them.
 
-Status of this document: onboarding in progress. The partition's
+Status of this document: onboarding complete. The partition's
 `unmodeled_budget` (§3) counts source modules whose externally
-observable behavior is not yet claimed by an approved normative ID.
-It shrinks per PR; it does not reach zero in one change.
+observable behavior is not claimed by an approved normative ID, and it
+reached zero on 2026-08-04.
 
-Accounting for the current value: 119 modules under `src/`, of which 101
-are claimed by an `Implementation binding` in §16 whose `target_ids` are
-approved. The remaining 18 are four per-slice extraction adapter sets
-and the symbol index that ranks their output; their observable
-behavior is lifted in later change sets. The count is derived from the
-§16 footprint rather than assessed by hand, so it moves only when a
-binding gains or loses a path, or when a target is approved.
+Accounting: 119 modules under `src/`, all of them claimed by an
+`Implementation binding` in §16 whose `target_ids` are approved. The
+count is derived from the §16 footprint rather than assessed by hand, so
+it moves only when a binding gains or loses a path, or when a target is
+approved. A module added from here is debt until a binding names it.
 
-Fifteen of the modules that were counted as debt implemented behavior an
-approved ID already governed — the parser the extractors dispatch to,
-the ports behind the clock, the revision and the writer, and the use
-cases behind `init` and `version` — and were unclaimed only because no
-binding named them. Naming them moved the count from 52 to 37 and
-changed no code. What remains is the extraction whose observable output
-no normative ID describes, less the enums slice, whose seven modules
-project-map:BEH-015 now governs, and less the twelve modules behind the
-prior endpoints and interactions extractors, which project-map:DLT-019
-deletes with the ids that reached them.
-
-All six approved phases of the detection rework are inside the 70. Each
-one briefly raised the count while its records were still `proposed`,
-because a module counts as modeled only under an approved target, and
-each approval brought it back down. The first two took it to 74, above
-the 72 the trend was set against; that breach was reported rather than
-smoothed and cleared in one step. Phase D took it to 57 and its approval
-returned it to 52. Phase E raised it not at all: its records were
-approved before its code, so its nine modules were claimed the moment
-they landed. Phase F took it to 56, and its approval returned it to 52
-along with two modules the tail of phase B had left unclaimed.
-
+How it got there from 72. The detection rework claimed its own modules
+as each phase landed. Phase G then did three things: it named fifteen
+modules that had implemented approved behavior all along and were
+unclaimed only because no binding listed them, taking the count from 52
+to 37; project-map:BEH-015 governed the enums slice, 37 to 30;
+project-map:DLT-019 deleted the twelve modules of the prior endpoints
+and interactions extractors, 30 to 18; and project-map:BEH-016 governed
+the four slices that remained.
 ---
 
 ## 1. Context
@@ -126,7 +110,7 @@ default_policy_set:
   - project-map:POL-002
 id_namespace: project-map
 unmodeled_budget:
-  current: 18
+  current: 0
   baseline_at: "2026-07-27"
   baseline_value: 72
   trend: monotonic_non_increasing
@@ -1453,11 +1437,30 @@ lifecycle:
 partition_id: project-map
 target_ids:
   - project-map:BEH-004
+  - project-map:BEH-016
   - project-map:INV-002
 binding:
   orchestration: src/features/build/build.use-case.ts
   extractor_set: src/features/build/extractor-set.ts
   entity_ranking: src/features/build/slices/entities/extract.ts
+  symbol_index: src/features/build/symbol-index.ts
+  contexts_extract: src/features/build/slices/contexts/extract.ts
+  contexts_render: src/features/build/slices/contexts/render.ts
+  entities_render: src/features/build/slices/entities/render.ts
+  entities_go: src/features/build/slices/entities/adapters/go.ts
+  entities_python: src/features/build/slices/entities/adapters/python.ts
+  entities_typescript: src/features/build/slices/entities/adapters/typescript.ts
+  entities_java: src/features/build/slices/entities/adapters/java.ts
+  entities_kotlin: src/features/build/slices/entities/adapters/kotlin.ts
+  storage_extract: src/features/build/slices/storage/extract.ts
+  storage_render: src/features/build/slices/storage/render.ts
+  storage_alembic: src/features/build/slices/storage/adapters/python-alembic.ts
+  storage_sqlalchemy: src/features/build/slices/storage/adapters/python-sqlalchemy.ts
+  storage_orm: src/features/build/slices/storage/adapters/typescript-orm.ts
+  workers_extract: src/features/build/slices/workers/extract.ts
+  workers_render: src/features/build/slices/workers/render.ts
+  workers_python: src/features/build/slices/workers/adapters/python.ts
+  workers_typescript: src/features/build/slices/workers/adapters/typescript.ts
   file_discovery: src/infrastructure/filesystem/globby-walker.ts
   extraction_context: src/features/build/extraction-context.ts
   extractor_port: src/features/build/extractor.port.ts

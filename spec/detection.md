@@ -928,6 +928,79 @@ test_obligation:
 ---
 ```
 
+```yaml
+---
+id: project-map:BEH-016
+type: Behavior
+lifecycle:
+  status: proposed
+partition_id: project-map
+title: build — what the entities, contexts, storage and workers sections report
+given: a source tree in a supported language
+when: those four sections are rendered
+then: |
+  Contexts: one entry per directory at the configured depth holding at
+  least `contexts.auto.min_files` files, carrying its path, its file
+  count and a role. The role is the one `contexts.auto.known_roles` maps
+  the directory's own name to, and a directory the map does not name
+  carries the generic role. A `contexts.custom` entry overrides both.
+  Entities: one entry per declared type carrying fields and methods.
+  Python and Java and Kotlin report a class; TypeScript reports a class,
+  an interface, and a type alias whose right side is an object type; Go
+  reports a struct. A type is reported when it declares a method or at
+  least two fields, so a one-field wrapper is not an entity. Fields and
+  methods are capped, and entries are ranked by
+  `entities.importance` over the method count, the field count and the
+  number of modules referencing the name, then trimmed to
+  `entities.top_n`. Ranking ties break on name, then on source location,
+  so the order is total.
+  Storage: one entry per ORM table carrying its table name and the model
+  that declares it, and one per migration under
+  `storage.migrations_dir`, carrying its revision, the revision it
+  follows, the tables it touches and a summary. The last
+  `storage.last_n` migrations are reported.
+  Workers: one entry per declaration matching a `workers.patterns`
+  entry, carrying its name and source. A pattern is a class-name shape
+  or a decorator.
+  Every one of the four reports nothing rather than an empty section
+  when it finds nothing.
+negative_cases:
+  - a directory under `contexts.auto.min_files`, which is not a context
+  - a type declaring one field and no method, which is not an entity
+  - a file outside `storage.migrations_dir`, which is not a migration
+out_of_scope:
+  - the ranking weights themselves, which are configuration
+  - inheritance beyond the names a declaration lists
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-001
+  - project-map:POL-002
+test_obligation:
+  predicate: |
+    A fixture reports its declared entity, its ORM table, both its
+    migrations and its worker; a directory below the minimum file count
+    is no context; a TypeScript interface and object-type alias are
+    entities; and the ranking order is stable across two runs.
+  test_template: integration
+  boundary_classes:
+    - a directory at the minimum file count against one below it
+    - a class, an interface and an object-type alias
+    - a type with one field against one with two
+    - a migration inside the configured directory against one outside
+  failure_scenarios:
+    - an empty section rendering a heading
+    - a ranking order that differs between two runs over one tree
+    - a one-field type reported as an entity
+---
+```
+
 ---
 
 ## 7. Data contracts

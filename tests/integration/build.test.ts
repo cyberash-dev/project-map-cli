@@ -51,6 +51,7 @@ async function buildMap(
 }
 
 describe("python-aiohttp-minimal fixture", () => {
+	/* @covers project-map:BEH-016 */
 	it("extracts entities, enums, storage and workers", async () => {
 		const { map, config } = await buildMap(FIXTURE);
 
@@ -113,6 +114,7 @@ describe("python-aiohttp-minimal fixture", () => {
 });
 
 describe("typescript-express-minimal fixture", () => {
+	/* @covers project-map:BEH-016 */
 	it("extracts interfaces and object-type type aliases as entities", async () => {
 		const logger = new ConsoleLogger(false);
 		const loader = new CosmiconfigLoader();
@@ -161,6 +163,7 @@ describe("typescript-express-minimal fixture", () => {
 });
 
 describe("javascript-prototype-minimal fixture", () => {
+	/* @covers project-map:BEH-016 */
 	it("extracts prototype-based entities and honors contexts.auto.depth", async () => {
 		const logger = new ConsoleLogger(false);
 		const loader = new CosmiconfigLoader();
