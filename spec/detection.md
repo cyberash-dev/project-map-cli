@@ -82,7 +82,13 @@ notes: |
 id: project-map:SUR-004
 type: Surface
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-04T08:31:26.285Z
+    change_request: govern the installed package
+    scope: first-time-approval
 partition_id: project-map
 name: project-map/package
 version: "1.0.0"
@@ -1338,7 +1344,13 @@ test_obligation:
 id: project-map:CTR-009
 type: Contract
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-04T08:31:26.221Z
+    change_request: govern the installed package
+    scope: first-time-approval
 partition_id: project-map
 title: the installed package — entry point, contents, and runtime
 surface_ref: project-map:SUR-004
