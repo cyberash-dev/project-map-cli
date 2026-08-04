@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, rm, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { diagnosticsOf } from "../support/operations.js";
@@ -136,9 +136,10 @@ describe("the unclassified ratchet", () => {
 	/* @covers project-map:DLT-017 */
 	it("leaves a build without the flag from reading the baseline at all", async () => {
 		await withBaseline(workspace.dir, COVERING);
-		/* A baseline that would fail the run if it were read, so passing
-		 * proves the file was not opened rather than that it satisfied. */
-		await writeFile(path.join(workspace.dir, BASELINE), "{ not json", "utf8");
+		/* Declared and absent, so the run fails on the existence check before
+		 * any read: passing proves the path was never reached, not merely that
+		 * its content parsed. */
+		await rm(path.join(workspace.dir, BASELINE));
 
 		expect(await runCli(workspace.dir, ["build"])).toBe(0);
 		expect(await diagnosticsOf(workspace.dir)).toHaveLength(COVERING.length);
