@@ -65,6 +65,7 @@ members:
   - project-map:CTR-007
   - project-map:CTR-008
   - project-map:GA-002
+  - project-map:CTR-010
 consumer_compat_policy: semver_per_surface
 notes: |
   The facts artifact is committed into consumer repositories and read by
@@ -785,7 +786,13 @@ test_obligation:
 id: project-map:BEH-014
 type: Behavior
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-04T10:58:27.005Z
+    change_request: "phase G: the unclassified ratchet"
+    scope: first-time-approval
 partition_id: project-map
 title: build --strict — ratchet on what the baseline does not cover
 given: a configuration whose detection emits diagnostics
@@ -1487,7 +1494,13 @@ test_obligation:
 id: project-map:CTR-010
 type: Contract
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-04T10:58:26.943Z
+    change_request: "phase G: the unclassified ratchet"
+    scope: first-time-approval
 partition_id: project-map
 title: the unclassified baseline and what it suppresses
 surface_ref: project-map:SUR-003
@@ -2857,7 +2870,13 @@ tests_new_behavior: |
 id: project-map:DLT-017
 type: Delta
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-04T10:58:27.069Z
+    change_request: "phase G: the unclassified ratchet"
+    scope: first-time-approval
 partition_id: project-map
 title: the command surface gains the strict flag and its verdict code
 target_id: project-map:CTR-001
