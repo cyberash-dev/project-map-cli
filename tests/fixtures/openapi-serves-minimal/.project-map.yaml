@@ -4,8 +4,7 @@ project:
 
 repository_identity: sample/served
 
-sections:
-  - metadata
+sections: []
 
 openapi:
   serves:

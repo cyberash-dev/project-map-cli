@@ -16,11 +16,7 @@ export function renderStorage(storage: {
 		out.push(
 			table(
 				["Table", "Model", "Source"],
-				storage.tables.map((t) => [
-					t.table,
-					t.model,
-					`${t.source.file}:${t.source.line}`,
-				]),
+				storage.tables.map((t) => [t.table, t.model, t.source.file]),
 				["left", "left", "left"],
 			),
 		);

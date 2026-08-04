@@ -221,7 +221,6 @@ sections:
   - storage
   - interactions
   - workers
-  - metadata
 
 overview:
   path: .project-map/overview.md # optional prose preamble
@@ -285,7 +284,6 @@ configures none renders both sections empty.
 repository_identity: arcadia/billing/my_service # required once detection is on
 
 sections:
-  - metadata
   - endpoints # H2 "HTTP endpoints" — inbound facts
   - interactions # H2 "External dependencies" — outbound operations
   - detection_coverage # H2 "Detection coverage"
@@ -372,24 +370,23 @@ to `.gitignore` and commit the artifact.
 ## Output determinism
 
 - Alphabetical sort everywhere (secondary by source location).
-- Timestamps are in `## Generation metadata`, which `--check` strips before
-  comparison.
+- `PROJECT_MAP.md` carries no timestamp, no tool version, no revision and no
+  file count. Running `build` twice on an unchanged tree produces byte-identical
+  output, and `--check` compares the bytes with nothing normalized away.
 - Config hash is deterministic (`sha256` of canonicalized config JSON).
-- Running `build` twice on an unchanged tree → byte-identical output (modulo
-  the build-duration cell).
-- The facts artifact is stricter: it is a pure function of the analysis unit
-  and compares byte for byte with no normalization at all. Building the same
+- The facts artifact holds to the same rule and adds one: building the same
   tree from a different absolute path produces the same bytes.
 - No network access and no model inference in the build path.
 
-The `Tool version` metadata row sits inside the compared bytes, so upgrading
-the CLI reports every committed `PROJECT_MAP.md` as out of date until it is
-rebuilt. That is deliberate: the committed document records which version
-produced it.
+Everything a rebuild alone would change lives outside the document a repository
+merges by hand. `project-map.json` carries the tool version, the timestamp, the
+revision, the config hash and the file counts; `.project-map/facts.meta.json`
+carries the timestamp and the build duration for the facts artifact. Both are
+opt-in, and `--check` reads neither.
 
 ## Versioning
 
-The npm version is the CLI's release version. Three published surfaces carry
+The npm version is the CLI's release version. Four published surfaces carry
 their own semver, and `CHANGELOG.md` lists them per release:
 
 | Surface                       | Covers                                                 |
@@ -397,6 +394,7 @@ their own semver, and `CHANGELOG.md` lists them per release:
 | `project-map/cli`             | command names, option names, exit codes, config schema |
 | `project-map/map-document`    | `PROJECT_MAP.md` structure and its JSON companion      |
 | `project-map/detection-facts` | `facts.json` schema, identity and serialization        |
+| `project-map/package`         | `bin` entry point, tarball contents, `engines.node`    |
 
 `facts.json` additionally embeds its own `schema_version`, so a consumer can
 pin against the artifact without reading the package version.

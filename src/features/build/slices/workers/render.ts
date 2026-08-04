@@ -15,12 +15,7 @@ export function renderWorkers(workers: readonly Worker[]): Root["children"] {
 	const out: RootContent[] = [heading(2, "Workers")];
 	for (const w of workers) {
 		out.push({ type: "heading", depth: 3, children: [inlineCode(w.name)] });
-		out.push(
-			paragraph([
-				text("Source: "),
-				inlineCode(`${w.source.file}:${w.source.line}`),
-			]),
-		);
+		out.push(paragraph([text("Source: "), inlineCode(w.source.file)]));
 		if (w.handler) {
 			out.push(paragraph([text("Handler: "), inlineCode(w.handler)]));
 		}

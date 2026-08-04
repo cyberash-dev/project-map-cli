@@ -21,7 +21,7 @@ export function renderEnums(enums: readonly EnumType[]): Root["children"] {
 			children: [inlineCode(displayNames[index] ?? e.name)],
 		};
 		children.push(h);
-		children.push(paragraph([inlineCode(`${e.source.file}:${e.source.line}`)]));
+		children.push(paragraph([inlineCode(e.source.file)]));
 		children.push(
 			bulletList(
 				e.members.map((m) => ({

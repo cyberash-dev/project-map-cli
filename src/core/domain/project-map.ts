@@ -91,8 +91,8 @@ export type ProjectMap = {
 
 /**
  * The sections a repository renders unless it names others. The reworked
- * detection is not among them: a repository that changes no configuration must
- * see the document it saw before, because check mode compares it byte for byte.
+ * detection is not among them, and `metadata` left the accepted set entirely
+ * with project-map:DLT-020.
  */
 export const DEFAULT_SECTION_IDS = [
 	"overview",
@@ -103,7 +103,6 @@ export const DEFAULT_SECTION_IDS = [
 	"storage",
 	"interactions",
 	"workers",
-	"metadata",
 ] as const;
 
 /**

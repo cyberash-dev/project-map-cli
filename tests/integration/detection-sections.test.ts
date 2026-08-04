@@ -13,7 +13,6 @@ const UNCONDITIONAL_HEADINGS = [
 	"## Bounded contexts",
 	"## Domain entities",
 	"## Enums",
-	"## Generation metadata",
 ];
 
 const DETECTION_HEADINGS = [
@@ -35,7 +34,10 @@ async function withSections(
 	const listed = ids.map((id) => `  - ${id}`).join("\n");
 	await writeFile(
 		configPath,
-		config.replace(/sections:\n(?: {2}- \w+\n)+/, `sections:\n${listed}\n`),
+		config.replace(
+			/sections:(?: \[\]\n|\n(?: {2}- \w+\n)+)/,
+			`sections:\n${listed}\n`,
+		),
 		"utf8",
 	);
 }
@@ -72,7 +74,7 @@ describe("the reworked detection renders under its own section ids", () => {
 
 	/* @covers project-map:DLT-007 */
 	it("renders a detection section a configuration opts into", async () => {
-		await withSections(workspace.dir, ["metadata", "interactions"]);
+		await withSections(workspace.dir, ["interactions"]);
 
 		await runCli(workspace.dir, ["build"]);
 
@@ -94,7 +96,7 @@ describe("the reworked detection renders under its own section ids", () => {
 
 	/* @covers project-map:DLT-015 */
 	it("renders an identifier as code rather than escaping it as prose", async () => {
-		await withSections(workspace.dir, ["metadata", "interactions"]);
+		await withSections(workspace.dir, ["interactions"]);
 
 		await runCli(workspace.dir, ["build"]);
 
@@ -105,7 +107,7 @@ describe("the reworked detection renders under its own section ids", () => {
 
 	/* @covers project-map:DLT-015 */
 	it("keeps the underscores of a dunder member out of emphasis", async () => {
-		await withSections(workspace.dir, ["metadata", "interactions"]);
+		await withSections(workspace.dir, ["interactions"]);
 
 		await runCli(workspace.dir, ["build"]);
 
@@ -135,7 +137,7 @@ describe("the reworked detection renders under its own section ids", () => {
 
 	/* @covers project-map:DLT-019 */
 	it("renders the reworked outbound under the legacy id", async () => {
-		await withSections(workspace.dir, ["metadata", "interactions"]);
+		await withSections(workspace.dir, ["interactions"]);
 
 		await runCli(workspace.dir, ["build"]);
 
@@ -146,7 +148,7 @@ describe("the reworked detection renders under its own section ids", () => {
 
 	/* @covers project-map:DLT-007 */
 	it("exits 5 on a section id outside the accepted set", async () => {
-		await withSections(workspace.dir, ["metadata", "inbound_endpoints"]);
+		await withSections(workspace.dir, ["inbound_endpoints"]);
 
 		expect(await runCli(workspace.dir, ["build"])).toBe(5);
 	});
@@ -190,7 +192,7 @@ describe("the default section list", () => {
 	it("renders no legacy section where nothing configures detection", async () => {
 		await withIdentity(workspace.dir);
 		await withSections(workspace.dir, [
-			"metadata",
+			"contexts",
 			"endpoints",
 			"interactions",
 		]);
@@ -200,7 +202,7 @@ describe("the default section list", () => {
 		const document = await documentOf(workspace.dir);
 		expect(document).not.toContain("## HTTP endpoints");
 		expect(document).not.toContain("## External dependencies");
-		expect(document).toContain("## Generation metadata");
+		expect(document).toContain("## Bounded contexts");
 	});
 });
 

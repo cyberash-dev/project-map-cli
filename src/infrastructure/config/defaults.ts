@@ -137,7 +137,6 @@ sections:
   - storage
   - interactions
   - workers
-  - metadata
 
 overview:
   path: .project-map/overview.md

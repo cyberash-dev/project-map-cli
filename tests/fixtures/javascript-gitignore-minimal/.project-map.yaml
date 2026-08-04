@@ -10,7 +10,6 @@ exclude: []
 
 sections:
   - contexts
-  - metadata
 
 contexts:
   custom: []

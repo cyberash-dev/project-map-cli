@@ -4,8 +4,7 @@ project:
 
 repository_identity: sample/split-lib
 
-sections:
-  - metadata
+sections: []
 
 analysis_unit:
   sources:

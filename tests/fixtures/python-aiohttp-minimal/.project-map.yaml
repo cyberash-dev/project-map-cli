@@ -16,7 +16,6 @@ sections:
   - storage
   - interactions
   - workers
-  - metadata
 
 contexts:
   custom: []

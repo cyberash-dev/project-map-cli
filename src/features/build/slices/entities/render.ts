@@ -23,15 +23,9 @@ export function renderEntities(entities: readonly Entity[]): Root["children"] {
 		children.push(h);
 
 		const bullets: PhrasingContent[][] = [];
-		bullets.push([
-			text("Source: "),
-			inlineCode(`${e.source.file}:${e.source.line}`),
-		]);
+		bullets.push([text("Source: "), inlineCode(e.source.file)]);
 		if (e.inherits.length > 0) {
 			bullets.push([text("Inherits: "), inlineCode(e.inherits.join(", "))]);
-		}
-		if (e.referencedFrom > 0) {
-			bullets.push([text(`Referenced from ${e.referencedFrom} module(s)`)]);
 		}
 		if (e.methods.length > 0) {
 			bullets.push([text("Methods: "), inlineCode(e.methods.join(", "))]);

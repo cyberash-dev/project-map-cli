@@ -867,9 +867,8 @@ title: build — what the enums section reports
 given: a source tree in a supported language
 when: the enums section is rendered
 then: |
-  One entry is reported per enumerated TYPE, carrying its name, the
-  source location of its declaration, and its member names in
-  declaration order. A type declaring no member is not reported.
+  One entry is reported per enumerated TYPE, carrying its name, the file
+  that declares it, and its member names in declaration order. A type declaring no member is not reported.
   What counts as an enumerated type is per language and is decided by
   the declaration, never by a name:
   Python — a class whose bases include one the configuration lists in
@@ -946,8 +945,9 @@ given: a source tree in a supported language
 when: those four sections are rendered
 then: |
   Contexts: one entry per directory at the configured depth holding at
-  least `contexts.auto.min_files` files, carrying its path, its file
-  count and a role. The role is the one `contexts.auto.known_roles` maps
+  least `contexts.auto.min_files` files, carrying its path and a role,
+  ordered by the file count that qualified it, descending, with the path
+  breaking a tie. The role is the one `contexts.auto.known_roles` maps
   the directory's own name to, and a directory the map does not name
   carries the generic role. A `contexts.custom` entry overrides both.
   Entities: one entry per declared type carrying fields and methods.
@@ -966,7 +966,7 @@ then: |
   follows, the tables it touches and a summary. The last
   `storage.last_n` migrations are reported.
   Workers: one entry per declaration matching a `workers.patterns`
-  entry, carrying its name and source. A pattern is a class-name shape
+  entry, carrying its name and the file that declares it. A pattern is a class-name shape
   or a decorator.
   Every one of the four reports nothing rather than an empty section
   when it finds nothing.
@@ -2284,7 +2284,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "1.3.0"
+    intended_version: "2.0.0"
 as_is: |
   project-map:CTR-002 lists fourteen top-level configuration keys, none
   of which names a repository identity or bounds an analysis unit. The
@@ -2345,7 +2345,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "1.3.0"
+    intended_version: "2.0.0"
 as_is: |
   project-map:CTR-002 accepts no `openapi` and no `detect` section.
   Detection anchors cannot be declared, so an in-house wrapper is
@@ -2396,7 +2396,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "1.3.0"
+    intended_version: "2.0.0"
 as_is: |
   project-map:CTR-001 declares exit code 0 for success, 1 for a check
   drift, and 2 for no discoverable configuration. A configuration error
@@ -2448,7 +2448,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-002
-    intended_version: "2.0.0"
+    intended_version: "3.0.0"
 as_is: |
   project-map:CTR-003 fixes the SectionId set at nine values, and the
   configuration defaults `sections` to that whole set. Accepted set and
@@ -2546,9 +2546,9 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "1.3.0"
-  - id: project-map:SUR-002
     intended_version: "2.0.0"
+  - id: project-map:SUR-002
+    intended_version: "3.0.0"
 as_is: |
   project-map:DLT-008 widened the predicate of project-map:POL-001 to
   admit the facts artifact and its sidecar, and declared that the
@@ -2605,7 +2605,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "1.3.0"
+    intended_version: "2.0.0"
 as_is: |
   project-map:DLT-004 declares `surface_impact`
   project-map:SUR-001@0.4.0. It was approved and its bump was applied,
@@ -2655,7 +2655,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "1.3.0"
+    intended_version: "2.0.0"
 as_is: |
   project-map:DLT-004, project-map:DLT-005, project-map:DLT-009 and
   project-map:DLT-010 each declare `surface_impact` on
@@ -2712,7 +2712,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "1.3.0"
+    intended_version: "2.0.0"
 as_is: |
   project-map:CTR-005 declares `detect.outbound.sinks[]` with
   `base_type`, `call[]`, `path_arg`, `method`, and `target`, and fixes
@@ -2775,7 +2775,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-002
-    intended_version: "2.0.0"
+    intended_version: "3.0.0"
 as_is: |
   project-map:DLT-009 declares `surface_impact` on project-map:SUR-002
   at 1.0.0. It was approved and its bump was applied, and
@@ -2896,7 +2896,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-002
-    intended_version: "2.0.0"
+    intended_version: "3.0.0"
 as_is: |
   project-map:CTR-003 fixes which columns the three detection sections
   render but not the markup of a cell, and every cell is emitted as
@@ -2968,7 +2968,7 @@ baseline_version: project-map:BL-001
 compatibility_action: migrate
 surface_impact:
   - id: project-map:SUR-002
-    intended_version: "2.0.0"
+    intended_version: "3.0.0"
 as_is: |
   The entities and enums sections identify a declaration by its bare
   name. In a service-sized repository that name is not unique: one
@@ -3044,7 +3044,7 @@ baseline_version: project-map:BL-001
 compatibility_action: ignore
 surface_impact:
   - id: project-map:SUR-001
-    intended_version: "1.3.0"
+    intended_version: "2.0.0"
 as_is: |
   project-map:CTR-001 declares `build` with `--config`, `--out`,
   `--only`, `--json`, `--check` and `--verbose`, and exit codes 0
@@ -3104,7 +3104,7 @@ baseline_version: project-map:BL-001
 compatibility_action: migrate
 surface_impact:
   - id: project-map:SUR-002
-    intended_version: "2.0.0"
+    intended_version: "3.0.0"
 as_is: |
   The Go adapter reports one entry per `const` block rather than per
   enumerated type. A repository that splits an enum across two blocks —
@@ -3161,7 +3161,7 @@ baseline_version: project-map:BL-001
 compatibility_action: reject
 surface_impact:
   - id: project-map:SUR-002
-    intended_version: "2.0.0"
+    intended_version: "3.0.0"
 as_is: |
   `endpoints` and `interactions` render the prior extractors, which
   recognize a route and a client by the shape of a name. Consumers
@@ -3226,6 +3226,238 @@ tests_new_behavior: |
   renders the outbound operations under "External dependencies"; a
   configuration naming `inbound_endpoints` exits 5; and a repository
   configuring no detection renders neither section.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-020
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-04T16:10:00.882Z
+    change_request: shrink the map document to what a rebuild does not change
+    scope: first-time-approval
+partition_id: project-map
+title: the map document stops reporting how it was generated
+target_id: project-map:CTR-003
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: reject
+surface_impact:
+  - id: project-map:SUR-001
+    intended_version: "2.0.0"
+  - id: project-map:SUR-002
+    intended_version: "3.0.0"
+as_is: |
+  The document opens with two paragraphs and closes with a table. The
+  first paragraph names the tool version, the generation timestamp and
+  the resolved revision; the second names the scanned and the excluded
+  file count. The `metadata` SectionId renders an H2 "Generation
+  metadata" over eight rows: Tool version, Config hash, Scanned files,
+  Excluded, Build duration, Language, Frameworks, Errors.
+  Every one of those values moves without any extracted fact moving.
+  The timestamp differs on every build, so two people who rebuild one
+  unchanged tree produce two conflicting lines. The revision differs on
+  every commit. The tool version differs on every upgrade, and
+  project-map:OQ-001 recorded that the Tool version row sits inside the
+  compared bytes, so an upgrade alone reports every committed document
+  as out of date.
+  Nothing reads them. Check mode is the one consumer of the document
+  the tool itself has, and project-map:INV-001 normalizes the lead
+  paragraph and the Build duration row away before comparing. The
+  document is committed and merged like source, so a field no consumer
+  reads and every rebuild rewrites is a merge conflict that carries no
+  information.
+to_be: |
+  The document opens with the constant paragraph "Generated by
+  project-map. Do not edit by hand." and carries no other prose outside
+  its sections. The coverage paragraph is removed. `metadata` leaves the
+  accepted SectionId set; a configuration naming it under `sections`, or
+  an invocation passing it to `--only`, is rejected as an unknown id and
+  exits 5.
+  The extraction errors the Errors row carried are rendered under an H2
+  "Extraction errors", one bullet per entry naming the section and the
+  message. That heading is not a SectionId: it is emitted whenever an
+  entry exists, immediately after the lead paragraph, and absent when
+  none does. A failing extractor stays visible in the document a
+  repository commits, which is what project-map:BEH-004 requires of it.
+  The tool version, the generation timestamp, the resolved revision, the
+  config hash, the two file counts and the build duration stay in the
+  JSON companion of project-map:GA-001 and in the sidecar of
+  project-map:GA-002. Both are read by programs rather than merged by
+  hand, and neither is written unless the repository asks for it.
+  project-map:INV-001 loses its normalization: with no non-reproducible
+  field left in the document, two builds over one tree are byte
+  identical, and project-map:BEH-002 compares the committed bytes
+  against the rendered bytes with nothing rewritten on either side.
+  project-map:OQ-001 asked whether a tool version bump reporting every
+  committed document out of date is the intended contract. Neither of
+  its two options is taken: the row it is asked about is removed, so the
+  question no longer has a subject.
+  project-map:GA-001 moves from artifact version 1 to 2, because the
+  structure of the emission changes in a way that breaks a reader of the
+  prior one.
+  project-map:SUR-002 takes a major bump from 2.0.0 to 3.0.0 and
+  project-map:SUR-001 from 1.3.0 to 2.0.0: the document loses a section
+  every committed copy carries, and the accepted SectionId set loses a
+  value every configuration `init` has ever written carries. Every
+  `surface_impact` declaration on either Surface belonging to a
+  finalized Delta names the new version from here, superseding the pins
+  project-map:DLT-019 and project-map:DLT-011 set.
+migration_note: |
+  A repository drops the `- metadata` line from `sections` in its
+  configuration, and `init` stops writing it. Until it drops the line,
+  build exits 5 naming the invalid value. There is no silent path: an
+  unknown id is rejected rather than ignored.
+  Every committed document changes on the first rebuild. The two lead
+  paragraphs collapse into one constant line and the trailing table is
+  gone, which is one commit per repository and removes the lines that
+  conflicted.
+  A consumer that read the tool version or the timestamp out of the
+  markdown reads them from the JSON companion by setting `output.json`,
+  which carries both under `metadata` and is unchanged by this Delta.
+tests_old_behavior: |
+  The obligation that the metadata table renders its eight rows in the
+  declared order is retired with the table. It is replaced rather than
+  dropped: the same fixture now asserts the document carries no
+  "Generation metadata" heading, and a configuration naming `metadata`
+  exits 5.
+tests_new_behavior: |
+  A rendered document opens with the constant paragraph and carries no
+  timestamp, no tool version, no revision and no coverage line; a build
+  whose extractor throws renders the "Extraction errors" heading with a
+  bullet naming that section, and a build where none throws renders no
+  such heading; a configuration listing `metadata` exits 5; and two
+  builds over one tree produce equal strings with no normalization
+  applied to either.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-021
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-04T16:10:00.955Z
+    change_request: shrink the map document to what a rebuild does not change
+    scope: first-time-approval
+partition_id: project-map
+title: a rendered anchor names the file that declares it, not the line
+target_id: project-map:CTR-003
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: no_longer_guaranteed
+surface_impact:
+  - id: project-map:SUR-002
+    intended_version: "3.0.0"
+as_is: |
+  The entities, enums, storage and workers sections render a
+  declaration's anchor as `<file>:<line>`. The line is the one the
+  declaration held when the document was built, so it moves whenever
+  anything above it in that file grows or shrinks. Two branches that
+  each edit one file conflict on every anchor below their edits, and
+  neither anchor describes a change to the declaration it names.
+  Between two builds the number is also wrong rather than absent: a
+  reader who follows it lands on whatever occupies that line now.
+to_be: |
+  The anchor renders the file path alone. A reader locates the
+  declaration by the name the heading beside it carries, which is what
+  project-map:DLT-016 already made unambiguous.
+  The line stays in the domain record, in the JSON companion of
+  project-map:GA-001, and in the tie-breaker project-map:INV-002
+  requires of every rendered collection. Nothing that consumes a line
+  number loses it; the document stops printing one.
+  The byte anchors of project-map:CTR-006 are untouched. They identify a
+  fact rather than point a reader at a file, they are compared rather
+  than read, and the facts artifact is not merged by hand.
+migration_note: |
+  Every committed document changes on the first rebuild: each anchor
+  loses its `:<line>` suffix. A consumer that parsed `<file>:<line>` out
+  of the markdown reads the line from the JSON companion by setting
+  `output.json`, which carries `source.file` and `source.line`
+  separately.
+tests_old_behavior: |
+  The obligation that an entity carries the source location of its
+  declaration is narrowed rather than dropped: the same fixture now
+  asserts the anchor is the file path and carries no line suffix.
+tests_new_behavior: |
+  A fixture whose entity, enum, table and worker are rendered carries
+  each anchor as a file path with no `:<line>` suffix, and the JSON
+  companion of the same build carries the line for each of them.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-022
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-04T16:10:01.024Z
+    change_request: shrink the map document to what a rebuild does not change
+    scope: first-time-approval
+partition_id: project-map
+title: a ranked collection reports its rank, not the tally it ranks on
+target_id: project-map:CTR-003
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: no_longer_guaranteed
+surface_impact:
+  - id: project-map:SUR-002
+    intended_version: "3.0.0"
+as_is: |
+  The bounded-contexts table carries a Files column holding the file
+  count of each directory, and each entity carries a bullet reading
+  "Referenced from N module(s)".
+  Both numbers are already the key the collection is sorted on: contexts
+  are ordered by file count descending, and entities by the importance
+  score of which the inbound reference count is a weighted term. Each
+  moves whenever a file is added under the directory or a module gains
+  an import, neither of which changes the structure the section reports.
+  Two branches that each add one file under one directory conflict on
+  that row while agreeing about everything the row is there to say.
+to_be: |
+  The bounded-contexts table carries Path and Role. An entity carries
+  its anchor, the names it inherits and its methods, and no reference
+  count.
+  The order of each collection is unchanged and is what reports
+  magnitude: a context above another holds at least as many files, and
+  an entity above another ranks at least as high. The order is the total
+  order project-map:INV-002 already requires, so it is stable under
+  everything but a change to the counts themselves.
+  Both counts stay in the JSON companion of project-map:GA-001, which
+  already carries `fileCount`, `referencedFrom` and `importance`.
+  A count that heads the list it counts stays in the document: the field
+  count of an entity and the migration count of the storage section move
+  only when the list beneath them moves, so neither conflicts on its
+  own. The detection coverage section keeps every measure it renders,
+  because measuring is what the section is for.
+migration_note: |
+  Every committed document changes on the first rebuild: the Files
+  column and the reference-count bullet disappear. A consumer that read
+  either out of the markdown reads it from the JSON companion by setting
+  `output.json`.
+tests_old_behavior: |
+  The obligation that a context entry carries its file count is retired
+  with the column. It is replaced rather than dropped: the same fixture
+  now asserts the table carries Path and Role alone, and that the row
+  order is still file count descending with the path breaking ties.
+tests_new_behavior: |
+  A rendered contexts table carries the headers Path and Role and no
+  other; an entity block carries no reference count; and over a fixture
+  whose directories hold different file counts the row order is file
+  count descending with the path ascending where counts tie.
 ---
 ```
 

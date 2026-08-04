@@ -360,7 +360,7 @@ lifecycle:
     scope: first-time-approval
 partition_id: project-map
 name: project-map/cli
-version: "1.3.0"
+version: "2.0.0"
 boundary_type: cli
 members:
   - project-map:CTR-001
@@ -372,6 +372,9 @@ notes: |
   The command set, each command's argv shape, its option names, and its
   process exit codes. Version tracks the implementation version at the
   time this Surface was first authored against the baseline.
+  v2.0.0 — breaking: `metadata` leaves the SectionId set that
+  `sections` and `--only` accept, so a configuration naming it is
+  rejected; see project-map:DLT-020.
 ---
 ```
 
@@ -389,7 +392,7 @@ lifecycle:
     scope: first-time-approval
 partition_id: project-map
 name: project-map/map-document
-version: "2.0.0"
+version: "3.0.0"
 boundary_type: generated_published_artifact
 members:
   - project-map:CTR-003
@@ -398,8 +401,13 @@ consumer_compat_policy: semver_per_surface
 notes: |
   The map document is committed into consumer repositories and read by
   humans, by git hooks running check mode, and by coding agents. Its
-  section identifiers, section order, and generation-metadata rows are
-  external identifiers under SDD §8.
+  section identifiers, section order, and heading texts are external
+  identifiers under SDD §8.
+  v3.0.0 — breaking: the document stops reporting how it was generated,
+  an anchor names the file without the line, and a ranked collection
+  stops printing the count it is ranked on; `metadata` leaves the
+  accepted SectionId set. See project-map:DLT-020, project-map:DLT-021
+  and project-map:DLT-022.
   v0.3.0 — additive: project-map:GA-001 joins as a member, naming the
   emission itself so a structural-breaking diff in the emission carries
   its own major bump per SDD §11.4-bis. No member was renamed or
@@ -491,8 +499,9 @@ when: user runs `project-map build --check`
 then: |
   The tool renders the document in memory and reads the file at
   <md_path>, substituting the empty string when that file is absent.
-  It applies the non-reproducible-field normalization of
-  project-map:INV-001 to both strings and compares them for equality.
+  It compares the two strings for equality byte for byte, rewriting
+  neither: project-map:INV-001 leaves no non-reproducible field in the
+  document to normalize away.
   On equality: the tool writes no file and process exit code is 0.
   On inequality: the tool writes no file, emits
   "PROJECT_MAP.md is out of date." followed by U+000A to stderr, and
@@ -507,7 +516,7 @@ concurrency_model:
   actor_concurrency: single_per_process
   read_consistency: strong
   idempotency: none
-  time_source: wall_clock:unbounded
+  time_source: none
 data_scope: all_data
 policy_refs:
   - project-map:POL-001
@@ -520,13 +529,13 @@ test_obligation:
   test_template: integration
   boundary_classes:
     - document identical
-    - document differing only in non-reproducible fields
     - document differing in a rendered fact
+    - document differing in whitespace alone
     - document absent
   failure_scenarios:
     - a file is written while --check is set
     - exit 0 on a document differing in a rendered fact
----
+    - either side rewritten before the comparison
 ```
 
 ```yaml
@@ -598,11 +607,15 @@ when: user runs `project-map build`
 then: |
   The build completes and writes the document. The section owned by the
   throwing extractor renders from that extractor's declared empty value.
-  Generation metadata carries one extraction-error entry per throwing
-  extractor, each naming the section and the error message, and the
-  Errors row of the generation-metadata table lists those entries.
+  The document carries an H2 "Extraction errors" holding one bullet per
+  throwing extractor, each naming the section and the error message. The
+  heading sits immediately after the lead paragraph, ahead of every
+  configured section, and it is not itself a SectionId: no configuration
+  turns it off.
+  The JSON companion carries the same entries under `metadata.errors`.
 negative_cases:
-  - every extractor succeeds; the Errors row reads "(none)"
+  - every extractor succeeds; the document carries no "Extraction
+    errors" heading
 out_of_scope:
   - a failure in configuration loading, which precedes extraction
 applicability:
@@ -618,7 +631,7 @@ policy_refs:
 test_obligation:
   predicate: |
     A build whose extractor throws exits 0, writes the document, and
-    records exactly one extraction-error entry naming that section.
+    renders exactly one extraction-error bullet naming that section.
   test_template: integration
   boundary_classes:
     - zero failing extractors
@@ -626,8 +639,7 @@ test_obligation:
     - more than one failing extractor
   failure_scenarios:
     - the build aborts on an extractor failure
-    - the failure is silently dropped from generation metadata
----
+    - the failure dropped from the document it writes
 ```
 
 ---
@@ -850,19 +862,20 @@ surface_ref: project-map:SUR-002
 schema: |
   The document is GitHub-flavored markdown with this structure:
     H1            "Project Map: <project.name>"
-    paragraph     "Generated by project-map v<toolVersion> on <ISO-8601>"
-                  followed by " from revision <revision>" when a revision
-                  resolves
-    paragraph     "Coverage: <n> <language> files scanned (<m> excluded)."
+    paragraph     "Generated by project-map. Do not edit by hand."
+    H2            "Extraction errors" over one bullet per extraction
+                  error, present when at least one error exists
     sections      one per entry of <config.sections>, in the order that
                   list carries, each rendered by its section renderer
+  The lead paragraph is constant. The document carries no timestamp, no
+  tool version, no revision, no config hash and no file count; the JSON
+  companion of project-map:GA-001 carries every one of them.
   A section whose collection is empty renders no heading and no body.
   The accepted SectionId set is: overview, contexts, entities, enums,
-  endpoints, storage, interactions, workers, metadata,
-  detection_coverage.
+  endpoints, storage, interactions, workers, detection_coverage.
   The accepted set and the default `sections` list are distinct. The
-  default is the first nine; `detection_coverage` is opt-in, because the
-  prior extractors had no counterpart to it.
+  default is the first eight; `detection_coverage` is opt-in, because
+  the prior extractors had no counterpart to it.
   The three detection ids render the facts of project-map:CTR-006:
   `endpoints` an H2 "HTTP endpoints" over method, route, resolution,
   provenance and contracts; `interactions` an H2 "External dependencies"
@@ -879,49 +892,47 @@ schema: |
   prose. Emphasis is not parsed inside code, so a member whose name
   begins and ends with an underscore renders as the name it was
   declared with. Cells of the other sections are prose.
-  The metadata section renders an H2 "Generation metadata" and a
-  two-column table whose rows appear in this order: Tool version,
-  Config hash, Scanned files, Excluded, Build duration, Language,
-  Frameworks, Errors.
+  A declaration's rendered anchor is the path of the file that declares
+  it. The line it sits on is carried by the JSON companion.
+  The bounded-contexts table carries Path and Role. An entity carries
+  its anchor, the names it inherits and its methods. Neither carries the
+  count it is ranked on: the order of the collection reports that.
 preconditions: extraction completed, with or without extraction errors
 postconditions: |
   The document satisfies project-map:INV-001 and project-map:INV-002.
 external_identifiers: |
-  The SectionId values; the H1 and H2 heading texts; the generation
-  metadata row labels; the "Generated by project-map v" and
-  "Coverage: " paragraph prefixes; the "| Build duration |" row label,
-  which check-mode normalization matches on.
+  The SectionId values; the H1 and H2 heading texts, "Extraction errors"
+  included; the text of the lead paragraph, which is constant and
+  carries no generated value.
 compatibility_rules: |
-  Renaming a SectionId, a heading text, or a metadata row label is a
-  major bump of project-map:SUR-002, because check mode compares
-  document text and coding agents parse these headings. Adding a
-  SectionId is a minor bump. Reordering the metadata rows is a major
-  bump.
+  Renaming a SectionId or a heading text is a major bump of
+  project-map:SUR-002, because check mode compares document text and
+  coding agents parse these headings. Removing a SectionId from the
+  accepted set is a major bump. Adding a SectionId is a minor bump.
 applicability:
   invariant_to_all_axes: true
 concurrency_model:
   actor_concurrency: single_per_process
   read_consistency: strong
   idempotency: none
-  time_source: wall_clock:unbounded
+  time_source: none
 data_scope: all_data
 policy_refs:
   - project-map:POL-001
 test_obligation:
   predicate: |
-    A rendered document carries the H1, the two lead paragraphs, the
-    configured sections in the configured order, and the generation
-    metadata table with its rows in the declared order.
+    A rendered document carries the H1, the constant lead paragraph and
+    the configured sections in the configured order, and carries no
+    timestamp, no tool version and no generation-metadata heading.
   test_template: integration
   boundary_classes:
     - every section populated
     - one section empty
-    - revision resolvable versus null
+    - an extraction error present versus absent
   failure_scenarios:
     - a heading text differing from the declared text
-    - metadata rows in an order other than the declared order
     - an empty section rendering a bare heading
----
+    - a clock, a revision or a tool version reaching the document
 ```
 
 ---
@@ -941,19 +952,16 @@ lifecycle:
     change_request: SDD onboarding of the existing implementation
     scope: first-time-approval
 partition_id: project-map
-title: the map document is reproducible modulo declared non-reproducible fields
+title: the map document is reproducible byte for byte
 always: |
   Two builds over an identical source tree and an identical resolved
-  configuration produce map documents that are byte-identical after the
-  following normalization is applied to both:
-    the line matching /^Generated by project-map v.+$/m becomes
-      "Generated by project-map"
-    the line matching /^\| Build duration\s*\|.*\|$/m becomes
-      "| Build duration | <normalized> |"
-  The normalization defines exactly three non-reproducible fields: the
-  generation timestamp, the VCS revision string, and the build duration.
-  Every other rendered value is a pure function of the selected source
-  files and the resolved configuration.
+  configuration produce byte-identical map documents. No normalization
+  is applied before the comparison, and none is available to apply: the
+  document carries no non-reproducible field, so every rendered value is
+  a pure function of the selected source files and the resolved
+  configuration.
+  The generation timestamp, the VCS revision and the build duration are
+  carried by the JSON companion alone.
 scope: the map document produced by build (project-map:CTR-003)
 evidence: public_api
 stability: contractual
@@ -964,25 +972,24 @@ concurrency_model:
   actor_concurrency: single_per_process
   read_consistency: strong
   idempotency: none
-  time_source: wall_clock:unbounded
+  time_source: none
 negative_cases:
-  - the Tool version metadata row lies outside the normalization, so a
-    tool version change alters the compared bytes; see project-map:OQ-001
+  - two builds under different tool versions, which differ in no
+    rendered byte and are therefore no violation of this invariant
 out_of_scope:
   - the JSON document, which check mode does not read and which carries
-    the timestamp and duration unnormalized
+    the timestamp, the revision and the build duration unnormalized
 test_obligation:
   predicate: |
-    Building twice over one fixture and normalizing both documents per
-    the always clause yields equal strings.
+    Building twice over one fixture yields equal strings with no
+    normalization applied to either.
   test_template: integration
   boundary_classes:
     - fixture with a resolvable revision
     - fixture without a resolvable revision
   failure_scenarios:
     - a collection rendered in filesystem or hash-map iteration order
-    - a clock or duration value rendered outside generation metadata
----
+    - a clock, a revision or a duration value rendered into the document
 ```
 
 ```yaml
@@ -1063,7 +1070,7 @@ partition_id: project-map
 title: the map document and its optional JSON companion
 source_ids:
   - project-map:CTR-003
-version: 1
+version: 2
 generator: project-map-cli
 generator_version: "0.2.2"
 command: project-map build
@@ -1078,10 +1085,14 @@ applicability:
 notes: |
   The emission is regenerated whole on every build; the tool applies no
   patches to a previously written document, so `clean` is exact.
-  A structural-breaking diff in the emission (a renamed section id, a
-  renamed heading, a reordered generation-metadata table) is a major
-  bump of project-map:SUR-002 regardless of the bump on
-  project-map:CTR-003, per SDD §11.4-bis.
+  A structural-breaking diff in the emission, which is a renamed
+  section id or a renamed heading, is a major bump of
+  project-map:SUR-002 regardless of the bump on project-map:CTR-003,
+  per SDD §11.4-bis.
+  Artifact version 2 is the structure project-map:DLT-020,
+  project-map:DLT-021 and project-map:DLT-022 leave: no generation
+  metadata, an anchor without a line, and no count the collection
+  carrying it is ranked on. Version 1 is every emission before them.
 test_obligation:
   predicate: |
     Two consecutive builds over one unchanged tree emit an identical
@@ -1782,6 +1793,10 @@ notes: |
   Raised during brownfield recon, not from a reported defect. Recorded
   rather than silently corrected, per SDD §6.4: changing it is a Delta,
   not a fix.
+  Closed by project-map:DLT-020, which takes neither option: the
+  paragraph and the Tool version row both leave the document, so the
+  question has no subject left. It is recorded closed rather than
+  deleted, because the answer is why the rows are gone.
 ---
 ```
 

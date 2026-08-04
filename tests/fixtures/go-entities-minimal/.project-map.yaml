@@ -5,7 +5,6 @@ project:
 sections:
   - entities
   - enums
-  - metadata
 
 output:
   markdown: PROJECT_MAP.md

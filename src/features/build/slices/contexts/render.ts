@@ -11,9 +11,9 @@ export function renderContexts(
 	return [
 		...section("Bounded contexts", 2),
 		table(
-			["Path", "Files", "Role"],
-			contexts.map((c) => [c.path, String(c.fileCount), c.role]),
-			["left", "right", "left"],
+			["Path", "Role"],
+			contexts.map((c) => [c.path, c.role]),
+			["left", "left"],
 		),
 	];
 }

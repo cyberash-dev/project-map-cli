@@ -15,7 +15,6 @@ sections:
   - enums
   - endpoints
   - storage
-  - metadata
 
 contexts:
   custom: []

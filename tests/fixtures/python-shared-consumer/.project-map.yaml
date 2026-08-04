@@ -4,8 +4,7 @@ project:
 
 repository_identity: sample/consuming
 
-sections:
-  - metadata
+sections: []
 
 analysis_unit:
   sources:
