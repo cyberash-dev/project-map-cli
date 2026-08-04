@@ -86,6 +86,7 @@ describe("the unclassified ratchet", () => {
 	});
 
 	/* @covers project-map:BEH-014 */
+	/* @covers project-map:DLT-017 */
 	it("exits 6 on a diagnostic the baseline does not list", async () => {
 		await withBaseline(workspace.dir, COVERING.slice(1));
 
@@ -132,6 +133,7 @@ describe("the unclassified ratchet", () => {
 	});
 
 	/* @covers project-map:BEH-014 */
+	/* @covers project-map:DLT-017 */
 	it("leaves a build without the flag on its own terms", async () => {
 		await withBaseline(workspace.dir, COVERING.slice(1));
 
