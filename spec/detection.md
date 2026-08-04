@@ -1975,9 +1975,9 @@ lifecycle:
   approval_record:
     owner_role: tech-lead
     approver_identity: cyberash
-    timestamp: 2026-07-29T10:17:34.313Z
-    change_request: detection rework phase B tail
-    scope: first-time-approval
+    timestamp: 2026-08-04T14:13:52.024Z
+    change_request: "phase G: retire the constraint at its sunset"
+    scope: deprecation
 sunset_version: project-map:SUR-002@2.0.0
 replacement_id: project-map:DLT-019
 partition_id: project-map
@@ -3067,7 +3067,13 @@ tests_new_behavior: |
 id: project-map:DLT-019
 type: Delta
 lifecycle:
-  status: proposed
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-04T14:13:51.963Z
+    change_request: "phase G: rebind the legacy section ids"
+    scope: first-time-approval
 partition_id: project-map
 title: the legacy section ids are rebound to the reworked detectors
 target_id: project-map:CTR-003
