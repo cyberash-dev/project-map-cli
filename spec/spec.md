@@ -149,7 +149,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: 98f725673763d373855d2a19d2df81b85771d8f8
+    reference: ebb48134b3957d5105832e51367f4f804ff91272
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -161,14 +161,14 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 9b2d662ad0c73f7af37967848551464a0095d82073b5730f541390e33fb209b3
-baseline_commit_sha: 98f725673763d373855d2a19d2df81b85771d8f8
+freshness_token: 90f19df8121560cf0e60409ff7d3651400367dd7644ac2cc07deb88f17fbd6be
+baseline_commit_sha: ebb48134b3957d5105832e51367f4f804ff91272
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from e36dec17 to 98f72567 across every phase of the
+  Refreshed from e36dec17 to ebb48134 across every phase of the
   detection rework and the 1.0.0 release.
   The first two phases added twenty-two modules, each claimed by project-map:IMP-006, project-map:IMP-007 or
   project-map:IMP-008, plus the configuration keys those phases add and
@@ -255,6 +255,12 @@ notes: |
   records but does not authorize the release. The test closes part of the
   obligation of project-map:CTR-001, which states every command over an
   invocation while the rest of the suite invokes the program in process.
+  3f1c6f6f and 4491aaa3 answer project-map:OQ-004 with its first option.
+  project-map:SUR-004 and project-map:CTR-009 govern what a consumer
+  installs: the command name in `bin`, the file allow-list, and the
+  `engines.node` range. Inside Discovery scope they add one test; the
+  manifest is unchanged, because the Contract was written against what
+  the package already declares. The descriptive fields stay unmodeled.
   eca64c55, c596588e and e37b638c close a defect the map document
   carried since before this partition existed: an entity was reported by
   its bare name. One validation service declares seventeen Go structs
