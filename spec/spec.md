@@ -157,7 +157,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: ebb48134b3957d5105832e51367f4f804ff91272
+    reference: b749c3041557e6c3786c3fd5d59d271268106b67
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -169,15 +169,15 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 90f19df8121560cf0e60409ff7d3651400367dd7644ac2cc07deb88f17fbd6be
-baseline_commit_sha: ebb48134b3957d5105832e51367f4f804ff91272
+freshness_token: 0d8972425616270c07d841fab775961a372a0a064d0361503a8a227269f54fb0
+baseline_commit_sha: b749c3041557e6c3786c3fd5d59d271268106b67
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from e36dec17 to ebb48134 across every phase of the
-  detection rework and the 1.0.0 release.
+  Refreshed from e36dec17 to b749c304 across the detection rework, the
+  1.0.0 release, and the first half of phase G.
   The first two phases added twenty-two modules, each claimed by project-map:IMP-006, project-map:IMP-007 or
   project-map:IMP-008, plus the configuration keys those phases add and
   one line in src/cli/commands.ts that threads `output.facts` through
@@ -263,6 +263,15 @@ notes: |
   records but does not authorize the release. The test closes part of the
   obligation of project-map:CTR-001, which states every command over an
   invocation while the rest of the suite invokes the program in process.
+  b601aa1a opens phase G by correcting its own accounting: fifteen modules
+  counted as debt implemented behavior an approved ID already governed
+  and were unclaimed only because no binding named them. The count moved
+  from 52 to 37 with no code change, and project-map:BL-001's partition
+  record moved with it.
+  5d262f32 adds the ratchet. project-map:BEH-014, project-map:CTR-010 and
+  project-map:DLT-017 carry `--strict`, the baseline it reads, and exit
+  code 6; project-map:SUR-001 moves to 1.3.0. The baseline is read after
+  the fact set is canonical and reaches no emitted byte.
   3f1c6f6f and 4491aaa3 answer project-map:OQ-004 with its first option.
   project-map:SUR-004 and project-map:CTR-009 govern what a consumer
   installs: the command name in `bin`, the file allow-list, and the
