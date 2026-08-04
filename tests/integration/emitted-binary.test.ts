@@ -22,6 +22,7 @@ describe.skipIf(process.platform === "win32")("the emitted binary", () => {
 	});
 
 	/* @covers project-map:CTR-001 */
+	/* @covers project-map:CTR-009 */
 	it("runs directly, without an interpreter in front of it", async () => {
 		const binary = path.join(REPO_ROOT, "dist/cli/index.js");
 
