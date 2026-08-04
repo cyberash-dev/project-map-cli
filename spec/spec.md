@@ -144,7 +144,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: a46e23b59c9a89ed20fed0b48f4169945159f8d1
+    reference: 1fb4f227eca67cbc370ea0956be5e23b959e0152
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -156,15 +156,15 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 1eaa69179c0c609f7c2f8bad4630652c5fd89846194fb0dc9962a39f63778fac
-baseline_commit_sha: a46e23b59c9a89ed20fed0b48f4169945159f8d1
+freshness_token: 0892749946bb59e32b9eb4052b6be6180872a375ceda5d2dd3a74eeba1252973
+baseline_commit_sha: 1fb4f227eca67cbc370ea0956be5e23b959e0152
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from e36dec17 to a46e23b5 across the detection rework, the
-  1.0.0 release, and phase G so far.
+  Refreshed from e36dec17 to 1fb4f227 across the detection rework, the
+  1.0.0 release, and the whole of phase G.
   The first two phases added twenty-two modules, each claimed by project-map:IMP-006, project-map:IMP-007 or
   project-map:IMP-008, plus the configuration keys those phases add and
   one line in src/cli/commands.ts that threads `output.facts` through
@@ -255,6 +255,13 @@ notes: |
   and were unclaimed only because no binding named them. The count moved
   from 52 to 37 with no code change, and project-map:BL-001's partition
   record moved with it.
+  25e84d37 governs the four extraction slices that remained, and takes
+  the partition's unmodeled budget to zero: every module under src/ now
+  sits behind an approved normative ID, where the onboarding started at
+  seventy-two. project-map:BEH-016 states what the contexts, entities,
+  storage and workers sections report; the tests that already exercised
+  those shapes name it rather than new ones being written to repeat
+  them.
   637aae77 rebinds the legacy section ids. `endpoints` renders the
   inbound facts and `interactions` the outbound operations, each under
   the heading it already had; `inbound_endpoints` and
