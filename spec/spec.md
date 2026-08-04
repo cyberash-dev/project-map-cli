@@ -145,7 +145,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: 6ba2d98f9a39ed67746b20aafb3f503e9dbfe1cb
+    reference: 58b6655472f54179a14bfd64538116e960b98028
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -157,15 +157,26 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: a9c5aa27a0fbf82d7b4ad1dd81f94a44ce547d3cd9d13b2d4d5b2bbf823972bd
-baseline_commit_sha: 6ba2d98f9a39ed67746b20aafb3f503e9dbfe1cb
+freshness_token: 8f014141cafca99aa329afcd087f2b214ea85d9e08d8062b473e93166b49357d
+baseline_commit_sha: 58b6655472f54179a14bfd64538116e960b98028
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from e36dec17 to 6ba2d98f across the detection rework, the
-  1.0.0 release, and the whole of phase G.
+  Refreshed from 6ba2d98f to 58b66554. 58b66554 shrinks the map
+  document to what a rebuild does not change: the generated header, the
+  coverage line, the file count of a context, the reference count of an
+  entity, the line in every anchor, and the whole generation-metadata
+  section, whose id leaves the accepted SectionId set. It adds no
+  module, so the derived debt count stays 0. Its crossings are the
+  footprints of CTR-003, INV-001, BEH-002 and BEH-004, authorized by
+  project-map:DLT-020, project-map:DLT-021 and project-map:DLT-022 and
+  approved after the code in the order this record names. The same three
+  carry project-map:SUR-001 to 2.0.0 and project-map:SUR-002 to 3.0.0,
+  and every surface_impact pin on both was rewritten to match.
+  The refresh before it ran from e36dec17 to 6ba2d98f across the
+  detection rework, the 1.0.0 release, and the whole of phase G.
   The first two phases added twenty-two modules, each claimed by project-map:IMP-006, project-map:IMP-007 or
   project-map:IMP-008, plus the configuration keys those phases add and
   one line in src/cli/commands.ts that threads `output.facts` through
