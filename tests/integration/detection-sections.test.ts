@@ -15,11 +15,7 @@ const UNCONDITIONAL_HEADINGS = [
 	"## Enums",
 ];
 
-const DETECTION_HEADINGS = [
-	"## HTTP endpoints",
-	"## External dependencies",
-	"## Detection coverage",
-];
+const DETECTION_HEADINGS = ["## HTTP endpoints", "## External dependencies"];
 
 async function documentOf(dir: string): Promise<string> {
 	return readFile(path.join(dir, "PROJECT_MAP.md"), "utf8");
@@ -83,17 +79,6 @@ describe("the reworked detection renders under its own section ids", () => {
 		);
 	});
 
-	/* @covers project-map:CTR-003 */
-	it("renders a closed-enum coverage value as code", async () => {
-		await withSections(workspace.dir, ["detection_coverage"]);
-
-		await runCli(workspace.dir, ["build"]);
-
-		expect(await documentOf(workspace.dir)).toMatch(
-			/\| `inbound`\s+\| `unmeasured`\s+\|/,
-		);
-	});
-
 	/* @covers project-map:DLT-015 */
 	it("renders an identifier as code rather than escaping it as prose", async () => {
 		await withSections(workspace.dir, ["interactions"]);
@@ -154,6 +139,42 @@ describe("the reworked detection renders under its own section ids", () => {
 	});
 });
 
+describe("the coverage measures leave the document", () => {
+	let workspace: Workspace;
+
+	beforeEach(async () => {
+		workspace = await createWorkspace("python-outbound");
+	});
+	afterEach(async () => {
+		await workspace.dispose();
+	});
+
+	/* @covers project-map:DLT-023 */
+	it("rejects the removed coverage section", async () => {
+		await withSections(workspace.dir, ["detection_coverage"]);
+
+		expect(await runCli(workspace.dir, ["build"])).toBe(5);
+	});
+
+	/* @covers project-map:DLT-023 */
+	it("keeps the measures in the artifact it renders no section for", async () => {
+		await withSections(workspace.dir, ["interactions"]);
+
+		await runCli(workspace.dir, ["build"]);
+
+		expect(await documentOf(workspace.dir)).not.toContain(
+			"## Detection coverage",
+		);
+		const artifact: unknown = JSON.parse(
+			await readFile(
+				path.join(workspace.dir, ".project-map/facts.json"),
+				"utf8",
+			),
+		);
+		expect(artifact).toHaveProperty("coverage");
+	});
+});
+
 describe("the default section list", () => {
 	let workspace: Workspace;
 
@@ -178,14 +199,11 @@ describe("the default section list", () => {
 	});
 
 	/* @covers project-map:ASM-002 */
-	it("renders no coverage section without detection inputs", async () => {
-		await withSections(workspace.dir, ["detection_coverage"]);
+	it("validates a detection section without an identity to emit under", async () => {
+		await withSections(workspace.dir, ["contexts", "endpoints"]);
 
-		await runCli(workspace.dir, ["build"]);
-
-		expect(await documentOf(workspace.dir)).not.toContain(
-			"## Detection coverage",
-		);
+		expect(await runCli(workspace.dir, ["build"])).toBe(0);
+		expect(await documentOf(workspace.dir)).not.toContain("## HTTP endpoints");
 	});
 
 	/* @covers project-map:DLT-019 */

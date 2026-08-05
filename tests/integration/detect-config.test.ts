@@ -66,7 +66,7 @@ describe("detection configuration", () => {
 	it("accepts a detection section without a repository identity when no facts are emitted", async () => {
 		const config = await loadYaml(
 			workspace.dir,
-			`${MINIMAL}sections:\n  - detection_coverage\n`,
+			`${MINIMAL}sections:\n  - endpoints\n`,
 		);
 
 		expect(config.repositoryIdentity).toBeNull();

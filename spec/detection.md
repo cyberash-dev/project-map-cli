@@ -3461,6 +3461,77 @@ tests_new_behavior: |
 ---
 ```
 
+```yaml
+---
+id: project-map:DLT-023
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-05T08:22:51.798Z
+    change_request: the coverage measures leave the document for the artifact
+    scope: first-time-approval
+partition_id: project-map
+title: the coverage measures leave the document for the artifact that holds them
+target_id: project-map:CTR-003
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: reject
+surface_impact:
+  - id: project-map:SUR-001
+    intended_version: "2.0.0"
+  - id: project-map:SUR-002
+    intended_version: "3.0.0"
+as_is: |
+  `detection_coverage` renders an H2 "Detection coverage" over the
+  coverage measures and, where any exist, the aggregated diagnostics.
+  Every cell of it is a tally. On one validation service the section
+  reads 166 declared routes, 0 reconciled, 73 classified operations and
+  52 resolved: five numbers that move on any commit touching a route, a
+  call site or a served specification, and that say nothing a reader
+  acts on directly.
+  project-map:DLT-022 kept the section for that reason, holding that
+  measuring is what it is for. That reasoning stands for the measures
+  and not for the place they are printed: the same numbers are content
+  of the facts artifact under `coverage` and `diagnostics`, which
+  project-map:BEH-013 already requires of it.
+to_be: |
+  `detection_coverage` leaves the accepted SectionId set. A
+  configuration naming it under `sections`, or an invocation passing it
+  to `--only`, is rejected as an unknown id and exits 5. The two
+  detection ids that remain are `endpoints` and `interactions`.
+  The measures and the aggregated diagnostics stay where a program reads
+  them: `coverage` and `diagnostics` of the artifact project-map:GA-002
+  emits. Nothing about how either is computed changes, and
+  project-map:BEH-013 is untouched.
+  The carve-out project-map:DLT-022 made for this section is superseded.
+  The rule it stated holds without exception: the map document reports
+  structure, and a tally that moves without the structure moving belongs
+  to the artifact.
+migration_note: |
+  A repository drops the `- detection_coverage` line from `sections`.
+  Until it does, build exits 5 naming the invalid value.
+  A reader who watched the measures reads them from
+  `<output.facts>` under `coverage`. A repository that wants an
+  unclassified site to fail a build already has the mechanism for it:
+  `--strict` against the baseline of project-map:CTR-010, which is what
+  the diagnostics table could only be read to do by hand.
+tests_old_behavior: |
+  The obligations that the section renders its measures and that a
+  closed-enum measure renders as code are retired with the section.
+  They are replaced rather than dropped: the same fixture now asserts
+  the document carries no "Detection coverage" heading and that a
+  configuration naming the id exits 5.
+tests_new_behavior: |
+  A configuration listing `detection_coverage` exits 5; a build over a
+  fixture with detection configured renders no "Detection coverage"
+  heading; and the artifact of that same build still carries `coverage`
+  and `diagnostics`.
+---
+```
+
 ---
 
 ## 16. Implementation bindings

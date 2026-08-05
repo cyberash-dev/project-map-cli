@@ -383,9 +383,10 @@ notes: |
   The command set, each command's argv shape, its option names, and its
   process exit codes. Version tracks the implementation version at the
   time this Surface was first authored against the baseline.
-  v2.0.0 — breaking: `metadata` leaves the SectionId set that
-  `sections` and `--only` accept, so a configuration naming it is
-  rejected; see project-map:DLT-020.
+  v2.0.0 — breaking: `metadata` and `detection_coverage` leave the
+  SectionId set that `sections` and `--only` accept, so a
+  configuration naming either is rejected; see project-map:DLT-020 and
+  project-map:DLT-023.
 ---
 ```
 
@@ -416,9 +417,11 @@ notes: |
   identifiers under SDD §8.
   v3.0.0 — breaking: the document stops reporting how it was generated,
   an anchor names the file without the line, and a ranked collection
-  stops printing the count it is ranked on; `metadata` leaves the
-  accepted SectionId set. See project-map:DLT-020, project-map:DLT-021
-  and project-map:DLT-022.
+  stops printing the count it is ranked on; `metadata` and
+  `detection_coverage` leave the accepted SectionId set, the second
+  because its measures are content of the facts artifact. See
+  project-map:DLT-020, project-map:DLT-021, project-map:DLT-022 and
+  project-map:DLT-023.
   v0.3.0 — additive: project-map:GA-001 joins as a member, naming the
   emission itself so a structural-breaking diff in the emission carries
   its own major bump per SDD §11.4-bis. No member was renamed or
@@ -883,22 +886,21 @@ schema: |
   companion of project-map:GA-001 carries every one of them.
   A section whose collection is empty renders no heading and no body.
   The accepted SectionId set is: overview, contexts, entities, enums,
-  endpoints, storage, interactions, workers, detection_coverage.
-  The accepted set and the default `sections` list are distinct. The
-  default is the first eight; `detection_coverage` is opt-in, because
-  the prior extractors had no counterpart to it.
-  The three detection ids render the facts of project-map:CTR-006:
+  endpoints, storage, interactions, workers. It is exactly the default
+  `sections` list: a configuration narrows that list and never widens
+  it.
+  The two detection ids render the facts of project-map:CTR-006:
   `endpoints` an H2 "HTTP endpoints" over method, route, resolution,
   provenance and contracts; `interactions` an H2 "External dependencies"
-  over owner, method, route, destination and resolution;
-  `detection_coverage` an H2 "Detection coverage" over the coverage
-  measures and, where any exist, the diagnostics.
+  over owner, method, route, destination and resolution. The coverage
+  measures and the aggregated diagnostics are content of the artifact
+  project-map:GA-002 emits rather than of this document.
   A declaration whose bare name another declaration also claims is
   headed by that name qualified with the shortest suffix of its
   declaring directory that tells the two apart; a name nothing else
   claims is headed by itself. A field bullet and an enum member are
   inline code, and a field type is folded onto one line.
-  In those three sections a cell carrying a name, a value or a
+  In those two sections a cell carrying a name, a value or a
   closed-enum member is inline code, and a cell carrying a count is
   prose. Emphasis is not parsed inside code, so a member whose name
   begins and ends with an underscore renders as the name it was
@@ -944,9 +946,8 @@ test_obligation:
     - a heading text differing from the declared text
     - an empty section rendering a bare heading
     - a clock, a revision or a tool version reaching the document
-```
-
 ---
+```
 
 ## 8. Invariants
 
@@ -1001,6 +1002,7 @@ test_obligation:
   failure_scenarios:
     - a collection rendered in filesystem or hash-map iteration order
     - a clock, a revision or a duration value rendered into the document
+---
 ```
 
 ```yaml

@@ -286,7 +286,6 @@ repository_identity: arcadia/billing/my_service # required once detection is on
 sections:
   - endpoints # H2 "HTTP endpoints" — inbound facts
   - interactions # H2 "External dependencies" — outbound operations
-  - detection_coverage # H2 "Detection coverage"
 
 analysis_unit: # everything detection is allowed to observe
   sources:
@@ -361,7 +360,9 @@ not fold is `unknown(dynamic)`, a destination the repository does not bind is
 `unknown(operation_in_library_root)`, and each fact carries a `resolution` of
 `resolved`, `ambiguous`, `unresolved` or `conflicting`. Coverage denominators
 are honest — an axis nothing declares reports `unmeasured` rather than a
-completed fraction.
+completed fraction. Both live in the artifact alone: the document renders no
+coverage section, because a tally that moves without the structure moving is a
+merge conflict rather than a reader's answer.
 
 The artifact carries no timestamp; the generation time and build duration live
 in `.project-map/facts.meta.json`, which `--check` never opens. Add the sidecar

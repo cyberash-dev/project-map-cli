@@ -3,10 +3,7 @@ import {
 	ALL_LANGUAGES,
 	FRAMEWORKS_BY_LANGUAGE,
 } from "../../core/domain/language.js";
-import {
-	DEFAULT_SECTION_IDS,
-	SECTION_IDS,
-} from "../../core/domain/project-map.js";
+import { SECTION_IDS } from "../../core/domain/project-map.js";
 import { SelectorSchema } from "./selector-schema.js";
 
 const FRAMEWORK_VALUES = Array.from(
@@ -74,7 +71,7 @@ export const ConfigFileSchema = z
 		root: z.string().default("."),
 		respect_gitignore: z.boolean().default(false),
 		exclude: z.array(z.string()).default([]),
-		sections: z.array(z.enum(SECTION_VALUES)).default([...DEFAULT_SECTION_IDS]),
+		sections: z.array(z.enum(SECTION_VALUES)).default([...SECTION_IDS]),
 		overview: z
 			.object({
 				path: z.string().nullable().default(null),

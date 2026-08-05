@@ -8,7 +8,7 @@ import { isEndpointFact } from "../../../core/domain/facts/fact.js";
 import type { ValueIr } from "../../../core/domain/facts/value-ir.js";
 import type { DetectionSectionId } from "../../../core/domain/project-map.js";
 import type { FactSet } from "../../detect/detect.use-case.js";
-import { codeCell, heading, paragraph, table, text } from "./mdast-helpers.js";
+import { codeCell, heading, table } from "./mdast-helpers.js";
 
 /**
  * The reworked detection rendered under its own section ids. A hole keeps its
@@ -25,10 +25,7 @@ export function renderDetectionSection(
 	if (id === "endpoints") {
 		return renderInbound(facts.facts.filter(isEndpointFact));
 	}
-	if (id === "interactions") {
-		return renderOutbound(facts.facts.filter(isOutbound));
-	}
-	return renderCoverage(facts);
+	return renderOutbound(facts.facts.filter(isOutbound));
 }
 
 function isOutbound(fact: DetectionFact): fact is OutboundOperationFact {
@@ -72,30 +69,6 @@ function renderOutbound(
 				codeCell(fact.resolution),
 			]),
 		),
-	];
-}
-
-function renderCoverage(facts: FactSet): RootContent[] {
-	const rows = Object.entries(facts.coverage).map(([key, value]) => [
-		codeCell(key),
-		typeof value === "string" ? codeCell(value) : String(value),
-	]);
-	const diagnostics = facts.diagnostics.map((entry) => [
-		codeCell(entry.code),
-		codeCell(entry.canonical_callee),
-		String(entry.count),
-	]);
-	return [
-		heading(2, "Detection coverage"),
-		table(["Measure", "Value"], rows),
-		...(diagnostics.length === 0
-			? []
-			: [
-					paragraph([
-						text("Unclassified sites inside the candidate universe:"),
-					]),
-					table(["Code", "Callee", "Anchors"], diagnostics),
-				]),
 	];
 }
 

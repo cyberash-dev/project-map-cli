@@ -90,11 +90,11 @@ export type ProjectMap = {
 };
 
 /**
- * The sections a repository renders unless it names others. The reworked
- * detection is not among them, and `metadata` left the accepted set entirely
- * with project-map:DLT-020.
+ * Every section a repository can render, and the list it renders unless it
+ * names a narrower one. `metadata` and `detection_coverage` left the set with
+ * project-map:DLT-020 and project-map:DLT-023.
  */
-export const DEFAULT_SECTION_IDS = [
+export const SECTION_IDS = [
 	"overview",
 	"contexts",
 	"entities",
@@ -110,16 +110,7 @@ export const DEFAULT_SECTION_IDS = [
  * are the ids the prior extractors held: project-map:DLT-019 rebinds them
  * rather than leaving a repository two names for one thing.
  */
-export const DETECTION_SECTION_IDS = [
-	"endpoints",
-	"interactions",
-	"detection_coverage",
-] as const;
-
-export const SECTION_IDS = [
-	...DEFAULT_SECTION_IDS,
-	"detection_coverage",
-] as const;
+export const DETECTION_SECTION_IDS = ["endpoints", "interactions"] as const;
 
 export type SectionId = (typeof SECTION_IDS)[number];
 export type DetectionSectionId = (typeof DETECTION_SECTION_IDS)[number];
