@@ -1,4 +1,4 @@
-import type { Root, RootContent } from "mdast";
+import type { Heading, Root, RootContent } from "mdast";
 import { toMarkdown } from "mdast-util-to-markdown";
 import { gfmTableToMarkdown } from "mdast-util-gfm-table";
 import {
@@ -36,8 +36,13 @@ export function renderMarkdown(
 	config: ResolvedConfig,
 	facts: FactSet | null = null,
 ): string {
+	const title: Heading = {
+		type: "heading",
+		depth: 1,
+		children: [text("Project Map: "), inlineCode(map.project.name)],
+	};
 	const children: RootContent[] = [
-		heading(1, `Project Map: ${map.project.name}`),
+		title,
 		paragraph([text(LEAD_PARAGRAPH)]),
 		...renderExtractionErrors(map.metadata.errors),
 	];

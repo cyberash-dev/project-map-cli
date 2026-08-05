@@ -32,6 +32,10 @@ from revision <sha>` and `Coverage: <n> files scanned (<m> excluded).` are
 - **Counts a collection is ranked on.** The `Files` column of the bounded
   contexts table and the `Referenced from N module(s)` bullet of an entity are
   gone; the row order still reports the same magnitude.
+- **The field count on the `Fields:` label.** The bullets under it are the
+  same list in full, so `Fields (8):` reported nothing the page did not, and it
+  moved on every field added or removed. `project-map.json` still carries the
+  array.
 - **The `Resolution` column of both detection tables.** `## HTTP endpoints`
   heads Method, Route, Provenance, Contracts; `## External dependencies` heads
   Owner, Method, Route, Destination. In the document the column restated the
@@ -54,13 +58,22 @@ Everything removed stays where a program reads it: `project-map.json`
   id: no configuration turns it off, and it is absent when nothing failed.
 - **`init` writes the section list without `metadata`.** No default list
   ever named `detection_coverage`, so nothing else changes there.
+- **A value read out of the source renders as inline code everywhere.**
+  Previously only the two detection sections did, and every other position
+  went through prose escaping: a project named `yandex_pay_plus` opened the
+  document as `yandex\_pay\_plus`, and the same happened to a bounded-context
+  path, a table, a model, a revision, a migration summary and a worker topic.
+  The H1 is now ``# Project Map: `<name>` ``. A consumer matching
+  `^# Project Map: ` still matches; one that unescaped `\_` stops needing to.
 
 ### Migration
 
 Drop `- metadata` and `- detection_coverage` from `sections` in
-`.project-map.yaml`, then rebuild and commit `PROJECT_MAP.md`. A consumer that parsed the tool version, the
-timestamp or `<file>:<line>` out of the markdown reads them from
-`project-map.json` instead.
+`.project-map.yaml`, then rebuild and commit `PROJECT_MAP.md`. A consumer that
+parsed the tool version, the timestamp, `<file>:<line>`, a field count or a
+resolution out of the markdown reads them from `project-map.json` and
+`<output.facts>` instead, and one that matched a name against its escaped
+spelling matches the declared spelling now.
 
 ## 1.0.0
 

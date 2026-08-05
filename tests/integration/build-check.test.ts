@@ -119,8 +119,8 @@ describe("check mode drift classes", () => {
 		await runCli(workspace.dir, ["build"]);
 		const mdPath = path.join(workspace.dir, MD);
 		const drifted = (await readFile(mdPath, "utf8")).replace(
-			"# Project Map: aiohttp-minimal",
-			"# Project Map: renamed",
+			"# Project Map: `aiohttp-minimal`",
+			"# Project Map: `renamed`",
 		);
 		await writeFile(mdPath, drifted, "utf8");
 		const filesBefore = await listFiles(workspace.dir);

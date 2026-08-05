@@ -1,6 +1,11 @@
 import type { Root, RootContent } from "mdast";
 import type { Migration, Table } from "../../../../core/domain/project-map.js";
-import { heading, section, table } from "../../rendering/mdast-helpers.js";
+import {
+	codeCell,
+	heading,
+	section,
+	table,
+} from "../../rendering/mdast-helpers.js";
 
 export function renderStorage(storage: {
 	readonly tables: readonly Table[];
@@ -16,7 +21,11 @@ export function renderStorage(storage: {
 		out.push(
 			table(
 				["Table", "Model", "Source"],
-				storage.tables.map((t) => [t.table, t.model, t.source.file]),
+				storage.tables.map((t) => [
+					codeCell(t.table),
+					codeCell(t.model),
+					codeCell(t.source.file),
+				]),
 				["left", "left", "left"],
 			),
 		);
@@ -27,9 +36,9 @@ export function renderStorage(storage: {
 			table(
 				["Revision", "Touched tables", "Summary"],
 				storage.migrations.map((m) => [
-					m.revision,
-					m.tables.join(", "),
-					m.summary,
+					codeCell(m.revision),
+					codeCell(m.tables.join(", ")),
+					codeCell(m.summary),
 				]),
 				["left", "left", "left"],
 			),

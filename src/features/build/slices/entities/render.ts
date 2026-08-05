@@ -43,7 +43,7 @@ export function renderEntities(entities: readonly Entity[]): Root["children"] {
 		if (e.fields.length > 0) {
 			children.push({
 				type: "paragraph",
-				children: [text(`Fields (${e.fields.length}):`)],
+				children: [text("Fields:")],
 			});
 			children.push(
 				bulletList(

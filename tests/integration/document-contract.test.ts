@@ -81,10 +81,11 @@ describe("map document contract", () => {
 
 	/* @covers project-map:CTR-003 */
 	/* @covers project-map:DLT-020 */
+	/* @covers project-map:DLT-025 */
 	it("opens with the H1 and the constant lead paragraph", async () => {
 		const lines = (await buildDocument(workspace.dir)).split("\n");
 
-		expect(lines[0]).toBe("# Project Map: aiohttp-minimal");
+		expect(lines[0]).toBe("# Project Map: `aiohttp-minimal`");
 		expect(lines[2]).toBe(LEAD);
 	});
 
@@ -180,7 +181,9 @@ describe("map document emission", () => {
 		const regenerated = await buildDocument(workspace.dir);
 
 		expect(regenerated).not.toContain("stale marker");
-		expect(regenerated.startsWith("# Project Map: aiohttp-minimal")).toBe(true);
+		expect(regenerated.startsWith("# Project Map: `aiohttp-minimal`")).toBe(
+			true,
+		);
 	});
 
 	/* @covers project-map:GA-001 */
@@ -264,6 +267,71 @@ describe("ranked collections", () => {
 	});
 });
 
+describe("a value read out of the source", () => {
+	let workspace: Workspace;
+
+	beforeEach(async () => {
+		workspace = await createWorkspace(FIXTURE);
+	});
+	afterEach(async () => {
+		await workspace.dispose();
+	});
+
+	/* @covers project-map:DLT-025 */
+	it("survives nowhere as an escaped underscore", async () => {
+		const markdown = await buildDocument(workspace.dir);
+
+		expect(markdown).toContain("interactions/pay_transactions");
+		expect(markdown).toContain("EVENT_TYPE_TRANSACTION_CREATED");
+		expect(markdown).not.toContain("\\_");
+	});
+
+	/* @covers project-map:DLT-025 */
+	it("renders every cell of the tables it reads as code", async () => {
+		const markdown = await buildDocument(workspace.dir);
+
+		const contexts = bodyRows(markdown, "## Bounded contexts");
+		expect(contexts.map((row) => row[0])).toContain("`entities`");
+		expect(contexts.map((row) => row[1])).toContain("Domain entities");
+		expect(bodyRows(markdown, "### Tables")).toContainEqual([
+			"`transactions`",
+			"`Transaction`",
+			"`entities/transaction.py`",
+		]);
+	});
+});
+
+describe("a field list", () => {
+	let workspace: Workspace;
+
+	beforeEach(async () => {
+		workspace = await createWorkspace(FIXTURE);
+	});
+	afterEach(async () => {
+		await workspace.dispose();
+	});
+
+	/* @covers project-map:DLT-026 */
+	it("is introduced by a label carrying no count", async () => {
+		const markdown = await buildDocument(workspace.dir);
+
+		expect(markdown).toContain("Fields:");
+		expect(markdown).not.toMatch(/Fields \(\d+\)/);
+	});
+
+	/* @covers project-map:DLT-026 */
+	it("reports its length by its bullets", async () => {
+		const markdown = await buildDocument(workspace.dir);
+
+		expect(fieldBullets(markdown, "### `Transaction`")).toEqual([
+			"`transaction_id`",
+			"`status`",
+			"`amount`",
+			"`currency`",
+		]);
+	});
+});
+
 describe("extractor failure isolation", () => {
 	let workspace: Workspace;
 
@@ -344,8 +412,19 @@ function contextsByFileCount(companion: unknown): string[] {
 	return rows.map((row) => row.path);
 }
 
+/** The first column, unquoted: the assertion is about order, not rendering. */
 function dataColumn(markdown: string, heading: string): string[] {
 	return bodyRows(markdown, heading).flatMap((row) =>
-		row[0] === undefined ? [] : [row[0]],
+		row[0] === undefined ? [] : [row[0].replaceAll("`", "")],
 	);
+}
+
+function fieldBullets(markdown: string, entityHeading: string): string[] {
+	const after = markdown.slice(markdown.indexOf(entityHeading)).split("\n");
+	const under = after.slice(after.indexOf("Fields:") + 1);
+	const end = under.findIndex((line) => line !== "" && !line.startsWith("- "));
+	return under
+		.slice(0, end)
+		.filter((line) => line.startsWith("- "))
+		.map((line) => line.slice(2));
 }

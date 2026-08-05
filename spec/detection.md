@@ -3608,6 +3608,124 @@ tests_new_behavior: |
 ---
 ```
 
+```yaml
+---
+id: project-map:DLT-025
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-05T09:37:02.155Z
+    change_request: a value read out of the source renders as code, not as escaped prose
+    scope: first-time-approval
+partition_id: project-map
+title: a value read out of the source renders as code, not as escaped prose
+target_id: project-map:CTR-003
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: no_longer_guaranteed
+surface_impact:
+  - id: project-map:SUR-002
+    intended_version: "3.0.0"
+as_is: |
+  project-map:DLT-015 made every cell of the two detection sections
+  inline code and left the rest of the document prose. The rule it
+  stated was about the value, not about the section: a token the tool
+  read out of the source is not prose and the markdown serializer must
+  not treat it as such. Applying it to two sections only left the same
+  defect everywhere else.
+  A serializer escapes prose. Every remaining prose position that
+  carries a token therefore renders it altered: the H1 spells a project
+  named yandex_pay_plus as `yandex\_pay\_plus`, and the same happens to
+  a bounded-context path, a table name, a model name, a source path, a
+  revision, an alembic operation name in a migration summary, and a
+  topic a worker subscribes to.
+  The escape is not cosmetic. A reader copying the name out of the
+  document copies a name that does not exist, and a grep for the
+  declared spelling misses the line that reports it.
+to_be: |
+  A value the tool read out of the source or out of the configuration is
+  inline code wherever the document carries it: the project name in the
+  H1, a bounded-context path, a table name, a model name, a source path,
+  a revision, a touched-table list, a migration summary, and a topic a
+  worker subscribes to.
+  Prose stays what the tool wrote itself: the role of a bounded context,
+  a bullet label, a heading, an extraction message. The serializer
+  escapes nothing inside code and parses no emphasis there, so a name
+  carrying an underscore renders as the name it was declared with.
+migration_note: |
+  A consumer matching the H1 on `^# Project Map: ` still matches; one
+  that read the project name as the rest of the line now reads it
+  between backticks. A consumer that unescaped `\_` back to `_` to
+  recover a path or a topic stops needing to.
+  No configuration key, no section id and no heading text other than the
+  H1 changes.
+tests_old_behavior: |
+  No obligation asserted the escaped form; the closest, on
+  project-map:DLT-015, asserted its absence inside the two detection
+  sections. It is widened rather than replaced: the same predicate now
+  holds over the whole document.
+tests_new_behavior: |
+  A build over a fixture whose project name, bounded-context path,
+  storage table and worker topic all carry an underscore renders a
+  document containing no backslash-escaped underscore anywhere, and
+  renders each of those four values as inline code.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-026
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-05T09:37:02.218Z
+    change_request: a field list reports its length by its length
+    scope: first-time-approval
+partition_id: project-map
+title: a field list reports its length by its length
+target_id: project-map:CTR-003
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: no_longer_guaranteed
+surface_impact:
+  - id: project-map:SUR-002
+    intended_version: "3.0.0"
+as_is: |
+  An entity introduces its fields with the label "Fields (N):", where N
+  is the number of bullets printed directly beneath it. The bullets are
+  the same list, in full, on the following lines.
+  N therefore reports nothing the reader cannot count off the page, and
+  it moves on every field added or removed. Two authors adding one field
+  each to one entity conflict on the label, having touched no line the
+  other touched.
+to_be: |
+  The label is the bare "Fields:". The bullets under it report how many
+  there are, the same way the row order of a ranked collection reports
+  the magnitude it is ranked on under project-map:DLT-022.
+  Nothing about which fields are reported changes: `entities.top_n`,
+  `entities.include_fields` and the ordering are untouched, and the JSON
+  companion of project-map:GA-001 carries the field array as before.
+migration_note: |
+  A consumer parsing the count out of the label reads `fields.length`
+  from `project-map.json`. A consumer matching the label on
+  `^Fields` still matches.
+tests_old_behavior: |
+  No obligation asserted the count; project-map:CTR-003 named the field
+  bullet and its type folding and never named the label. The label is
+  named by this delta so that it stops being unmodeled.
+tests_new_behavior: |
+  A build over a fixture with a multi-field entity renders the label
+  "Fields:" exactly, renders no parenthesized count on it, and renders
+  one bullet per field.
+---
+```
+
 ---
 
 ## 16. Implementation bindings

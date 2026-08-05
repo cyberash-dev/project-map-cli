@@ -21,7 +21,14 @@ export function renderWorkers(workers: readonly Worker[]): Root["children"] {
 		}
 		if (w.subscribesTo.length > 0) {
 			out.push(paragraph([text("Subscribes to:")]));
-			out.push(bulletList(w.subscribesTo.map((e) => e)));
+			out.push(
+				bulletList(
+					w.subscribesTo.map((topic) => ({
+						type: "paragraph" as const,
+						children: [inlineCode(topic)],
+					})),
+				),
+			);
 		}
 	}
 	return out;
