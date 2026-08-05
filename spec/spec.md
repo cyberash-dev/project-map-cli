@@ -145,7 +145,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: 6ceeabd4313574c42efc035f00089a3379d93e84
+    reference: f8b0db9edcd5f2866fceedfc722374448dde23f7
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -157,13 +157,23 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 37705f2481a38f40c10b8030ecd5ed9d4bf96df3c68b18c5dddb0f8f6f0916bb
-baseline_commit_sha: 6ceeabd4313574c42efc035f00089a3379d93e84
+freshness_token: 7e415e7a7d6f80b6f1b270187ef8acae885e9581a90ce3263779375b90d54b5d
+baseline_commit_sha: f8b0db9edcd5f2866fceedfc722374448dde23f7
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
+  Refreshed from 6ceeabd4 to f8b0db9e. f8b0db9e makes the version
+  refusal name the remedy: it opens with the instruction to update,
+  spells the update command in full, and names lowering the floor as the
+  deliberate alternative. It crosses two footprints, not one: BEH-017,
+  authorized by project-map:DLT-031 and approved after the code in the
+  order this record names, and the hook module of project-map:IMP-005,
+  where the exit-7 arm was dropped once the tool itself carried the same
+  text. No Delta could authorize the second: nothing normative governs
+  the emitted script, which project-map:OQ-005 now records. It adds no
+  module and the derived debt count stays 0.
   Refreshed from 2d6da9d8 to 6ceeabd4. 6ceeabd4 gives a repository a
   version floor and a build that ratchets it: a run below
   `min_tool_version` is refused with exit 7 before anything is read
@@ -176,7 +186,9 @@ notes: |
   authorized by project-map:DLT-027 through project-map:DLT-030 and
   approved after the code in the order this record names. It adds two
   modules, both modeled by project-map:BEH-017 and project-map:INV-006,
-  so the derived debt count stays 0. project-map:SUR-003 goes to 2.0.0
+  so the derived debt count stays 0. It also crosses the hook module of
+  project-map:IMP-005, giving the emitted script one branch per exit
+  code; that emission is unmodeled and project-map:OQ-005 records it. project-map:SUR-003 goes to 2.0.0
   because every `analysis_unit_digest` changes value once.
   Refreshed from fff1804b to 2d6da9d8. 2d6da9d8 carries the rule of
   project-map:DLT-015 to the whole document: a value read out of the
@@ -1924,6 +1936,50 @@ notes: |
   artifact does not authorize publishing an unmodeled public surface.
   The baseline records the state but does not authorize the release;
   making it normative requires owner approval of the selected records.
+---
+```
+
+```yaml
+---
+id: project-map:OQ-005
+type: Open-Q
+partition_id: project-map
+question: |
+  The script `install-git-hook` writes is user-facing output of a
+  published command, and nothing normative governs its text. It has
+  already changed twice without a Delta, because no Delta could target
+  it: project-map:CTR-001 fixes the command and its `--type` enum,
+  project-map:POL-001 fixes where it writes, and
+  project-map:IMP-005 binds the module to those two and to
+  project-map:DLT-002, none of which reaches the emitted script.
+  The two changes are the exit-code branches added with
+  project-map:DLT-027 and the removal of the exit-7 arm with
+  project-map:DLT-031, once the tool's own refusal carried the same
+  text. Both are legitimate as internal decisions and both are
+  invisible to every gate.
+  What should govern the emitted hook: its exit-code branches, the text
+  each prints, and the SKIP_PROJECT_MAP_HOOK escape?
+options:
+  - option: model the emitted hook as a GeneratedArtifact on the CLI Surface
+    consequence: |
+      The branch set and each message become declared emission, so a
+      change to either needs a Delta and a test obligation. It also
+      binds the hook's text to the exit codes of project-map:CTR-001,
+      which is the coupling that made the last change necessary.
+  - option: model only the branch-to-exit-code mapping, leaving the prose free
+    consequence: |
+      A new exit code that the hook does not handle becomes a gate
+      failure, while wording stays an internal decision. Cheaper, and it
+      covers the failure that actually matters: a code the hook
+      misreports as stale output.
+  - option: leave the emitted hook unmodeled
+    consequence: |
+      The script stays an internal decision and keeps changing without a
+      Delta. Acceptable while the hook is a convenience, and wrong once
+      a repository's CI depends on what it prints.
+blocking: no
+owner: cyberash
+default_if_unresolved: model only the branch-to-exit-code mapping, leaving the prose free
 ---
 ```
 
