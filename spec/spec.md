@@ -145,7 +145,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: b50eadc81c209f6560795de487df389c27866f6e
+    reference: fff1804b941bc67664e3204a9959bf7e51295f89
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -157,14 +157,24 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 02a5361c703b2cb6179232475b02f38607a6308d3591373feac797c208ce0f8f
-baseline_commit_sha: b50eadc81c209f6560795de487df389c27866f6e
+freshness_token: d39cb94d00ec36b87dea1861c1b7ce9031c16e516df1186c7bf129155bb864ab
+baseline_commit_sha: fff1804b941bc67664e3204a9959bf7e51295f89
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from 6ba2d98f to b50eadc8. b50eadc8 takes the coverage
+  Refreshed from b50eadc8 to fff1804b. fff1804b drops the Resolution
+  column from the two detection tables. In the document the column
+  restated the cells beside it: the ladder of project-map:CTR-006 tests
+  exactly the required fields of an HTTP variant, and every one of them
+  is a rendered column, so `unresolved` and a visible `unknown(...)`
+  coincide in both directions across all 776 rows the two live services
+  render. The grade stays on every record of the artifact. Its crossing
+  is the footprint of CTR-003, authorized by project-map:DLT-024 and
+  approved after the code in the order this record names. It adds no
+  module and the derived debt count stays 0.
+  b50eadc8 takes the coverage
   measures out of the document: `detection_coverage` leaves the
   accepted SectionId set, project-map:DLT-023 authorizes it, and the
   measures stay in the artifact where project-map:BEH-013 already put
