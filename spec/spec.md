@@ -145,7 +145,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: f8b0db9edcd5f2866fceedfc722374448dde23f7
+    reference: a31186ea7eb3abd62c0f4d3674d0a36e0542cf49
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -157,13 +157,21 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 7e415e7a7d6f80b6f1b270187ef8acae885e9581a90ce3263779375b90d54b5d
-baseline_commit_sha: f8b0db9edcd5f2866fceedfc722374448dde23f7
+freshness_token: 4825a02569f114da3c721c5b72c06f0aa5e1189a72abdb666684acc10c9946ac
+baseline_commit_sha: a31186ea7eb3abd62c0f4d3674d0a36e0542cf49
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
+  Refreshed from f8b0db9e to a31186ea. a31186ea closes the two open
+  questions and takes the count off the migrations heading. It crosses
+  the storage renderer, authorized by project-map:DLT-032, and the hook
+  module of project-map:IMP-005, now modeled by project-map:BEH-018,
+  which project-map:OQ-005 records as its answer. project-map:OQ-004
+  needed no change: project-map:SUR-004 and project-map:CTR-009 had
+  already answered it. It adds no module and the derived debt count
+  stays 0.
   Refreshed from 6ceeabd4 to f8b0db9e. f8b0db9e makes the version
   refusal name the remedy: it opens with the instruction to update,
   spells the update command in full, and names lowering the floor as the
