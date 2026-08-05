@@ -145,7 +145,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: 58b6655472f54179a14bfd64538116e960b98028
+    reference: b50eadc81c209f6560795de487df389c27866f6e
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -157,14 +157,21 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 8f014141cafca99aa329afcd087f2b214ea85d9e08d8062b473e93166b49357d
-baseline_commit_sha: 58b6655472f54179a14bfd64538116e960b98028
+freshness_token: 02a5361c703b2cb6179232475b02f38607a6308d3591373feac797c208ce0f8f
+baseline_commit_sha: b50eadc81c209f6560795de487df389c27866f6e
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
-  Refreshed from 6ba2d98f to 58b66554. 58b66554 shrinks the map
+  Refreshed from 6ba2d98f to b50eadc8. b50eadc8 takes the coverage
+  measures out of the document: `detection_coverage` leaves the
+  accepted SectionId set, project-map:DLT-023 authorizes it, and the
+  measures stay in the artifact where project-map:BEH-013 already put
+  them. With the id gone the accepted set equals the default list, so
+  the two constants naming it collapse into one. It adds no module and
+  the derived debt count stays 0.
+  58b66554 shrinks the map
   document to what a rebuild does not change: the generated header, the
   coverage line, the file count of a context, the reference count of an
   entity, the line in every anchor, and the whole generation-metadata
