@@ -23,6 +23,9 @@ Surfaces: `project-map/cli` 2.0.0 · `project-map/map-document` 3.0.0 ·
   release: the schema has rejected unknown top-level keys since v0.1.0, so every
   published version refuses a configuration carrying it. See the README for the
   deliberate costs.
+  The refusal names the remedy, not only the mismatch: it states that the tool
+  has to be updated, spells `npm i -g project-map-cli@latest` in full, and names
+  lowering the floor as the deliberate alternative.
 
 ### Removed
 

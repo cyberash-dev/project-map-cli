@@ -415,7 +415,20 @@ min_tool_version: "2.0.0"
 ```
 
 `init` writes it. A `build` or `facts` run below it is refused with exit 7
-before anything is read beyond the configuration. A `build` that finishes at
+before anything is read beyond the configuration, naming the remedy rather than
+only the mismatch:
+
+```
+You need to update project-map. Installed 2.0.0, this repository requires 3.1.0.
+
+  Update it:
+    npm i -g project-map-cli@latest
+
+  /repo/.project-map.yaml declares min_tool_version: 3.1.0.
+  If staying on 2.0.0 is deliberate, lower that line instead.
+```
+
+A `build` that finishes at
 exit 0 raises the line to its own `<major>.<minor>.0` — a patch carries the
 format of its minor, so raising to the patch would let one invocation lock a
 team out over a difference no emission reflects. The rewrite replaces the bytes

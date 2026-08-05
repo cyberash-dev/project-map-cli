@@ -4032,8 +4032,10 @@ then: |
   The running release is compared against the floor on major, minor and
   patch as numbers. A release lower than the floor is refused before
   anything is read beyond the configuration: exit code 7, no path opened
-  for writing, and a message naming the running version, the floor and
-  the file that declares it.
+  for writing, and a message naming the running version, the floor, the
+  file that declares it, and what to do: that the tool has to be
+  upgraded, the command that upgrades it spelled in full, and lowering
+  the floor as the deliberate alternative.
   A prerelease whose three release components equal the floor clears it.
   A release of X carries the format of X, and a repository that
   published a candidate does not lock its own testers out of it.
@@ -4167,6 +4169,57 @@ test_obligation:
   failure_scenarios:
     - a build writing a floor below the one it read
     - a refused build writing the key at all
+---
+```
+
+```yaml
+---
+id: project-map:DLT-031
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-05T13:28:25.415Z
+    change_request: the refusal names the remedy, not only the mismatch
+    scope: first-time-approval
+partition_id: project-map
+title: the refusal names the remedy, not only the mismatch
+target_id: project-map:BEH-017
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: ignore
+surface_impact:
+  - id: project-map:SUR-001
+    intended_version: "2.0.0"
+as_is: |
+  The refusal names the running version, the floor and the file that
+  declares it. All three are facts about the mismatch and none of them
+  is an instruction.
+  The reader is left to work out what to do, and the population that
+  reaches this message is exactly the population that does not know the
+  key exists: someone whose install predates it, running a repository
+  that adopted it. Telling that reader only that two numbers disagree
+  spends the one message this release gets to send them.
+to_be: |
+  The refusal additionally names what to do. It states that the tool has
+  to be upgraded, gives the command that upgrades it, and names lowering
+  the floor as the deliberate alternative for a reader who means to stay
+  where they are.
+  The command is spelled in full rather than described, so that it is
+  copied rather than reconstructed.
+  Nothing else about the refusal changes: the same condition, the same
+  exit code 7, the same empty write set.
+migration_note: |
+  A caller matching the message text sees more lines than before. Exit
+  code 7 is the stable signal and is unchanged.
+tests_old_behavior: |
+  The obligation that a run below the floor exits 7 and opens no path
+  for writing is unchanged.
+tests_new_behavior: |
+  A run refused by the floor writes a message that carries the upgrade
+  command verbatim, the floor, and the path of the file declaring it.
 ---
 ```
 

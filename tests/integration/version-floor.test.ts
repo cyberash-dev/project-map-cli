@@ -72,6 +72,27 @@ describe("a release below the declared floor", () => {
 		expect(await runCli(workspace.dir, ["facts", "--unit-digest"])).toBe(7);
 	});
 
+	/* @covers project-map:DLT-031 */
+	it("names the upgrade command, the floor and the file", async () => {
+		const written: string[] = [];
+		const realWrite = process.stderr.write.bind(process.stderr);
+		process.stderr.write = (chunk: string | Uint8Array): boolean => {
+			written.push(String(chunk));
+			return true;
+		};
+
+		try {
+			await runCli(workspace.dir, ["build"]);
+		} finally {
+			process.stderr.write = realWrite;
+		}
+
+		const message = written.join("");
+		expect(message).toContain("npm i -g project-map-cli@latest");
+		expect(message).toContain("99.0.0");
+		expect(message).toContain(CONFIG);
+	});
+
 	/* @covers project-map:POL-001 */
 	/* @covers project-map:INV-006 */
 	it("leaves the floor it refused untouched", async () => {

@@ -87,14 +87,7 @@ fi
 
 case "$CODE" in
   7)
-    cat >&2 <<'MSG'
-
-  project-map is older than this repository requires.
-  .project-map.yaml declares a min_tool_version above the installed version.
-
-    npm i -g project-map-cli@latest
-
-MSG
+    # The tool already named the version, the file and the update command.
     ;;
   5)
     cat >&2 <<'MSG'

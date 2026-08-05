@@ -99,7 +99,7 @@ export class CosmiconfigLoader implements IConfigLoader {
 		}
 		throw new ConfigTimeError(
 			"tool_version_too_old",
-			`project-map ${this.toolVersion} is older than the ${floor} ${filepath} requires. Upgrade it, or lower min_tool_version.`,
+			refusal(this.toolVersion, floor, filepath),
 		);
 	}
 
@@ -320,6 +320,22 @@ function resolveSink(raw: ConfigFile["detect"]["outbound"]["sinks"][number]) {
 		target: raw.target,
 		pathVia: raw.path_via,
 	};
+}
+
+/**
+ * project-map:DLT-031. Whoever reads this does not know the key exists, so the
+ * message spends its one chance on the remedy rather than on the mismatch.
+ */
+function refusal(running: string, floor: string, filepath: string): string {
+	return [
+		`You need to update project-map. Installed ${running}, this repository requires ${floor}.`,
+		"",
+		"  Update it:",
+		"    npm i -g project-map-cli@latest",
+		"",
+		`  ${filepath} declares min_tool_version: ${floor}.`,
+		`  If staying on ${running} is deliberate, lower that line instead.`,
+	].join("\n");
 }
 
 function hashConfig(raw: ConfigFile): string {
