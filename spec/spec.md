@@ -145,7 +145,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: 2d6da9d8ae3209b38bd0e1811ea71fcd1a9a9b9b
+    reference: 6ceeabd4313574c42efc035f00089a3379d93e84
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -157,13 +157,27 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 753ab1827df52237aedaa6e87ca5868616910840aff363fc354bd61f80ad37ef
-baseline_commit_sha: 2d6da9d8ae3209b38bd0e1811ea71fcd1a9a9b9b
+freshness_token: 37705f2481a38f40c10b8030ecd5ed9d4bf96df3c68b18c5dddb0f8f6f0916bb
+baseline_commit_sha: 6ceeabd4313574c42efc035f00089a3379d93e84
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
+  Refreshed from 2d6da9d8 to 6ceeabd4. 6ceeabd4 gives a repository a
+  version floor and a build that ratchets it: a run below
+  `min_tool_version` is refused with exit 7 before anything is read
+  beyond the configuration, and a run that finishes at exit 0 raises the
+  line to its own major and minor with patch zero, replacing the bytes
+  of that value alone. It also narrows the analysis-unit digest to the
+  three configuration sections project-map:CTR-004 declares, which is
+  what keeps build a fixed point over a configuration it amends. Its
+  crossings are the footprints of CTR-001, CTR-002, CTR-004 and POL-001,
+  authorized by project-map:DLT-027 through project-map:DLT-030 and
+  approved after the code in the order this record names. It adds two
+  modules, both modeled by project-map:BEH-017 and project-map:INV-006,
+  so the derived debt count stays 0. project-map:SUR-003 goes to 2.0.0
+  because every `analysis_unit_digest` changes value once.
   Refreshed from fff1804b to 2d6da9d8. 2d6da9d8 carries the rule of
   project-map:DLT-015 to the whole document: a value read out of the
   source or the configuration is inline code wherever it appears, so
