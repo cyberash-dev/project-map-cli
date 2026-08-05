@@ -145,7 +145,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: fff1804b941bc67664e3204a9959bf7e51295f89
+    reference: 2d6da9d8ae3209b38bd0e1811ea71fcd1a9a9b9b
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -157,13 +157,23 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: d39cb94d00ec36b87dea1861c1b7ce9031c16e516df1186c7bf129155bb864ab
-baseline_commit_sha: fff1804b941bc67664e3204a9959bf7e51295f89
+freshness_token: 753ab1827df52237aedaa6e87ca5868616910840aff363fc354bd61f80ad37ef
+baseline_commit_sha: 2d6da9d8ae3209b38bd0e1811ea71fcd1a9a9b9b
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
+  Refreshed from fff1804b to 2d6da9d8. 2d6da9d8 carries the rule of
+  project-map:DLT-015 to the whole document: a value read out of the
+  source or the configuration is inline code wherever it appears, so
+  the serializer stops escaping a name that carries an underscore. It
+  also drops the count from the "Fields:" label, which reported the
+  number of bullets printed directly beneath it. Its crossing is the
+  footprint of CTR-003, authorized by project-map:DLT-025 and
+  project-map:DLT-026 and approved after the code in the order this
+  record names. The H1 changed text, which is why both pin
+  project-map:SUR-002 at the unreleased 3.0.0.
   Refreshed from b50eadc8 to fff1804b. fff1804b drops the Resolution
   column from the two detection tables. In the document the column
   restated the cells beside it: the ladder of project-map:CTR-006 tests
