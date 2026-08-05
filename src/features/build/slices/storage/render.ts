@@ -31,7 +31,7 @@ export function renderStorage(storage: {
 		);
 	}
 	if (storage.migrations.length > 0) {
-		out.push(heading(3, `Migrations (last ${storage.migrations.length})`));
+		out.push(heading(3, "Recent migrations"));
 		out.push(
 			table(
 				["Revision", "Touched tables", "Summary"],

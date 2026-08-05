@@ -980,6 +980,10 @@ schema: |
   heading, an extraction message. The serializer escapes nothing inside
   code and parses no emphasis there, so a name carrying an underscore,
   leading and trailing ones included, renders as it was declared.
+  Storage renders an H3 "Tables" over its table and an H3 "Recent
+  migrations" over the tail of the migration list that `storage.last_n`
+  caps. Neither heading carries a count: the heading says the collection
+  is a tail and the rows say how long it is.
   A declaration's rendered anchor is the path of the file that declares
   it. The line it sits on is carried by the JSON companion.
   The bounded-contexts table carries Path and Role. An entity carries
@@ -1929,6 +1933,14 @@ blocking: no
 owner: cyberash
 default_if_unresolved: model the npm package as a public Surface with Contracts
 notes: |
+  Closed by project-map:SUR-004 and its member project-map:CTR-009,
+  which take the first option: the package is a Surface, and the
+  Contract fixes `bin`, the `files` allow-list and `engines.node` as
+  external identifiers while naming every other manifest field
+  descriptive. The tarball is not modeled as a GeneratedArtifact
+  separately, because the allow-list already fixes its contents.
+  Recorded closed rather than deleted: the answer is why those two
+  records exist.
   Raised while refreshing project-map:BL-001 through 4c6b1d5 and
   extended for the `scripts.build` change in cd58ca4a. Every listed
   change lands before 1.0.0 is published: the registry holds 0.2.2 and
@@ -1980,6 +1992,15 @@ options:
 blocking: no
 owner: cyberash
 default_if_unresolved: model only the branch-to-exit-code mapping, leaving the prose free
+notes: |
+  Closed by project-map:BEH-018, which takes the second option. It fixes
+  which class an exit code belongs to and forbids reporting a
+  configuration-time failure as a stale document; the wording of each
+  message stays an internal decision.
+  The first option was rejected as disproportionate: freezing the prose
+  of a convenience hook would make every wording change a Delta while
+  catching nothing the classification does not already catch. The third
+  was rejected because the defect it permits had already happened twice.
 ---
 ```
 

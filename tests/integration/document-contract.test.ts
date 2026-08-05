@@ -301,6 +301,26 @@ describe("a value read out of the source", () => {
 	});
 });
 
+describe("the storage headings", () => {
+	let workspace: Workspace;
+
+	beforeEach(async () => {
+		workspace = await createWorkspace(FIXTURE);
+	});
+	afterEach(async () => {
+		await workspace.dispose();
+	});
+
+	/* @covers project-map:DLT-032 */
+	it("head the migration tail without saying how long it is", async () => {
+		const markdown = await buildDocument(workspace.dir);
+
+		expect(markdown).toContain("### Tables");
+		expect(markdown).toContain("### Recent migrations");
+		expect(markdown).not.toMatch(/### Migrations/);
+	});
+});
+
 describe("a field list", () => {
 	let workspace: Workspace;
 

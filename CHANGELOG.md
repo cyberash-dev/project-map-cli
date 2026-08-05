@@ -50,6 +50,11 @@ from revision <sha>` and `Coverage: <n> files scanned (<m> excluded).` are
   same list in full, so `Fields (8):` reported nothing the page did not, and it
   moved on every field added or removed. `project-map.json` still carries the
   array.
+- **The count on the migrations heading.** `### Migrations (last 5)` becomes
+  `### Recent migrations`. That the list is a tail is information the rows do
+  not carry, so the heading keeps saying it; the number is the row count, which
+  the table already gives, and it moved whenever a repository crossed below its
+  own `storage.last_n`.
 - **The `Resolution` column of both detection tables.** `## HTTP endpoints`
   heads Method, Route, Provenance, Contracts; `## External dependencies` heads
   Owner, Method, Route, Destination. In the document the column restated the

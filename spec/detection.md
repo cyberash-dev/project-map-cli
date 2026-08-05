@@ -4223,6 +4223,133 @@ tests_new_behavior: |
 ---
 ```
 
+```yaml
+---
+id: project-map:DLT-032
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-05T14:28:47.355Z
+    change_request: the migrations heading says the list is a tail, not how long
+    scope: first-time-approval
+partition_id: project-map
+title: the migrations heading says the list is a tail, not how long the tail is
+target_id: project-map:CTR-003
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: no_longer_guaranteed
+surface_impact:
+  - id: project-map:SUR-002
+    intended_version: "3.0.0"
+as_is: |
+  Storage renders two H3 headings, "Tables" and "Migrations (last N)",
+  and project-map:CTR-003 describes neither. They are emission no
+  normative statement reaches.
+  The parenthetical is not the same defect project-map:DLT-026 removed
+  from the field label. There the bullets were the whole list, so the
+  count restated the page. Here the list is a tail capped by
+  `storage.last_n`, and a reader who sees five rows under a bare heading
+  cannot tell five migrations from five of ninety. That the list is
+  truncated is information the rows do not carry.
+  The number is not. N is the row count, which the table already gives,
+  and it moves whenever a repository crosses below its own cap.
+to_be: |
+  The heading is "Recent migrations". It states that the collection is a
+  tail; the rows state how long it is. "Tables" is unchanged.
+  Both storage headings are named by project-map:CTR-003, so the
+  emission stops being unmodeled and a later change to either is a Delta
+  rather than an internal decision.
+migration_note: |
+  A consumer matching `^### Migrations` matches `^### Recent migrations`
+  no longer. The cap itself is readable where it is set,
+  `storage.last_n` in the configuration.
+tests_old_behavior: |
+  No obligation asserted the heading, because project-map:CTR-003 did
+  not name it. The obligation is created rather than replaced.
+tests_new_behavior: |
+  A build over a fixture carrying migrations renders "### Recent
+  migrations" exactly, renders no parenthesized count on it, and renders
+  "### Tables" beside it.
+---
+```
+
+```yaml
+---
+id: project-map:BEH-018
+type: Behavior
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-05T14:28:47.285Z
+    change_request: the emitted hook names the failure class it received
+    scope: first-time-approval
+partition_id: project-map
+title: install-git-hook — the emitted hook names the failure class it received
+given: |
+  - a repository carrying a configuration discoverable per
+    project-map:CTR-002
+  - the hook that `install-git-hook` emits, installed at
+    <repo_root>/.git/hooks/<type>
+when: the hook runs and `build --check` exits non-zero
+then: |
+  The hook fails the commit or the push, and what it prints is chosen by
+  the exit code rather than assumed from it.
+  A configuration-time code, which is 5 and 7 of project-map:CTR-001,
+  names a failure the document cannot fix. The hook does not tell the
+  reader to regenerate the document for either. Regenerating runs the
+  same command and fails the same way, so that instruction sends a
+  blocked reader around a circle, and the reader who receives 7 is by
+  construction the one least able to diagnose it.
+  Every other non-zero code names a document out of date with its
+  source, and the hook says to regenerate it and stage it.
+  SKIP_PROJECT_MAP_HOOK=1 keeps its meaning for every code.
+  The wording of each message is an internal decision. What this fixes
+  is which class a code belongs to, and that a configuration-time code
+  is never reported as drift.
+negative_cases:
+  - the check exits 0 => the hook prints nothing and lets the commit
+    through
+  - no configuration is discoverable => the hook exits 0 without running
+    the tool, because the repository did not opt in
+  - the tool is on neither the local bin nor PATH => the hook exits 0
+    with a note, because a hook cannot demand a tool the developer never
+    installed
+out_of_scope:
+  - the text of any message, which stays an internal decision
+  - the Claude hook and the Claude skill, which `claude install` emits
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-001
+test_obligation:
+  predicate: |
+    A repository whose declared floor exceeds the running release runs
+    the emitted hook and receives a non-zero exit whose output carries
+    the update instruction and does not say the document is out of date.
+    A repository whose document drifted receives the instruction to
+    regenerate it.
+  test_template: integration
+  boundary_classes:
+    - exit 7 versus exit 1
+    - the check clean
+    - SKIP_PROJECT_MAP_HOOK set
+  failure_scenarios:
+    - a configuration-time failure reported as a stale document
+    - a non-zero code that lets the commit through
+---
+```
+
 ---
 
 ## 16. Implementation bindings
