@@ -4,6 +4,7 @@ export const CONFIG_TIME_ERROR_CODES = [
 	"invalid_selector",
 	"duplicate_module_id",
 	"schema_violation",
+	"tool_version_too_old",
 ] as const;
 
 export type ConfigTimeErrorCode = (typeof CONFIG_TIME_ERROR_CODES)[number];

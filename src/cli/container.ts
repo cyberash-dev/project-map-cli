@@ -47,7 +47,7 @@ export function createContainer(
 		walker: new GlobbyWalker(),
 		clock: new SystemClock(),
 		revision: new GitRevisionProvider(),
-		configLoader: new CosmiconfigLoader(),
+		configLoader: new CosmiconfigLoader(toolVersion),
 		parser: new TreeSitterParserRegistry(ALL_LANGUAGES, logger),
 	};
 }

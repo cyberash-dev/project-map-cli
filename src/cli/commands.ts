@@ -42,6 +42,17 @@ import {
 	ratchet,
 } from "../features/detect/merge/ratchet.js";
 import { parseBaseline } from "./unclassified-baseline.js";
+import {
+	isPrerelease,
+	parseRelease,
+	parseRunning,
+	raisedFloorFor,
+} from "../core/domain/tool-version.js";
+import {
+	isRewritable,
+	locateFloor,
+	withFloorRaised,
+} from "../infrastructure/config/version-floor.js";
 
 const require = createRequire(import.meta.url);
 
@@ -176,6 +187,14 @@ function registerBuildCommand(program: Command): void {
 }
 
 /**
+ * A refusal by version is its own code so the git hook can tell "upgrade the
+ * tool" from "fix the YAML"; every other config-time error keeps 5.
+ */
+function exitCodeFor(error: ConfigTimeError): number {
+	return error.code === "tool_version_too_old" ? 7 : 5;
+}
+
+/**
  * A configuration-time error is raised before any build runs, so it carries its
  * own exit code rather than surfacing as an unclassified crash.
  */
@@ -187,7 +206,7 @@ async function runBuild(opts: BuildOptions): Promise<void> {
 			throw error;
 		}
 		process.stderr.write(`${error.message}\n`);
-		process.exitCode = 5;
+		process.exitCode = exitCodeFor(error);
 	}
 }
 
@@ -241,7 +260,65 @@ async function build(opts: BuildOptions): Promise<void> {
 		if (opts.strict) {
 			await runRatchet(container, effectiveConfig, projectRoot, detection);
 		}
+		await raiseFloor(container, effectiveConfig);
 	}
+}
+
+/**
+ * project-map:BEH-017. Last, and only on exit 0: a floor asserts that this
+ * release built the repository, so a run that did not finish must not claim it.
+ * A failure here never fails the build, because a read-only checkout has
+ * nothing to do with the map that was already written.
+ */
+async function raiseFloor(
+	container: Container,
+	config: ResolvedConfig,
+): Promise<void> {
+	const target = floorTarget(config);
+	const failed = process.exitCode !== undefined && process.exitCode !== 0;
+	if (target === null || failed) {
+		return;
+	}
+	const [sourcePath, release] = target;
+	if (!isRewritable(sourcePath)) {
+		container.logger.info(
+			`${sourcePath} cannot be rewritten in place; raise min_tool_version to ${release} by hand`,
+		);
+		return;
+	}
+	try {
+		const text = await container.reader.read(sourcePath);
+		const located = locateFloor(text);
+		if (located.kind === "refused") {
+			container.logger.warn(`${sourcePath}: ${located.reason}; left alone`);
+			return;
+		}
+		if (located.kind === "found") {
+			await container.writer.write(
+				sourcePath,
+				withFloorRaised(text, located.span, release),
+			);
+			container.logger.info(`raised min_tool_version to ${release}`);
+		}
+	} catch (error: unknown) {
+		container.logger.warn(
+			`could not raise min_tool_version in ${sourcePath}: ${String(error)}. The map was written; raise the line by hand.`,
+		);
+	}
+}
+
+/** The path to amend and the release to write, or null where nothing is owed. */
+function floorTarget(config: ResolvedConfig): [string, string] | null {
+	if (config.minToolVersion === null || config.sourcePath === null) {
+		return null;
+	}
+	const declared = parseRelease(config.minToolVersion);
+	const running = parseRunning(TOOL_VERSION);
+	if (declared === null || running === null || isPrerelease(TOOL_VERSION)) {
+		return null;
+	}
+	const release = raisedFloorFor(running, declared);
+	return release === null ? null : [config.sourcePath, release];
 }
 
 /**
@@ -447,7 +524,7 @@ function registerFactsCommand(program: Command): void {
 				throw error;
 			}
 			process.stderr.write(`${error.message}\n`);
-			process.exitCode = 5;
+			process.exitCode = exitCodeFor(error);
 		}
 	});
 }

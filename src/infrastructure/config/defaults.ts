@@ -93,10 +93,30 @@ export function defaultFrameworks(language: Language): readonly Framework[] {
 	}
 }
 
+/**
+ * The comment is load-bearing (project-map:DLT-027): an installation predating
+ * this key rejects the whole configuration and prints only the key's name, so
+ * this text is the only explanation that reaches its reader.
+ */
+function floorBlock(toolVersion: string | null): string {
+	if (toolVersion === null) {
+		return "";
+	}
+	const floor = toolVersion.split(".").slice(0, 2).join(".");
+	return `# The lowest project-map version allowed to rebuild this map.
+# \`project-map build\` raises this to its own version.
+# If your CLI reports \`Unrecognized key: "min_tool_version"\`, your install
+# predates the key: npm i -g project-map-cli@latest
+min_tool_version: "${floor}.0"
+
+`;
+}
+
 export function defaultConfigYaml(
 	projectName: string,
 	language: Language,
 	framework: Framework | null,
+	toolVersion: string | null = null,
 ): string {
 	const frameworksList: Framework[] = [];
 	if (framework !== null) {
@@ -117,7 +137,7 @@ export function defaultConfigYaml(
 	const frameworksStr =
 		frameworksList.length === 0 ? "[]" : `[${frameworksList.join(", ")}]`;
 
-	return `project:
+	return `${floorBlock(toolVersion)}project:
   name: ${projectName}
   language: ${language}
   frameworks: ${frameworksStr}

@@ -400,6 +400,48 @@ their own semver, and `CHANGELOG.md` lists them per release:
 `facts.json` additionally embeds its own `schema_version`, so a consumer can
 pin against the artifact without reading the package version.
 
+### The version floor
+
+Developers install the CLI separately, so an older install can rebuild a map a
+newer one produced and silently revert both its format and its content. One
+config key stops that:
+
+```yaml
+# The lowest project-map version allowed to rebuild this map.
+# `project-map build` raises this to its own version.
+# If your CLI reports `Unrecognized key: "min_tool_version"`, your install
+# predates the key: npm i -g project-map-cli@latest
+min_tool_version: "2.0.0"
+```
+
+`init` writes it. A `build` or `facts` run below it is refused with exit 7
+before anything is read beyond the configuration. A `build` that finishes at
+exit 0 raises the line to its own `<major>.<minor>.0` — a patch carries the
+format of its minor, so raising to the patch would let one invocation lock a
+team out over a difference no emission reflects. The rewrite replaces the bytes
+of the value alone; comments, line endings and every other key survive.
+
+Adding the key to an existing repository is what makes this work against
+installs that will never receive this release: the schema has rejected unknown
+top-level keys since v0.1.0, so every published version refuses a configuration
+carrying it. What those versions print is a raw schema error naming the key, so
+carry the comment over — it is the only explanation that reaches their reader.
+
+Known costs, all deliberate:
+
+- Two developers on different minors both build and commit: a one-line merge
+  conflict on the floor. Take the higher.
+- The slowest upgrader is blocked by the fastest. That is the mechanism.
+- A deliberate downgrade is impossible from inside the tool, because an older
+  install fails on the unknown key before it reads any flag. Lower the line.
+- `build` inside a pre-commit hook leaves an unstaged edit to the config: the
+  commit keeps the old floor and the working tree stays dirty. Use `--check`
+  there, which never writes.
+- A `project-map.config.ts`, `.js` or `package.json` configuration is read and
+  enforced but never rewritten: the first two are inside the scanned source set
+  for a TypeScript or JavaScript project, so writing to one would move the map's
+  own inputs. Raise those by hand; the run names the version to set.
+
 ## Adding a new language adapter to an existing slice
 
 1. Create `src/features/build/slices/<slice>/adapters/<lang>.ts` implementing

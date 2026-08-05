@@ -78,8 +78,36 @@ else
   exit 0
 fi
 
-if ! "$BIN" build --check; then
-  cat >&2 <<'MSG'
+CODE=0
+"$BIN" build --check || CODE=$?
+
+if [ "$CODE" -eq 0 ]; then
+  exit 0
+fi
+
+case "$CODE" in
+  7)
+    cat >&2 <<'MSG'
+
+  project-map is older than this repository requires.
+  .project-map.yaml declares a min_tool_version above the installed version.
+
+    npm i -g project-map-cli@latest
+
+MSG
+    ;;
+  5)
+    cat >&2 <<'MSG'
+
+  project-map rejected the configuration; the message above names the key.
+  If that key is min_tool_version, your install predates it:
+
+    npm i -g project-map-cli@latest
+
+MSG
+    ;;
+  *)
+    cat >&2 <<'MSG'
 
   PROJECT_MAP.md is out of date. Regenerate and stage it:
 
@@ -89,10 +117,12 @@ if ! "$BIN" build --check; then
   Skip this gate for one commit with SKIP_PROJECT_MAP_HOOK=1.
 
 MSG
-  if [ "\${SKIP_PROJECT_MAP_HOOK:-0}" = "1" ]; then
-    echo "project-map: SKIP_PROJECT_MAP_HOOK=1 set, letting this through." >&2
-    exit 0
-  fi
-  exit 1
+    ;;
+esac
+
+if [ "\${SKIP_PROJECT_MAP_HOOK:-0}" = "1" ]; then
+  echo "project-map: SKIP_PROJECT_MAP_HOOK=1 set, letting this through." >&2
+  exit 0
 fi
+exit 1
 `;

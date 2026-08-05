@@ -410,6 +410,10 @@ notes: |
   The command set, each command's argv shape, its option names, and its
   process exit codes. Version tracks the implementation version at the
   time this Surface was first authored against the baseline.
+  v2.0.0 — breaking: build gains a conditional write to the discovered
+  configuration file, raising the `min_tool_version` it cleared; see
+  project-map:DLT-027 and project-map:DLT-028. A release below that
+  floor is refused with exit 7.
   v2.0.0 — breaking: `metadata` and `detection_coverage` leave the
   SectionId set that `sections` and `--only` accept, so a
   configuration naming either is rejected; see project-map:DLT-020 and
@@ -774,6 +778,12 @@ error_taxonomy: |
      and sits below 3 and 4: those name a fact about the artifact and
      about the configuration, while 6 names a verdict about a policy the
      repository set for itself.
+  7  the running release is lower than the `min_tool_version` the
+     configuration declares (BEH-017). It is raised before anything is
+     built and writes no path. A release predating that key returns no
+     code of this taxonomy for it: it rejects the key as unrecognized
+     with whatever its own release carried, which for every published
+     release is 1.
 applicability:
   invariant_to_all_axes: true
 concurrency_model:
@@ -795,7 +805,7 @@ test_obligation:
     - each enumerated option value
     - each exit code in error_taxonomy
   failure_scenarios:
-    - an exit code outside {0, 1, 2, 3, 4, 5}
+    - an exit code outside {0, 1, 2, 3, 4, 5, 6, 7}
     - --type or --scope accepting a value outside its enumeration
 ---
 ```
@@ -827,7 +837,13 @@ schema: |
   project block validates.
   Top-level keys: project, root, respect_gitignore, exclude, sections,
   overview, contexts, entities, enums, endpoints, storage, interactions,
-  workers, output, repository_identity, analysis_unit, openapi, detect.
+  workers, output, repository_identity, analysis_unit, openapi, detect,
+  min_tool_version.
+  `min_tool_version` is the lowest release allowed to rebuild the
+  repository, defaulting to absent. Its grammar is three dot-separated
+  components, each "0" or a digit sequence with no leading zero; a value
+  outside it, a value YAML reads as a number, and a prerelease are each
+  rejected here. project-map:BEH-017 fixes what a run does with it.
   `output.facts` is a path defaulting to null. `repository_identity` is
   a logical string, required exactly when `output.facts` is non-null or
   an `openapi` or `detect` section is present, per project-map:ASM-002.
@@ -1190,7 +1206,13 @@ predicate: |
                     when <config.output.facts> is a string,
                     path.resolve(<project_root>, <config.output.facts>) and
                     its sidecar, which is that path with a trailing
-                    ".json" removed when present and ".meta.json" appended
+                    ".json" removed when present and ".meta.json" appended;
+                    and <config.sourcePath>, the discovered configuration
+                    file itself, admitted only under every condition
+                    project-map:BEH-017 names for raising the floor. That
+                    path is not resolved against <project_root>, because
+                    --config accepts a path outside it and the raise
+                    follows it there
     build --check   the empty set
     init            the configuration file at the resolved target path
     version         the empty set
@@ -1206,6 +1228,8 @@ negative_test_obligations:
   - run build with output.json null and assert no JSON document appears
   - run init against an existing configuration without --force and
     assert the existing file's bytes are unchanged
+  - run build at or below the declared floor and assert the
+    configuration file's bytes are unchanged
   - run claude install --scope project and assert no path outside
     <project_root> is opened for writing
 test_obligation:

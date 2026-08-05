@@ -6,6 +6,11 @@ import * as yaml from "yaml";
 import type { z } from "zod";
 import { ConfigTimeError } from "../../core/domain/config-time-error.js";
 import type { Framework, Language } from "../../core/domain/language.js";
+import {
+	compareReleases,
+	parseRelease,
+	parseRunning,
+} from "../../core/domain/tool-version.js";
 import type {
 	AnalysisUnitConfig,
 	ContextsConfig,
@@ -34,6 +39,8 @@ import {
 const MODULE_NAME = "project-map";
 
 export class CosmiconfigLoader implements IConfigLoader {
+	constructor(private readonly toolVersion: string | null = null) {}
+
 	async load(
 		cwd: string,
 		explicitPath: string | null,
@@ -69,7 +76,31 @@ export class CosmiconfigLoader implements IConfigLoader {
 				`${result.filepath} is not a valid configuration: ${issuesOf(validated.error)}`,
 			);
 		}
+		this.refuseBelowFloor(validated.data.min_tool_version, result.filepath);
 		return resolveConfig(validated.data, result.filepath, cwd);
+	}
+
+	/**
+	 * project-map:BEH-017. Raised here rather than per command so that `build`
+	 * and `facts` share one comparison, and before resolution so that a refused
+	 * run has read nothing beyond the configuration.
+	 */
+	private refuseBelowFloor(floor: string | null, filepath: string): void {
+		if (floor === null || this.toolVersion === null) {
+			return;
+		}
+		const declared = parseRelease(floor);
+		const running = parseRunning(this.toolVersion);
+		if (declared === null || running === null) {
+			return;
+		}
+		if (compareReleases(running, declared) >= 0) {
+			return;
+		}
+		throw new ConfigTimeError(
+			"tool_version_too_old",
+			`project-map ${this.toolVersion} is older than the ${floor} ${filepath} requires. Upgrade it, or lower min_tool_version.`,
+		);
 	}
 
 	async writeDefault(
@@ -82,6 +113,7 @@ export class CosmiconfigLoader implements IConfigLoader {
 			name || "my-project",
 			language,
 			framework,
+			this.toolVersion,
 		);
 		await writeFile(targetPath, content, "utf8");
 	}
@@ -175,6 +207,8 @@ function resolveConfig(
 		openapi: resolveOpenApi(raw),
 		detect: resolveDetect(raw),
 		configHash,
+		unitConfigHash: hashUnitConfig(raw),
+		minToolVersion: raw.min_tool_version,
 		sourcePath,
 	};
 }
@@ -289,6 +323,24 @@ function resolveSink(raw: ConfigFile["detect"]["outbound"]["sinks"][number]) {
 }
 
 function hashConfig(raw: ConfigFile): string {
-	const canonical = canonicalJson(raw);
+	return digestOf(canonicalJson(raw));
+}
+
+/**
+ * The slice of configuration the analysis unit carries (project-map:CTR-004).
+ * Keeping it narrower than the whole document is what lets `build` amend a key
+ * without invalidating the artifact it wrote in the same run.
+ */
+function hashUnitConfig(raw: ConfigFile): string {
+	return digestOf(
+		canonicalJson({
+			detect: raw.detect,
+			openapi: raw.openapi,
+			analysis_unit: raw.analysis_unit,
+		}),
+	);
+}
+
+function digestOf(canonical: string): string {
 	return `sha256:${createHash("sha256").update(canonical).digest("hex").slice(0, 16)}`;
 }

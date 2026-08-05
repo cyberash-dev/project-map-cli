@@ -58,7 +58,7 @@ lifecycle:
     scope: first-time-approval
 partition_id: project-map
 name: project-map/detection-facts
-version: "1.1.0"
+version: "2.0.0"
 boundary_type: generated_published_artifact
 members:
   - project-map:CTR-006
@@ -75,6 +75,10 @@ notes: |
   carries a timestamp and compares modulo the normalization of
   project-map:INV-001, while the facts artifact carries no timestamp and
   compares byte for byte.
+  v2.0.0 — breaking: `analysis_unit_digest` covers the three
+  configuration sections project-map:CTR-004 declares, rather than the
+  whole configuration document. Every value of it changes once; see
+  project-map:DLT-030.
 ---
 ```
 
@@ -3723,6 +3727,446 @@ tests_new_behavior: |
   A build over a fixture with a multi-field entity renders the label
   "Fields:" exactly, renders no parenthesized count on it, and renders
   one bullet per field.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-027
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-05T10:59:20.217Z
+    change_request: a version floor a build ratchets, and a unit digest that covers what it declares
+    scope: first-time-approval
+partition_id: project-map
+title: a repository declares the lowest tool version allowed to rebuild it
+target_id: project-map:CTR-002
+kind: extend
+baseline_version: project-map:BL-001
+compatibility_action: ignore
+surface_impact:
+  - id: project-map:SUR-001
+    intended_version: "2.0.0"
+as_is: |
+  Nothing in the configuration names a tool version, and no command
+  compares its own version against anything a repository declares. Every
+  installed release builds every repository.
+  The consequence is a silent regression channel. A developer holding an
+  older release runs build and overwrites a document and an artifact
+  produced by a newer one, reverting both the format and the content,
+  and neither the run nor check mode names the cause. The existing
+  fingerprint does not cover it: `analyzer_build_digest` is a content
+  hash of the detection subtree alone, so it moves for no change to the
+  document renderers, and the artifact it guards is absent from every
+  repository whose `output.facts` is null.
+to_be: |
+  A top-level key `min_tool_version` carries the lowest release allowed
+  to rebuild the repository. Its grammar is three dot-separated
+  components, each either "0" or a digit sequence with no leading zero.
+  A value outside that grammar, an unquoted value YAML reads as a
+  number, and a prerelease value are each rejected at configuration
+  time.
+  The key defaults to absent. A configuration that omits it behaves
+  exactly as it does today, so every existing repository validates
+  unchanged.
+  The key is excluded from the analysis unit by project-map:CTR-004,
+  which names the three configuration sections the unit carries. It
+  names which binary runs rather than what is analyzed, so the facts of
+  a repository do not move when its floor does.
+  Rejection of an unrecognized top-level key, which project-map:CTR-002
+  already fixes as contract, is what carries this backward. A release
+  that predates the key rejects a configuration carrying it rather than
+  rebuilding the repository, which is the only mechanism that reaches an
+  installation this change is never shipped to.
+migration_note: |
+  A repository adopts the floor by adding one line. Until it does,
+  nothing changes for it.
+  Adding the line is what breaks an older installation, by design: that
+  installation reports an unrecognized key and exits non-zero. The
+  message it prints names the key and nothing else, because no text of
+  this release reaches it. The configuration comment `init` writes above
+  the key is the only channel that does, so a repository adopting the
+  floor by hand carries that comment over.
+tests_old_behavior: |
+  The obligation that a document carrying an unknown top-level key is
+  rejected is unchanged and continues to hold; `min_tool_version` joins
+  the recognized set and every other unknown key stays rejected.
+tests_new_behavior: |
+  A configuration carrying a well-formed floor validates; a floor
+  outside the grammar, a floor written unquoted as a number, and a
+  prerelease floor each exit 5 naming the key; a configuration omitting
+  the key validates and produces the configuration hash it produced
+  before the key existed.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-028
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-05T10:59:20.285Z
+    change_request: a version floor a build ratchets, and a unit digest that covers what it declares
+    scope: first-time-approval
+partition_id: project-map
+title: a successful build raises the floor it cleared
+target_id: project-map:POL-001
+kind: extend
+baseline_version: project-map:BL-001
+compatibility_action: ignore
+surface_impact:
+  - id: project-map:SUR-001
+    intended_version: "2.0.0"
+  - id: project-map:SUR-002
+    intended_version: "3.0.0"
+as_is: |
+  `build` writes the map document, the JSON companion where configured,
+  and the facts artifact with its sidecar where configured. The
+  configuration file belongs to `init` alone.
+  A floor nobody raises is a floor that goes stale. The release that
+  first declares one protects the repository against every release below
+  it and against nothing above, so the guarantee decays with every
+  version that ships after the line was written.
+to_be: |
+  The write set of `build` gains `<config.sourcePath>`, the file
+  discovery resolved, admitted only when all of the following hold: the
+  run wrote its artifacts and its exit code is 0; the configuration
+  carries `min_tool_version`; the source is a YAML or JSON document; and
+  the running release is higher than the floor in major and minor.
+  The path is `<config.sourcePath>` rather than a path resolved against
+  `<project_root>`, because `--config` accepts a path outside the
+  project root and this write follows it there.
+  The write replaces the bytes of the floor value and nothing else. Byte
+  ranges outside the value are preserved, so comments, blank lines, line
+  endings, indentation and the quoting of every other key survive.
+  `build --check` keeps the empty write set. It returns before the write
+  block, so the guarantee holds by construction rather than by a flag
+  test.
+  A raise that fails is reported and does not fail the build. A
+  read-only checkout, a mounted working copy and a configuration owned
+  by another user each leave the run at exit 0 with its artifacts
+  written and a message naming the line to raise by hand.
+migration_note: |
+  A repository whose configuration is a TypeScript or JavaScript module,
+  or whose configuration lives in `package.json`, is never rewritten:
+  the first cannot be spliced, and for a TypeScript or JavaScript
+  project those two file names are inside the scanned source set, so
+  writing to one would move the inputs of the map itself. Those
+  repositories read the floor and raise the line by hand.
+tests_old_behavior: |
+  The obligation that `build --check` opens no path under the fixture
+  for writing is unchanged and gains the case where the running release
+  is higher than the floor.
+tests_new_behavior: |
+  A build above the floor writes exactly one path beyond its artifacts,
+  and the bytes of that file differ only in the floor value, with a
+  comment above the line, a comment trailing it on the same line, a
+  carriage return and an unrelated long line all preserved. A build at
+  or below the floor, a build under `--check`, a build exiting 6 under
+  `--strict`, and a build whose configuration is not writable each leave
+  the file byte-identical.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-029
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-05T10:59:20.349Z
+    change_request: a version floor a build ratchets, and a unit digest that covers what it declares
+    scope: first-time-approval
+partition_id: project-map
+title: a tool too old for the repository is its own exit code
+target_id: project-map:CTR-001
+kind: extend
+baseline_version: project-map:BL-001
+compatibility_action: ignore
+surface_impact:
+  - id: project-map:SUR-001
+    intended_version: "2.0.0"
+as_is: |
+  The taxonomy runs 0 through 6. Its own test obligation is behind it:
+  the failure scenario names an exit code outside {0, 1, 2, 3, 4, 5},
+  which project-map:BEH-014 left stale when it added 6.
+  Exit 5 covers every configuration-time error. Reusing it for a refusal
+  by version would put "your installation is older than this repository
+  requires" and "you misspelled a key" behind one code, and the caller
+  that has to tell them apart is the git hook, whose message is the only
+  thing a blocked developer reads.
+to_be: |
+  The taxonomy declares 7 for a run whose release is lower than the
+  floor the configuration declares, per project-map:BEH-017. The run is
+  refused before anything is built, it writes no path, and the message
+  names the running version, the floor and the file that declares it.
+  The failure scenario names an exit code outside {0, 1, 2, 3, 4, 5, 6,
+  7}, closing the gap that already existed for 6.
+  Exit 5 keeps its meaning unchanged.
+  A release predating project-map:DLT-027 does not return 7. It rejects
+  the unrecognized key with whatever code that release carries: every
+  published release so far returns 1 with a schema error naming the
+  key, because the mapping of a configuration-time error onto 5 landed
+  after them. So 7 identifies this release refusing a floor it
+  understands, and nothing identifies the opposite direction to a
+  caller. The comment `init` writes above the key carries that
+  explanation instead.
+migration_note: |
+  A caller treating any non-zero code as failure is unaffected. A caller
+  enumerating codes gains one value.
+tests_old_behavior: |
+  The obligation that each declared exit code is produced by a fixture
+  triggering exactly that condition is unchanged and gains a row for 7.
+  The row for 6 was already owed and is closed by
+  project-map:BEH-014's own coverage.
+tests_new_behavior: |
+  A build and a check against a floor above the running release each
+  exit 7 and open no path under the fixture for writing.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-030
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-05T10:59:20.436Z
+    change_request: a version floor a build ratchets, and a unit digest that covers what it declares
+    scope: first-time-approval
+partition_id: project-map
+title: the unit digest covers the configuration the unit declares
+target_id: project-map:CTR-004
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: no_longer_guaranteed
+surface_impact:
+  - id: project-map:SUR-001
+    intended_version: "2.0.0"
+  - id: project-map:SUR-003
+    intended_version: "2.0.0"
+as_is: |
+  project-map:CTR-004 names what the analysis unit carries from the
+  configuration: the `detect`, `openapi` and `analysis_unit` sections.
+  The emission does not honor that. It folds the configuration hash,
+  which covers every validated key at every depth, into the unit digest,
+  so the digest moves for keys the unit does not contain.
+  Two consequences follow. Editing a key that only the map document
+  reads, `entities.top_n` or `sections`, changes `analysis_unit_digest`
+  and drifts the facts artifact although no fact moved. And a key
+  written by the build itself would invalidate the artifact of the run
+  that wrote it: the artifact is rendered from the configuration as
+  loaded, so a value raised afterwards leaves the emitted digest stale
+  against the file on disk, and `build` followed by `build --check`
+  reports drift.
+to_be: |
+  The unit digest covers the `detect`, `openapi` and `analysis_unit`
+  sections of the resolved configuration, which is what
+  project-map:CTR-004 declares and nothing more. The rest of the
+  configuration reaches the map document, and the configuration hash
+  continues to cover the whole document for the JSON companion of
+  project-map:GA-001.
+  A key outside those three sections is therefore outside the unit by
+  construction, with no key named as an exception. `build` stays a fixed
+  point over a configuration it amends.
+  project-map:INV-003 is unchanged. Every value in the artifact stays a
+  function of the materialized bytes and the resolved configuration; the
+  slice of configuration it depends on is now the slice the contract
+  declares.
+migration_note: |
+  Every repository emitting a facts artifact sees its
+  `analysis_unit_digest` change once, and `build --check` reports drift
+  until the artifact is rebuilt and committed. No fact, no diagnostic
+  and no coverage measure changes value.
+  One case survives the narrowing: a repository that lists its own
+  configuration file under `analysis_unit.config_declarations` puts
+  those bytes in the unit directly, so any edit to that file moves the
+  digest. That is the declared behavior of `config_declarations` and it
+  is not an exception to this rule.
+tests_old_behavior: |
+  The obligation that two builds over one unit produce byte-identical
+  artifacts is unchanged. The obligation that a configuration change
+  moves the digest is narrowed rather than dropped: it now holds for the
+  three declared sections and is asserted not to hold outside them.
+tests_new_behavior: |
+  Editing a key outside the three sections leaves the artifact
+  byte-identical; editing a key inside any of them changes it; and a
+  build followed by a check exits 0 over a fixture whose configuration
+  the same build amended.
+---
+```
+
+```yaml
+---
+id: project-map:BEH-017
+type: Behavior
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-05T10:59:20.091Z
+    change_request: a version floor a build ratchets, and a unit digest that covers what it declares
+    scope: first-time-approval
+partition_id: project-map
+title: build and facts — refuse below the declared floor, raise the floor cleared
+given: |
+  - a configuration that validates per project-map:CTR-002
+  - the configuration carries `min_tool_version`
+when: user runs `project-map build` or `project-map facts`
+then: |
+  The running release is compared against the floor on major, minor and
+  patch as numbers. A release lower than the floor is refused before
+  anything is read beyond the configuration: exit code 7, no path opened
+  for writing, and a message naming the running version, the floor and
+  the file that declares it.
+  A prerelease whose three release components equal the floor clears it.
+  A release of X carries the format of X, and a repository that
+  published a candidate does not lock its own testers out of it.
+  A run that clears the floor proceeds unchanged. When it is `build`
+  without `--check`, its exit code is 0, its running release is not a
+  prerelease, its configuration source is a YAML or JSON document, and
+  its major and minor together exceed the floor's, the run then rewrites
+  the floor value to `<major>.<minor>.0` of the running release. The
+  raise happens after every artifact is written, so a floor never claims
+  a build that did not finish.
+  The target is `<major>.<minor>.0` rather than the running version
+  because a patch release carries the format of its minor. Raising to
+  the patch would let one invocation of an arbitrary release lock a
+  whole team out over a difference no emission reflects.
+  The rewrite replaces the bytes of the value and nothing else, per
+  project-map:POL-001. A value the tool cannot locate as a plain scalar,
+  which is a value carrying an anchor, an alias or a block scalar, and a
+  key present more than once, are each reported and left alone rather
+  than guessed at.
+  A raise that fails for any reason is reported and leaves the exit code
+  at 0. The artifacts were written; the line is raised by hand.
+negative_cases:
+  - the configuration omits the key => neither refusal nor raise, and no
+    message
+  - the running release equals the floor => no refusal and no raise
+  - the run is `build --check` => the comparison still refuses, and a
+    clearing run writes nothing, per project-map:POL-001
+  - the run exits 6 under `--strict` => no raise, because a successful
+    build is exit 0
+  - the configuration is a TypeScript or JavaScript module, or lives in
+    `package.json` => the floor is read and enforced, and the raise
+    reports the version to set by hand
+  - a release predating project-map:DLT-027 => it rejects the
+    unrecognized key and exits non-zero with its own code, which for
+    every published release is 1; that rejection is the mechanism this
+    behavior relies on for installations it never reaches
+out_of_scope:
+  - adding the key where it is absent, which `init` does and `build`
+    does not
+  - any command other than `build` and `facts`; `version` in particular
+    is never refused, because it is what a blocked reader runs
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-001
+  - project-map:POL-002
+test_obligation:
+  predicate: |
+    A fixture whose floor exceeds the running release exits 7 from both
+    `build` and `build --check` and leaves every path under it
+    unchanged. A fixture whose floor is below the running release has
+    its floor raised to the running major and minor with patch zero,
+    with every byte outside that value preserved, and the same fixture
+    under `--check`, under a `--strict` verdict of 6, and with an
+    unwritable configuration is left byte-identical.
+  test_template: integration
+  boundary_classes:
+    - floor above, equal to, and below the running release
+    - floor differing in patch alone
+    - key absent
+    - build versus build --check versus facts
+    - configuration writable versus read-only
+    - value plain versus anchored, aliased, or a block scalar
+  failure_scenarios:
+    - a refusal that writes a path
+    - a raise that lowers the floor
+    - a raise after a build that did not reach exit 0
+    - a raise that reformats a byte outside the floor value
+    - a failed raise that turns exit 0 into a non-zero exit
+---
+```
+
+```yaml
+---
+id: project-map:INV-006
+type: Invariant
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-05T10:59:20.152Z
+    change_request: a version floor a build ratchets, and a unit digest that covers what it declares
+    scope: first-time-approval
+partition_id: project-map
+title: the declared floor never decreases
+always: |
+  No command writes a `min_tool_version` lower than the one it read. The
+  only command that writes the key at all is `build`, and it writes only
+  a value strictly greater in major and minor than the value present.
+  A floor therefore moves in one direction over the life of a
+  repository, whichever releases build it in whichever order. A release
+  below the floor is refused before it can write, and a release above it
+  either raises the floor or leaves it alone.
+scope: the `min_tool_version` value of a repository's configuration
+evidence: public_api
+stability: contractual
+data_scope: all_data
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+negative_cases:
+  - a human edits the key downward, which is the deliberate and only way
+    to lower a floor and is outside what any command does
+  - two working copies raise the floor to different values, which
+    version control resolves as a conflict on that line rather than as a
+    lowering
+out_of_scope:
+  - a configuration the tool refuses to rewrite, where the floor moves
+    only by hand
+  - the running release, which this invariant does not constrain
+test_obligation:
+  predicate: |
+    Over a fixture built repeatedly, the floor read after each build is
+    greater than or equal to the floor read before it, and a build whose
+    release is below the floor leaves the value untouched.
+  test_template: integration
+  boundary_classes:
+    - a build above the floor followed by a build at the raised floor
+    - a build refused below the floor
+  failure_scenarios:
+    - a build writing a floor below the one it read
+    - a refused build writing the key at all
 ---
 ```
 

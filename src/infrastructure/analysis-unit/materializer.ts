@@ -209,7 +209,7 @@ function unitDigest(input: DigestInput): string {
 	const preimage = jcs([
 		UNIT_SCHEMA,
 		input.config.repositoryIdentity ?? "",
-		input.config.configHash,
+		input.config.unitConfigHash,
 		input.registryVersion,
 		input.sources.map((source) => [source.path, sha256(source.text)]),
 		input.configDocuments.map((doc) => [doc.locator, sha256(doc.text)]),

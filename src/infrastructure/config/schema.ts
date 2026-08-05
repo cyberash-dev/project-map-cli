@@ -4,6 +4,7 @@ import {
 	FRAMEWORKS_BY_LANGUAGE,
 } from "../../core/domain/language.js";
 import { SECTION_IDS } from "../../core/domain/project-map.js";
+import { RELEASE_PATTERN } from "../../core/domain/tool-version.js";
 import { SelectorSchema } from "./selector-schema.js";
 
 const FRAMEWORK_VALUES = Array.from(
@@ -68,6 +69,17 @@ export const ConfigFileSchema = z
 			language: z.enum(LANGUAGE_VALUES),
 			frameworks: z.array(z.enum(FRAMEWORK_VALUES)).default([]),
 		}),
+		min_tool_version: z
+			.string({
+				error:
+					'min_tool_version must be a quoted release such as "2.0.0"; unquoted, YAML reads it as a number',
+			})
+			.regex(
+				RELEASE_PATTERN,
+				"min_tool_version must be three dot-separated components, each 0 or a digit sequence with no leading zero, and no prerelease suffix",
+			)
+			.nullable()
+			.default(null),
 		root: z.string().default("."),
 		respect_gitignore: z.boolean().default(false),
 		exclude: z.array(z.string()).default([]),

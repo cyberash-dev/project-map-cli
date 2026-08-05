@@ -111,6 +111,37 @@ describe("analysis unit materialization", () => {
 		expect(copied.digest).toBe(original.digest);
 	});
 
+	/* @covers project-map:DLT-030 */
+	it("digests a key outside the declared sections identically", async () => {
+		const before = await materializeAt(workspace.dir);
+		await writeFile(
+			path.join(workspace.dir, ".project-map.yaml"),
+			CONFIG.replace("output:", "sections:\n  - contexts\noutput:"),
+			"utf8",
+		);
+
+		const after = await materializeAt(workspace.dir);
+
+		expect(after.digest).toBe(before.digest);
+	});
+
+	/* @covers project-map:DLT-030 */
+	it("digests a change inside a declared section differently", async () => {
+		const before = await materializeAt(workspace.dir);
+		await writeFile(
+			path.join(workspace.dir, ".project-map.yaml"),
+			CONFIG.replace(
+				'    include: ["**/*.py"]',
+				'    include: ["**/*.py"]\n    exclude: ["matches-nothing/**"]',
+			),
+			"utf8",
+		);
+
+		const after = await materializeAt(workspace.dir);
+
+		expect(after.digest).not.toBe(before.digest);
+	});
+
 	/* @covers project-map:CTR-004 */
 	it("digests a changed source differently", async () => {
 		const before = await materializeAt(workspace.dir);

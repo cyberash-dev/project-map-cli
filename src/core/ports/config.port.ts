@@ -210,6 +210,8 @@ export type ResolvedConfig = {
 	readonly openapi: OpenApiConfig;
 	readonly detect: DetectConfig;
 	readonly configHash: string;
+	readonly unitConfigHash: string;
+	readonly minToolVersion: string | null;
 	readonly sourcePath: string | null;
 };
 

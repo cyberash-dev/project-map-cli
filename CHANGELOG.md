@@ -11,7 +11,18 @@ below moved without any extracted fact moving, which made `PROJECT_MAP.md`
 conflict on merge for reasons no reader cared about.
 
 Surfaces: `project-map/cli` 2.0.0 · `project-map/map-document` 3.0.0 ·
-`project-map/detection-facts` 1.1.0 · `project-map/package` 1.0.0.
+`project-map/detection-facts` 2.0.0 · `project-map/package` 1.0.0.
+
+### Added
+
+- **`min_tool_version`, a version floor with a ratchet.** A `build` or `facts`
+  run below the declared floor is refused with exit 7 before anything is read
+  beyond the configuration; a `build` that finishes at exit 0 raises the line to
+  its own `<major>.<minor>.0`, replacing the bytes of that value alone.
+  Adding the key to a repository is what stops installs that never receive this
+  release: the schema has rejected unknown top-level keys since v0.1.0, so every
+  published version refuses a configuration carrying it. See the README for the
+  deliberate costs.
 
 ### Removed
 
@@ -58,6 +69,14 @@ Everything removed stays where a program reads it: `project-map.json`
   id: no configuration turns it off, and it is absent when nothing failed.
 - **`init` writes the section list without `metadata`.** No default list
   ever named `detection_coverage`, so nothing else changes there.
+- **`analysis_unit_digest` covers what the analysis unit declares.** It folded
+  a hash of the whole configuration document; it now covers the `detect`,
+  `openapi` and `analysis_unit` sections alone, which is what the contract
+  always said. Every value of it changes once, so `build --check` reports drift
+  on `facts.json` until it is rebuilt and committed. No fact, diagnostic or
+  coverage measure changes value. Editing a key only the document reads,
+  `entities.top_n` or `sections`, no longer dirties the artifact.
+- **`init` writes `min_tool_version` with the comment explaining it.**
 - **A value read out of the source renders as inline code everywhere.**
   Previously only the two detection sections did, and every other position
   went through prose escaping: a project named `yandex_pay_plus` opened the
