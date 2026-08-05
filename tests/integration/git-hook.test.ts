@@ -1,8 +1,9 @@
 import { execFile } from "node:child_process";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import { promisify } from "node:util";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
 	createWorkspace,
 	runCli,
@@ -11,6 +12,19 @@ import {
 
 const run = promisify(execFile);
 const CONFIG = ".project-map.yaml";
+const REPO_ROOT = path.resolve(import.meta.dirname, "../..");
+const BINARY = path.join(REPO_ROOT, "dist/cli/index.js");
+
+/**
+ * The hook prefers a locally installed binary over one on PATH. Linking it
+ * where npm would keeps the test from reading whatever the machine happens to
+ * have installed, which is the difference between passing here and on CI.
+ */
+async function linkTool(dir: string): Promise<void> {
+	const binDir = path.join(dir, "node_modules/.bin");
+	await mkdir(binDir, { recursive: true });
+	await symlink(BINARY, path.join(binDir, "project-map"));
+}
 
 type HookRun = { readonly code: number; readonly output: string };
 
@@ -57,12 +71,20 @@ async function withFloor(dir: string, floor: string): Promise<void> {
 	);
 }
 
-describe("the emitted git hook", () => {
+describe.skipIf(process.platform === "win32")("the emitted git hook", () => {
 	let workspace: Workspace;
+
+	/* The fresh-checkout path alone; CI and the local convention build first. */
+	beforeAll(async () => {
+		if (!existsSync(BINARY)) {
+			await run("npm", ["run", "build"], { cwd: REPO_ROOT });
+		}
+	});
 
 	beforeEach(async () => {
 		workspace = await createWorkspace("python-aiohttp-minimal");
 		await mkdir(path.join(workspace.dir, ".git"), { recursive: true });
+		await linkTool(workspace.dir);
 		await runCli(workspace.dir, ["install-git-hook", "--type", "pre-commit"]);
 	});
 	afterEach(async () => {
