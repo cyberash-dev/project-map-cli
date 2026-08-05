@@ -145,7 +145,7 @@ discovery_scope:
   - vitest.config.ts
 coverage_evidence:
   - kind: git_tree_hash_v1
-    reference: a31186ea7eb3abd62c0f4d3674d0a36e0542cf49
+    reference: addfccc54bc06be437efcd8bb96eb8b8745469a9
     note: |
       Token covers the implementation, the test suite, and the build
       metadata that selects what is compiled and run.
@@ -157,13 +157,18 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 4825a02569f114da3c721c5b72c06f0aa5e1189a72abdb666684acc10c9946ac
-baseline_commit_sha: a31186ea7eb3abd62c0f4d3674d0a36e0542cf49
+freshness_token: 199ddae4e8d42f30fb5b5f6795ec8f41ea9b9863cbef1c6f149fb44ffcafd14b
+baseline_commit_sha: addfccc54bc06be437efcd8bb96eb8b8745469a9
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
   As-is facts become normative only where a Behavior, Invariant, or
   Contract in §5-§13 references them as preserved.
+  Refreshed from a31186ea to addfccc5. addfccc5 makes the obligation of
+  project-map:BEH-018 hermetic: the emitted hook skips itself when the
+  tool is neither linked locally nor on PATH, so the test read whatever
+  the machine had installed. It now links the emitted binary where npm
+  would. Test-only; no normative statement changes.
   Refreshed from f8b0db9e to a31186ea. a31186ea closes the two open
   questions and takes the count off the migrations heading. It crosses
   the storage renderer, authorized by project-map:DLT-032, and the hook
