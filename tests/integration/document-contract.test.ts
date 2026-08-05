@@ -14,6 +14,7 @@ import { NodeFileReader } from "../../src/infrastructure/filesystem/node-fs.js";
 import { ConsoleLogger } from "../../src/infrastructure/logger/console.js";
 import { TreeSitterParserRegistry } from "../../src/infrastructure/parser/tree-sitter.js";
 import { GitRevisionProvider } from "../../src/infrastructure/revision/git.js";
+import { bodyRows, headerRow } from "../support/markdown.js";
 import {
 	createWorkspace,
 	runCli,
@@ -343,30 +344,8 @@ function contextsByFileCount(companion: unknown): string[] {
 	return rows.map((row) => row.path);
 }
 
-function tableRows(markdown: string, heading: string): string[][] {
-	const after = markdown.slice(markdown.indexOf(heading)).split("\n");
-	const first = after.findIndex((line) => line.startsWith("|"));
-	const rows: string[][] = [];
-	for (const line of after.slice(first)) {
-		if (!line.startsWith("|")) {
-			break;
-		}
-		rows.push(
-			line
-				.split("|")
-				.slice(1, -1)
-				.map((cell) => cell.trim().replace(/\\(.)/g, "$1")),
-		);
-	}
-	return rows;
-}
-
-function headerRow(markdown: string, heading: string): string[] {
-	return tableRows(markdown, heading)[0] ?? [];
-}
-
 function dataColumn(markdown: string, heading: string): string[] {
-	return tableRows(markdown, heading)
-		.slice(2)
-		.flatMap((row) => (row[0] === undefined ? [] : [row[0]]));
+	return bodyRows(markdown, heading).flatMap((row) =>
+		row[0] === undefined ? [] : [row[0]],
+	);
 }

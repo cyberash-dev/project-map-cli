@@ -360,9 +360,9 @@ not fold is `unknown(dynamic)`, a destination the repository does not bind is
 `unknown(operation_in_library_root)`, and each fact carries a `resolution` of
 `resolved`, `ambiguous`, `unresolved` or `conflicting`. Coverage denominators
 are honest — an axis nothing declares reports `unmeasured` rather than a
-completed fraction. Both live in the artifact alone: the document renders no
-coverage section, because a tally that moves without the structure moving is a
-merge conflict rather than a reader's answer.
+completed fraction. The grade and the measures live in the artifact alone. The
+document renders neither: a coverage tally moves without the structure moving,
+and a row's grade only restates the `unknown(...)` cell already beside it.
 
 The artifact carries no timestamp; the generation time and build duration live
 in `.project-map/facts.meta.json`, which `--check` never opens. Add the sidecar

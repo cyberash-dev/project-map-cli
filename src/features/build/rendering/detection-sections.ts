@@ -39,11 +39,10 @@ function renderInbound(facts: readonly EndpointFact[]): RootContent[] {
 	return [
 		heading(2, "HTTP endpoints"),
 		table(
-			["Method", "Route", "Resolution", "Provenance", "Contracts"],
+			["Method", "Route", "Provenance", "Contracts"],
 			facts.map((fact) => [
 				codeCell(render(methodOf(fact))),
 				codeCell(render(pathOf(fact))),
-				codeCell(fact.resolution),
 				codeCell([...fact.provenance].join(", ")),
 				codeCell(fact.contract_refs.map((ref) => ref.contract_id).join(", ")),
 			]),
@@ -60,13 +59,12 @@ function renderOutbound(
 	return [
 		heading(2, "External dependencies"),
 		table(
-			["Owner", "Method", "Route", "Destination", "Resolution"],
+			["Owner", "Method", "Route", "Destination"],
 			facts.map((fact) => [
 				codeCell(fact.owner_operation),
 				codeCell(render(methodOf(fact))),
 				codeCell(render(pathOf(fact))),
 				codeCell(destinationOf(fact)),
-				codeCell(fact.resolution),
 			]),
 		),
 	];

@@ -32,11 +32,17 @@ from revision <sha>` and `Coverage: <n> files scanned (<m> excluded).` are
 - **Counts a collection is ranked on.** The `Files` column of the bounded
   contexts table and the `Referenced from N module(s)` bullet of an entity are
   gone; the row order still reports the same magnitude.
+- **The `Resolution` column of both detection tables.** `## HTTP endpoints`
+  heads Method, Route, Provenance, Contracts; `## External dependencies` heads
+  Owner, Method, Route, Destination. In the document the column restated the
+  cells beside it — a row the analyzer did not prove is the row whose method,
+  route or destination reads `unknown(<reason>)`, and the reason names why.
+  Every fact in the artifact still carries `resolution`.
 
 Everything removed stays where a program reads it: `project-map.json`
 (`output.json`) carries `metadata`, `source.line`, `fileCount` and
-`referencedFrom` unchanged, and the facts artifact carries `coverage` and
-`diagnostics`.
+`referencedFrom` unchanged, and the facts artifact carries `coverage`,
+`diagnostics` and `resolution`.
 
 ### Changed
 

@@ -1,6 +1,8 @@
 import { readFile, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { routesOf } from "../support/facts.js";
+import { bodyRows, headerRow } from "../support/markdown.js";
 import {
 	createWorkspace,
 	listFiles,
@@ -15,7 +17,9 @@ const UNCONDITIONAL_HEADINGS = [
 	"## Enums",
 ];
 
-const DETECTION_HEADINGS = ["## HTTP endpoints", "## External dependencies"];
+const ENDPOINTS = "## HTTP endpoints";
+const DEPENDENCIES = "## External dependencies";
+const DETECTION_HEADINGS = [ENDPOINTS, DEPENDENCIES];
 
 async function documentOf(dir: string): Promise<string> {
 	return readFile(path.join(dir, "PROJECT_MAP.md"), "utf8");
@@ -136,6 +140,81 @@ describe("the reworked detection renders under its own section ids", () => {
 		await withSections(workspace.dir, ["inbound_endpoints"]);
 
 		expect(await runCli(workspace.dir, ["build"])).toBe(5);
+	});
+});
+
+describe("an endpoint row reports what was found, not its grade", () => {
+	let workspace: Workspace;
+
+	beforeEach(async () => {
+		workspace = await createWorkspace("python-dsl-routes");
+		await withSections(workspace.dir, ["endpoints"]);
+	});
+	afterEach(async () => {
+		await workspace.dispose();
+	});
+
+	/* @covers project-map:DLT-024 */
+	it("heads the table without a resolution column", async () => {
+		await runCli(workspace.dir, ["build"]);
+
+		expect(headerRow(await documentOf(workspace.dir), ENDPOINTS)).toEqual([
+			"Method",
+			"Route",
+			"Provenance",
+			"Contracts",
+		]);
+	});
+
+	/* @covers project-map:DLT-024 */
+	it("renders no cell carrying a resolution value", async () => {
+		await runCli(workspace.dir, ["build"]);
+
+		const rows = bodyRows(await documentOf(workspace.dir), ENDPOINTS);
+		expect(rows.length).toBeGreaterThan(0);
+		expect(rows.flat()).not.toContain("`resolved`");
+	});
+});
+
+describe("a dependency row reports what was found, not its grade", () => {
+	let workspace: Workspace;
+
+	beforeEach(async () => {
+		workspace = await createWorkspace("python-outbound-unresolved");
+		await withSections(workspace.dir, ["interactions"]);
+	});
+	afterEach(async () => {
+		await workspace.dispose();
+	});
+
+	/* @covers project-map:DLT-024 */
+	it("heads the table without a resolution column", async () => {
+		await runCli(workspace.dir, ["build"]);
+
+		expect(headerRow(await documentOf(workspace.dir), DEPENDENCIES)).toEqual([
+			"Owner",
+			"Method",
+			"Route",
+			"Destination",
+		]);
+	});
+
+	/* @covers project-map:DLT-024 */
+	it("renders no cell carrying a resolution value", async () => {
+		await runCli(workspace.dir, ["build"]);
+
+		const rows = bodyRows(await documentOf(workspace.dir), DEPENDENCIES);
+		expect(rows.length).toBeGreaterThan(0);
+		expect(rows.flat()).not.toContain("`unresolved`");
+	});
+
+	/* @covers project-map:DLT-024 */
+	it("keeps the grade the document dropped on every artifact record", async () => {
+		await runCli(workspace.dir, ["build"]);
+
+		const routes = await routesOf(workspace.dir);
+		expect(routes.length).toBeGreaterThan(0);
+		expect(routes.map((route) => route.resolution)).toContain("unresolved");
 	});
 });
 

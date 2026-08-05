@@ -897,9 +897,9 @@ schema: |
   `sections` list: a configuration narrows that list and never widens
   it.
   The two detection ids render the facts of project-map:CTR-006:
-  `endpoints` an H2 "HTTP endpoints" over method, route, resolution,
-  provenance and contracts; `interactions` an H2 "External dependencies"
-  over owner, method, route, destination and resolution. The coverage
+  `endpoints` an H2 "HTTP endpoints" over method, route, provenance and
+  contracts; `interactions` an H2 "External dependencies" over owner,
+  method, route and destination. The derived resolution, the coverage
   measures and the aggregated diagnostics are content of the artifact
   project-map:GA-002 emits rather than of this document.
   A declaration whose bare name another declaration also claims is

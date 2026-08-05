@@ -3532,6 +3532,82 @@ tests_new_behavior: |
 ---
 ```
 
+```yaml
+---
+id: project-map:DLT-024
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-05T09:16:12.898Z
+    change_request: a detection row reports what was found, not its grade
+    scope: first-time-approval
+partition_id: project-map
+title: a detection row reports what was found, not how the analyzer graded it
+target_id: project-map:CTR-003
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: no_longer_guaranteed
+surface_impact:
+  - id: project-map:SUR-002
+    intended_version: "3.0.0"
+as_is: |
+  `endpoints` renders a Resolution column between the route and the
+  provenance; `interactions` renders one after the destination. Each
+  carries the value project-map:CTR-006 derives: resolved, ambiguous,
+  unresolved or conflicting.
+  In the document the column restates the cells beside it. `unresolved`
+  is the row whose method, route or destination already reads
+  `unknown(<reason>)`, and `resolved` is the row where none does. The
+  correspondence is not incidental: the ladder tests exactly the
+  required fields, and every required field of an HTTP variant is a
+  rendered column. Over the 776 rows the two live services render it
+  holds in both directions without a single exception.
+  Two values do carry what the other cells cannot. `ambiguous` says a
+  second variant exists, and the table renders only the first;
+  `conflicting` says two extractions of one core disagreed. Neither
+  occurs in either service, and neither is actionable from a table
+  cell: a reader who has one needs the variant set or the disagreeing
+  anchors, and both are content of the artifact rather than of the
+  document.
+to_be: |
+  Neither table carries a Resolution column. `endpoints` renders method,
+  route, provenance and contracts; `interactions` renders owner, method,
+  route and destination.
+  The typed value stays on the fact. project-map:CTR-006 derives it
+  unchanged, and every record of the artifact project-map:GA-002 emits
+  carries it, beside the variant set and the evidence anchors that make
+  a non-resolved grade actionable. Nothing about how it is derived, and
+  nothing about the ratchet of project-map:CTR-010, changes.
+  A reader keeps the answer the column gave in the document: a row
+  whose method, route or destination reads `unknown(<reason>)` is a row
+  the analyzer did not prove, and the reason names why.
+migration_note: |
+  A consumer parsing either table by column index shifts: Resolution
+  was column 3 of the endpoints table and column 5 of the external
+  dependencies table. A consumer wanting the grade reads `resolution`
+  from `<output.facts>`, where it has been since project-map:CTR-006
+  was approved.
+  No configuration key, no section id and no heading text changes, so
+  nothing a repository declares is affected.
+tests_old_behavior: |
+  The obligation that a closed-enum cell renders as inline code was
+  carried by the resolution cells of both tables. It is not dropped:
+  the same fixture continues to assert it over the provenance cell of
+  the endpoints table, which is the other closed enum the document
+  renders.
+tests_new_behavior: |
+  A build over a fixture with both detection sections configured
+  renders an endpoints header of exactly Method, Route, Provenance,
+  Contracts and an external-dependencies header of exactly Owner,
+  Method, Route, Destination; no row of either table carries a
+  resolution value; and the artifact of that same build still carries
+  `resolution` on every record.
+---
+```
+
 ---
 
 ## 16. Implementation bindings
