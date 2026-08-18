@@ -1,0 +1,23 @@
+project:
+  name: budgeting
+  language: python
+
+repository_identity: sample/budgeting
+
+sections: []
+
+analysis_unit:
+  sources:
+    include: ["**/*.py"]
+
+detect:
+  outbound:
+    sinks:
+      - base_type: "vendor_interactions.AbstractInteractionClient"
+        call: [post]
+        path_arg: { kind: arg, selector: "url" }
+        target: { kind: class_const, selector: "BASE_URL" }
+
+output:
+  markdown: PROJECT_MAP.md
+  facts: .project-map/facts.json

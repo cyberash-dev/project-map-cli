@@ -8,6 +8,7 @@ import {
 import { type GoImportIndex, goOriginMatches } from "../index/go/imports.js";
 import type { GoPackage, GoPackageIndex } from "../index/go/packages.js";
 import { foldGoConfigRef } from "../value/go-config.js";
+import { keyedFieldsOf } from "../value/go-composite.js";
 import { foldGoValue } from "../value/go-value.js";
 import type { RecordValue } from "../value/record.js";
 
@@ -154,16 +155,21 @@ export type GoFoldContext = {
 	readonly packages: GoPackageIndex;
 };
 
+/** Bounds one proof path of project-map:CTR-007 to three constant edges. */
+const MAX_CONSTANT_EDGES = 3;
+
 /**
  * Folds a Go expression, following a qualified constant into the package that
  * declares it. A typed constant is the ordinary way an HTTP verb is written.
+ * The next edge is looked up before the budget is spent, so a value with no
+ * further edge reads as absent and one whose edge is refused reads as bounded.
  */
 export function foldGoSinkValue(
 	node: SyntaxNode | null,
 	context: GoFoldContext,
 	depth = 0,
 ): ValueIr {
-	if (node === null || depth > 3) {
+	if (node === null) {
 		return { kind: "unknown", reason: "dynamic" };
 	}
 	const direct = foldGoValue(node);
@@ -171,7 +177,12 @@ export function foldGoSinkValue(
 		return direct;
 	}
 	const bound = constantOf(node, context);
-	return bound === null ? direct : foldGoSinkValue(bound, context, depth + 1);
+	if (bound === null) {
+		return direct;
+	}
+	return depth >= MAX_CONSTANT_EDGES
+		? { kind: "unknown", reason: "depth_exceeded" }
+		: foldGoSinkValue(bound, context, depth + 1);
 }
 
 function constantOf(
@@ -277,7 +288,7 @@ export function constructorSummary(
 		body,
 		(node) => node.type === "composite_literal",
 	)) {
-		const fields = keyedFields(literal);
+		const fields = keyedFieldsOf(literal);
 		if (fields.size > 0) {
 			return { fields, directory: found.directory };
 		}
@@ -328,29 +339,6 @@ function foundIn(target: GoPackage | null, name: string): FoundFunction | null {
 
 /* A keyed element wraps both halves in a literal_element; the value the field
  * holds is inside it. */
-function unwrapElement(node: SyntaxNode | null): SyntaxNode | null {
-	if (node === null || node.type !== "literal_element") {
-		return node;
-	}
-	return node.namedChildren[0] ?? null;
-}
-
-function keyedFields(literal: SyntaxNode): Map<string, SyntaxNode> {
-	const fields = new Map<string, SyntaxNode>();
-	const body = literal.childForFieldName("body");
-	for (const element of body?.namedChildren ?? []) {
-		if (element.type !== "keyed_element") {
-			continue;
-		}
-		const key = element.childForFieldName("key");
-		const value = unwrapElement(element.childForFieldName("value"));
-		if (key !== null && value !== null) {
-			fields.set(key.text, value);
-		}
-	}
-	return fields;
-}
-
 export function goConfigFold(
 	node: SyntaxNode | null,
 	context: GoFoldContext,

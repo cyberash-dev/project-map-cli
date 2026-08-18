@@ -11,6 +11,7 @@ export const REASON_CODES = [
 	"operation_in_library",
 	"operation_in_library_root",
 	"operation_mapping_unresolved",
+	"unanchored_router",
 ] as const;
 
 export type ReasonCode = (typeof REASON_CODES)[number];

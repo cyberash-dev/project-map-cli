@@ -8,11 +8,20 @@ const STRING_LITERALS = new Set([
 ]);
 
 /**
+ * Resolves a name the fold cannot read off the syntax: a package constant, or
+ * a field of a record the caller proved.
+ */
+export type GoValueResolver = (node: SyntaxNode) => ValueIr | null;
+
+/**
  * Folds a Go expression to the value IR of project-map:CTR-007. Only the forms
  * this phase can prove are folded; anything else becomes a typed hole rather
  * than the text of the expression that produced it.
  */
-export function foldGoValue(node: SyntaxNode | null): ValueIr {
+export function foldGoValue(
+	node: SyntaxNode | null,
+	resolve?: GoValueResolver,
+): ValueIr {
 	if (node === null) {
 		return { kind: "unknown", reason: "dynamic" };
 	}
@@ -20,12 +29,12 @@ export function foldGoValue(node: SyntaxNode | null): ValueIr {
 		return { kind: "literal", value: literalContent(node) };
 	}
 	if (node.type === "parenthesized_expression") {
-		return foldGoValue(node.namedChildren[0] ?? null);
+		return foldGoValue(node.namedChildren[0] ?? null, resolve);
 	}
-	if (node.type !== "binary_expression") {
-		return { kind: "unknown", reason: "dynamic" };
+	if (node.type === "binary_expression") {
+		return foldConcatenation(node, resolve);
 	}
-	return foldConcatenation(node);
+	return resolve?.(node) ?? { kind: "unknown", reason: "dynamic" };
 }
 
 function literalContent(node: SyntaxNode): string {
@@ -33,13 +42,16 @@ function literalContent(node: SyntaxNode): string {
 	return content === undefined ? "" : content.text;
 }
 
-function foldConcatenation(node: SyntaxNode): ValueIr {
+function foldConcatenation(
+	node: SyntaxNode,
+	resolve?: GoValueResolver,
+): ValueIr {
 	const operator = node.childForFieldName("operator");
 	if (operator === null || operator.text !== "+") {
 		return { kind: "unknown", reason: "dynamic" };
 	}
 	return concatValues(
-		foldGoValue(node.childForFieldName("left")),
-		foldGoValue(node.childForFieldName("right")),
+		foldGoValue(node.childForFieldName("left"), resolve),
+		foldGoValue(node.childForFieldName("right"), resolve),
 	);
 }

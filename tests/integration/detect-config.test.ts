@@ -43,7 +43,7 @@ describe("detection configuration", () => {
 	it("resolves a declared analysis unit independently of the top-level exclude", async () => {
 		const config = await loadYaml(
 			workspace.dir,
-			`${MINIMAL}repository_identity: midas\nexclude:\n  - "**/base.py"\nanalysis_unit:\n  sources:\n    include:\n      - "**/*.py"\n    exclude:\n      - "**/vendor/**"\n  config_declarations:\n    - "settings/**"\noutput:\n  facts: .project-map/facts.json\n`,
+			`${MINIMAL}repository_identity: orders-api\nexclude:\n  - "**/base.py"\nanalysis_unit:\n  sources:\n    include:\n      - "**/*.py"\n    exclude:\n      - "**/vendor/**"\n  config_declarations:\n    - "settings/**"\noutput:\n  facts: .project-map/facts.json\n`,
 		);
 
 		expect(config.exclude).toContain("**/base.py");
@@ -113,13 +113,13 @@ describe("openapi configuration", () => {
 	it("resolves a served specification with its contract id and mount", async () => {
 		const config = await loadYaml(
 			workspace.dir,
-			`${MINIMAL}repository_identity: midas\nopenapi:\n  serves:\n    - spec: repo:openapi/openapi.yaml\n      contract_id: midas.public.v2\n      mount: /v2\n`,
+			`${MINIMAL}repository_identity: orders-api\nopenapi:\n  serves:\n    - spec: repo:openapi/openapi.yaml\n      contract_id: orders-api.public.v2\n      mount: /v2\n`,
 		);
 
 		expect(config.openapi.serves).toEqual([
 			{
 				spec: "repo:openapi/openapi.yaml",
-				contractId: "midas.public.v2",
+				contractId: "orders-api.public.v2",
 				mount: "/v2",
 			},
 		]);
@@ -129,7 +129,7 @@ describe("openapi configuration", () => {
 	it("defaults the mount to null when the specification paths are absolute", async () => {
 		const config = await loadYaml(
 			workspace.dir,
-			`${MINIMAL}repository_identity: midas\nopenapi:\n  serves:\n    - spec: repo:openapi/openapi.yaml\n      contract_id: midas.public.v2\n`,
+			`${MINIMAL}repository_identity: orders-api\nopenapi:\n  serves:\n    - spec: repo:openapi/openapi.yaml\n      contract_id: orders-api.public.v2\n`,
 		);
 
 		expect(config.openapi.serves[0]?.mount).toBeNull();
@@ -140,7 +140,7 @@ describe("openapi configuration", () => {
 		await expect(
 			loadYaml(
 				workspace.dir,
-				`${MINIMAL}repository_identity: midas\nopenapi:\n  serves:\n    - spec: repo:openapi/openapi.yaml\n`,
+				`${MINIMAL}repository_identity: orders-api\nopenapi:\n  serves:\n    - spec: repo:openapi/openapi.yaml\n`,
 			),
 		).rejects.toThrow(/contract_id/);
 	});
@@ -151,7 +151,7 @@ describe("openapi configuration", () => {
 		await expect(
 			loadYaml(
 				workspace.dir,
-				`${MINIMAL}openapi:\n  serves:\n    - spec: repo:openapi/openapi.yaml\n      contract_id: midas.public.v2\n`,
+				`${MINIMAL}openapi:\n  serves:\n    - spec: repo:openapi/openapi.yaml\n      contract_id: orders-api.public.v2\n`,
 			),
 		).rejects.toThrow(/repository_identity/);
 	});
@@ -164,3 +164,74 @@ describe("openapi configuration", () => {
 		expect(config.openapi.consumes).toEqual([]);
 	});
 });
+
+describe("declared entry points", () => {
+	let workspace: Workspace;
+
+	beforeEach(async () => {
+		workspace = await createWorkspace();
+	});
+	afterEach(async () => {
+		await workspace.dispose();
+	});
+
+	/* @covers project-map:DLT-039 */
+	it("defaults the declared entry points to none", async () => {
+		const config = await loadYaml(workspace.dir, MINIMAL);
+
+		expect(config.detect.inbound.serveRoots).toEqual([]);
+	});
+
+	/* @covers project-map:DLT-039 */
+	it("resolves a declared entry point", async () => {
+		const config = await loadYaml(workspace.dir, serveRootYaml());
+
+		expect(config.detect.inbound.serveRoots).toEqual([
+			{ function: "internal/api.NewRouter", result: 0, mount: "/api" },
+		]);
+	});
+
+	/* @covers project-map:DLT-039 */
+	it.each([
+		["a mount that is not absolute", serveRootYaml({ mount: "api" })],
+		["a negative result index", serveRootYaml({ result: "-1" })],
+		["a fractional result index", serveRootYaml({ result: "0.5" })],
+		[
+			"a function carrying glob syntax",
+			serveRootYaml({ fn: "internal/*.New" }),
+		],
+	])("rejects %s at configuration time", async (_name, yaml) => {
+		await expect(loadYaml(workspace.dir, yaml)).rejects.toThrow();
+	});
+
+	/* @covers project-map:DLT-039 */
+	it("rejects two entries declaring one exposure twice", async () => {
+		await expect(
+			loadYaml(workspace.dir, `${serveRootYaml()}${serveRootEntry()}`),
+		).rejects.toThrow(/twice/);
+	});
+});
+
+type ServeRootOverrides = {
+	readonly fn?: string;
+	readonly result?: string;
+	readonly mount?: string;
+};
+
+function serveRootEntry(overrides: ServeRootOverrides = {}): string {
+	return [
+		`      - function: "${overrides.fn ?? "internal/api.NewRouter"}"`,
+		`        result: ${overrides.result ?? "0"}`,
+		`        mount: "${overrides.mount ?? "/api"}"`,
+		"",
+	].join("\n");
+}
+
+function serveRootYaml(overrides: ServeRootOverrides = {}): string {
+	return [
+		MINIMAL,
+		"repository_identity: sample/one\n",
+		"detect:\n  inbound:\n    serve_roots:\n",
+		serveRootEntry(overrides),
+	].join("");
+}

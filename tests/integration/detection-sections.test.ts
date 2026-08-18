@@ -176,6 +176,56 @@ describe("an endpoint row reports what was found, not its grade", () => {
 	});
 });
 
+describe("the endpoints section carries only a route it can name", () => {
+	let workspace: Workspace;
+
+	afterEach(async () => {
+		await workspace.dispose();
+	});
+
+	async function rendered(fixture: string): Promise<string> {
+		workspace = await createWorkspace(fixture);
+		await withSections(workspace.dir, ["endpoints"]);
+		await runCli(workspace.dir, ["build"]);
+		return documentOf(workspace.dir);
+	}
+
+	/* @covers project-map:DLT-046 */
+	it("renders the route the analysis proved", async () => {
+		const document = await rendered("python-serve-anchor");
+
+		expect(document).toContain("`/api/form/v1/checkout`");
+	});
+
+	/* @covers project-map:DLT-046 */
+	it("renders no row for a registration that reached no anchor", async () => {
+		const document = await rendered("python-serve-anchor");
+
+		expect(document).not.toContain("unanchored_router");
+	});
+
+	/* The route is what the section is read for; a handler outside the unit
+	 * costs the method cell and not the row. */
+	/* @covers project-map:DLT-046 */
+	it("renders a proven route whose method it could not prove", async () => {
+		const document = await rendered("python-serve-anchor");
+
+		expect(bodyRows(document, ENDPOINTS)).toContainEqual([
+			"`unknown(cross_boundary)`",
+			"`/health`",
+			"`router`",
+			"",
+		]);
+	});
+
+	/* @covers project-map:DLT-046 */
+	it("renders no heading where no registration proved its route", async () => {
+		const document = await rendered("python-serve-root-missing");
+
+		expect(document).not.toContain(ENDPOINTS);
+	});
+});
+
 describe("a dependency row reports what was found, not its grade", () => {
 	let workspace: Workspace;
 
@@ -206,6 +256,14 @@ describe("a dependency row reports what was found, not its grade", () => {
 		const rows = bodyRows(await documentOf(workspace.dir), DEPENDENCIES);
 		expect(rows.length).toBeGreaterThan(0);
 		expect(rows.flat()).not.toContain("`unresolved`");
+	});
+
+	/* @covers project-map:DLT-046 */
+	it("keeps rendering the hole the endpoints section stopped carrying", async () => {
+		await runCli(workspace.dir, ["build"]);
+
+		const rows = bodyRows(await documentOf(workspace.dir), DEPENDENCIES);
+		expect(rows.some((row) => row.join(" ").includes("unknown("))).toBe(true);
 	});
 
 	/* @covers project-map:DLT-024 */

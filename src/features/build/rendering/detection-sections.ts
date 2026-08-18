@@ -11,9 +11,9 @@ import type { FactSet } from "../../detect/detect.use-case.js";
 import { codeCell, heading, table } from "./mdast-helpers.js";
 
 /**
- * The reworked detection rendered under its own section ids. A hole keeps its
- * reason in the document: a reader has to be able to tell a route nobody
- * declared from one the analyzer could not prove.
+ * The reworked detection rendered under its own section ids. A dependency keeps
+ * the reason of its hole in the document; an endpoint whose route stayed a hole
+ * names no route, so it lives in the facts artifact alone.
  */
 export function renderDetectionSection(
 	id: DetectionSectionId,
@@ -23,9 +23,17 @@ export function renderDetectionSection(
 		return [];
 	}
 	if (id === "endpoints") {
-		return renderInbound(facts.facts.filter(isEndpointFact));
+		return renderInbound(
+			facts.facts.filter(isEndpointFact).filter(carriesRoute),
+		);
 	}
 	return renderOutbound(facts.facts.filter(isOutbound));
+}
+
+/* templateOf collapses an all-literal template, so a path that is not a
+ * literal carries at least one typed hole. */
+function carriesRoute(fact: EndpointFact): boolean {
+	return pathOf(fact)?.kind === "literal";
 }
 
 function isOutbound(fact: DetectionFact): fact is OutboundOperationFact {

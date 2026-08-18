@@ -16,15 +16,28 @@ using tree-sitter AST extraction. No LLM calls in the build path. See
 ```
 src/
   core/                    # Domain + ports. No imports from features/infra/cli.
+    domain/facts/          # Fact records, the value IR, the closed reason enum.
   features/<slice>/        # Vertical slices (init, build, version, install-hooks).
     build/slices/<kind>/   # One slice per extractor (contexts, entities, enums, …).
       extract.ts           # Orchestrates language adapters for this slice.
       adapters/<lang>.ts   # ILanguageAdapter<T> per language.
       render.ts
+    build/rendering/       # markdown.ts assembles the document; detection-sections.ts
+                           # renders the two detection tables.
+    detect/                # Structural detection. Its own vertical slice.
+      index/<lang>/        # Import, declaration and package indexes per language.
+      inbound/             # Route registrations: go/ (chi, ServeMux, serve roots),
+                           # python/ (serve anchors), python-dsl.ts.
+      outbound/            # Declared sinks and transport calls.
+      value/               # Value normalization: templates, folding.
+      merge/               # Semantic-core merge, diagnostics, cross-check.
+      openapi/             # Inventory ingest and the canonical path grammar.
+      registry/            # Generated build digests. Never edit by hand.
   infrastructure/          # Concrete port implementations (tree-sitter, globby, fs, git, …).
   cli/                     # container.ts (DI wiring) + commands.ts (commander).
 tests/
   integration/             # vitest + fixture projects under tests/fixtures/.
+  unit/                    # vitest over pure functions, no fixture workspace.
 ```
 
 **Invariants (enforced by code review, not tooling):**
@@ -32,7 +45,12 @@ tests/
 - `core/` is pure — no `features/`, `infrastructure/`, or `cli/` imports.
 - Slice code under `features/build/slices/<kind>/` imports only `core/` ports
   and its own `adapters/`. Never import from `infrastructure/` directly.
+- `features/detect/` imports `core/` ports and `infrastructure/parser/ts-utils.js`
+  for `SyntaxNode` alone. It never reaches into `features/build/`.
 - `cli/container.ts` is the single composition root.
+- `src/features/detect/registry/build-digest.generated.ts` is emitted by
+  `scripts/emit-build-digest.mjs`. Any change under the analyzer trees means
+  re-running that script, or `tests/integration/build-digest.test.ts` fails.
 
 ## Determinism is load-bearing
 
@@ -100,6 +118,28 @@ For local iteration on the CLI itself: `node dist/cli/index.js <cmd>` after
   the id to `core/domain/project-map.ts::SECTION_IDS` + the zod config schema.
 - **New CLI command**: wire in `src/cli/commands.ts` and add its use case to
   `src/cli/container.ts`.
+- **New router adapter**: add it under
+  `src/features/detect/inbound/<lang>/`, recognise the constructor and the
+  registration members by import provenance — never by identifier name — and
+  register it in that language's entry point (`inbound/go/chi.ts` for Go).
+  A new adapter changes `ADAPTER_REGISTRY_DIGEST`, so re-run
+  `scripts/emit-build-digest.mjs`.
+- **New diagnostic or reason code**: both enums are closed. Add to
+  `DIAGNOSTIC_CODES` (and `MANDATORY_CHECK_CODES` if it must fail `--check`)
+  or to `REASON_CODES` in `core/domain/facts/value-ir.ts`, and author the
+  matching spec Delta first — the closure is normative.
+
+## Specification-first
+
+The repository carries `.sdd/config.json`, so `spec/` is the source of truth
+and the gates are not optional: `sdd lint` before implementing, a red test
+carrying `@covers <id>` before the code, `sdd ready` before proposing a commit.
+Promoting a record is a human step (`sdd approve` + `sdd finalize`); the agent
+may not approve its own records. Refresh the baseline in its own commit after
+the landing commit.
+
+Use `sdd record list` / `sdd record get <id>` to navigate `spec/` — do not read
+or hand-edit the spec files.
 
 ## Non-obvious gotchas
 
@@ -109,8 +149,8 @@ For local iteration on the CLI itself: `node dist/cli/index.js <cmd>` after
 - **Test fixtures** under `tests/fixtures/` are parsed by the real
   tree-sitter pipeline — don't introduce syntax errors in them or integration
   tests will surface parse failures, not assertion failures.
-- **Revision provider is git-only.** An older `ArcGitRevisionProvider` used
-  to probe Yandex Arc first; it was removed. If `current()` returns `null`
+- **Revision provider is git-only.** An older two-VCS revision provider used
+  to probe a second VCS first; it was removed. If `current()` returns `null`
   (no `.git/`, or outside a working copy), metadata renders without a
   revision — that's expected, not a bug.
 

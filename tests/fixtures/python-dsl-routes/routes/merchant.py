@@ -1,4 +1,4 @@
-from vendor.sendr_aiohttp import PrefixedUrl
+from vendor.routing_dsl import PrefixedUrl
 
 from handlers.merchant import MerchantOrdersHandler
 

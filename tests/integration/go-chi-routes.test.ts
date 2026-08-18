@@ -62,12 +62,13 @@ describe("go router value identity", () => {
 	});
 
 	/* @covers project-map:BEH-009 */
+	/* @covers project-map:DLT-041 */
 	it("types a router reached through an undeclared helper rather than placing it", async () => {
 		await runCli(workspace.dir, ["build"]);
 
 		expect(await routesOf(workspace.dir)).toContainEqual({
 			method: "GET",
-			path: "/{unknown:dynamic}/loose",
+			path: "{unknown:unanchored_router}",
 			resolution: "unresolved",
 		});
 	});
@@ -114,8 +115,10 @@ describe("a router member that names no route", () => {
 		await runCli(workspace.dir, ["build"]);
 
 		const diagnostics = await diagnosticsOf(workspace.dir);
-		expect(diagnostics.map((entry) => entry.callee)).not.toContain(
-			"github.com/go-chi/chi/v5.Get",
-		);
+		expect(
+			diagnostics
+				.filter((entry) => entry.code === "external_registration_unclassified")
+				.map((entry) => entry.callee),
+		).not.toContain("github.com/go-chi/chi/v5.Get");
 	});
 });

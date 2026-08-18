@@ -157,8 +157,8 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 199ddae4e8d42f30fb5b5f6795ec8f41ea9b9863cbef1c6f149fb44ffcafd14b
-baseline_commit_sha: addfccc54bc06be437efcd8bb96eb8b8745469a9
+freshness_token: 92fab145a3760782db4ff5c013fe1a3bd22959887ac4c6c16bab1bcf7e647939
+baseline_commit_sha: bd642d3df1334f5f78c9178cdc95ab3083245362
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
@@ -437,7 +437,7 @@ lifecycle:
     scope: first-time-approval
 partition_id: project-map
 name: project-map/cli
-version: "2.0.0"
+version: "3.0.0"
 boundary_type: cli
 members:
   - project-map:CTR-001
@@ -457,6 +457,11 @@ notes: |
   SectionId set that `sections` and `--only` accept, so a
   configuration naming either is rejected; see project-map:DLT-020 and
   project-map:DLT-023.
+  v3.0.0 — breaking: the registry version folded into the analysis
+  unit is the adapter-registry digest, so `facts --unit-digest`
+  reports another value; see project-map:DLT-033. A committed facts
+  artifact naming no fingerprint fails check mode with exit 3 rather
+  than reporting drift; see project-map:DLT-034.
 ---
 ```
 
@@ -474,7 +479,7 @@ lifecycle:
     scope: first-time-approval
 partition_id: project-map
 name: project-map/map-document
-version: "3.0.0"
+version: "3.1.0"
 boundary_type: generated_published_artifact
 members:
   - project-map:CTR-003
@@ -485,6 +490,9 @@ notes: |
   humans, by git hooks running check mode, and by coding agents. Its
   section identifiers, section order, and heading texts are external
   identifiers under SDD §8.
+  v3.1.0: a path a resolver could not prove renders as the typed hole it
+  is, rather than as a literal it never reached or as a build that raised;
+  see project-map:DLT-035.
   v3.0.0 — breaking: the document stops reporting how it was generated,
   an anchor names the file without the line, and a ranked collection
   stops printing the count it is ranked on; `metadata` and
@@ -2014,6 +2022,187 @@ notes: |
   of a convenience hook would make every wording change a Delta while
   catching nothing the classification does not already catch. The third
   was rejected because the defect it permits had already happened twice.
+---
+```
+
+```yaml
+---
+id: project-map:OQ-006
+type: Open-Q
+partition_id: project-map
+question: |
+  project-map:DLT-036 bounds the inbound router summary at one
+  statically resolved call edge, inside the three project-map:CTR-007
+  fixes for declared sinks. One edge is what the generated chi server of
+  the validation service needs: the router crosses from the builder into
+  the handler-registering method and no further. A repository whose
+  sub-router is handed down two edges resolves nothing and reports
+  unknown(depth_exceeded). Should the inbound budget be raised to the
+  three the contract already allows?
+options:
+  - option: keep the inbound budget at one edge
+    consequence: |
+      The summary stays inline and needs no worklist, and a body is
+      analyzed at most once per distinct seed. A repository whose router
+      travels two edges keeps a typed hole where a prefix exists.
+  - option: raise the inbound budget to three edges
+    consequence: |
+      Bodies reachable at two and three edges enter the analysis, each
+      under its own seed signature, so the number of analyzed bodies and
+      the number of emitted registrations both grow with the fan-in of
+      every router-taking helper. The termination argument stops resting
+      on a single inline step and needs the state de-duplication
+      project-map:CTR-007 describes.
+blocking: no
+owner: cyberash
+default_if_unresolved: keep the inbound budget at one edge
+notes: |
+  Raised while implementing the summary against the two validation
+  services, not from a reported defect. Neither service needs a second
+  edge today, so the answer has no subject until one does. The trigger
+  is the first repository whose mount prefix is lost at
+  unknown(depth_exceeded) rather than at a helper outside the unit.
+  Closed by project-map:DLT-043, which takes the second option. The
+  trigger arrived measured rather than supposed: the validation service
+  builds its root in a method that hands the router to a per-contract
+  builder, which hands it to the registering wrapper, so ninety-six
+  registrations sit two edges out. At one edge every one of them reached
+  no anchor; at three they compose and ninety-four of them merge with the
+  route their specification declares.
+---
+```
+
+```yaml
+---
+id: project-map:OQ-007
+type: Open-Q
+partition_id: project-map
+question: |
+  project-map:DLT-041 refuses to publish a route that reaches no declared
+  entry point, so a repository that cannot declare one gets no absolute
+  route from its code half at all. A fallback join was considered and
+  excluded: match a served route against an unanchored registration by
+  the path suffix and the handler, and merge when the match is unique.
+  Should that fallback exist for a repository genuinely unable to declare
+  an entry point?
+options:
+  - option: leave it excluded
+    consequence: |
+      A repository unable to declare an entry point sees its
+      registrations as claimed sites with typed paths, and its served
+      routes as the inventory alone. Nothing false is published.
+  - option: add the suffix-and-handler fallback
+    consequence: |
+      Two costs, and both have to be understood before it is reactivated.
+      A served operation carries no handler anchor without
+      generator-specific reconciliation, so joining on the handler
+      reimports the generator naming convention the detector avoids
+      everywhere else. And uniqueness of the suffix match does not make
+      it sound: a specification declaring `GET /api/x` and one unanchored
+      `GET /x` from a router actually mounted at `/internal`, whose route
+      the specification never declared, match uniquely and merge into a
+      fact naming both provenances falsely.
+blocking: no
+owner: cyberash
+default_if_unresolved: leave it excluded
+notes: |
+  Recorded from the decision that closed the route-detection mechanism,
+  not from a reported defect. The reactivation condition is evidence that
+  a declaration is genuinely unreachable for a repository, and the
+  question has no subject until such a repository exists.
+---
+```
+
+```yaml
+---
+id: project-map:OQ-008
+type: Open-Q
+partition_id: project-map
+question: |
+  The semantic core of an endpoint fact is (mechanism, method, route), so
+  two listeners serving the same route on different ports produce one fact
+  rather than two. Adding the entry point to the core would split them, and
+  would also split every fact of a repository that declares one exposure
+  under two prefixes, which project-map:DLT-039 states is two route sets
+  already. Should the artifact model listeners and topology?
+options:
+  - option: leave the core as it is
+    consequence: |
+      A repository serving one route on two ports reports one fact. The
+      core stays a property of the route rather than of the deployment, and
+      a linker joining across repositories keeps joining on the route.
+  - option: model the listener in the core
+    consequence: |
+      Every endpoint fact carries an entry-point identity, so every fact id
+      of every repository changes and the linker gains a component it has
+      to know how to compare across services that name their listeners
+      differently.
+blocking: no
+owner: cyberash
+default_if_unresolved: leave the core as it is
+notes: |
+  Recorded from the decision that closed the route-detection mechanism. The
+  trigger is a real repository serving one method and path on two listeners
+  where the two are genuinely different endpoints; until one exists the
+  split has no subject.
+---
+```
+
+```yaml
+---
+id: project-map:OQ-009
+type: Open-Q
+partition_id: project-map
+question: |
+  A generated server registers its routes as `options.BaseURL + "/path"`
+  where the options type is build-generated and outside the analysis unit.
+  project-map:DLT-036 obtains the zero value of a field a composite
+  literal did not assign from the struct declaration, and that declaration
+  is absent, so the read is unknown(dynamic) and the route is never
+  composed. Should an absent field be read as the empty string from the
+  context it is used in rather than from its declaration?
+options:
+  - option: leave the zero value declaration-based
+    consequence: |
+      The route is not composed, the registration stays unresolved in the
+      facts artifact, and the code half of the cross-check on such a
+      service stays incomplete: its OpenAPI facts gain no router
+      provenance and openapi_route_not_in_code stays at the size of the
+      inventory. The rule that obtains a zero value keeps one source.
+  - option: read the absent field from its use context
+    consequence: |
+      For a keyed literal of an out-of-unit type whose value the existing
+      project-map:DLT-036 lattice already proves, under its current guards
+      and no new ones, a field absent from the literal and used as an
+      operand of `+` with a proven string reads as the empty string. The
+      guard is a closed set of exactly one context; a positional literal
+      is refused because absence is unprovable there, and fmt.Sprintf,
+      path.Join and every numeric kind sit outside it. Each further
+      context costs its own decision.
+      The cost is a Delta to project-map:CTR-007 replacing the
+      declaration-based way of obtaining a zero value, an ASSUMPTION
+      record on well-typedness with its source, its review date and its
+      default, because the premise is wider than this one fold, and
+      surface_impact on project-map:SUR-003 and project-map:SUR-002.
+      The tests it owes: a concatenation with an unassigned field resolves
+      and merges; a Sprintf yields unknown(dynamic); an escape between
+      construction and read yields unknown; a positional literal yields
+      unknown; and a negative oracle on a non-string operand.
+blocking: no
+owner: cyberash
+default_if_unresolved: leave the zero value declaration-based
+notes: |
+  Recorded from the decision that put the map document under
+  project-map:DLT-046, so the mechanism is parked with its design rather
+  than reinvented later. It was not taken then because reading an assigned
+  field needs no type while the zero value of an absent one does, which
+  makes the premise load-bearing, and because its gain is completeness,
+  the lowest of the governing criteria.
+  Reactivate on either of two triggers: a second Go service of the same
+  shape, registrations inside the unit and the options type generated
+  outside it, where the openapi_route_not_in_code volume hides real
+  drift; or a consumer of the facts artifact that needs the merge the
+  fold would prove.
 ---
 ```
 

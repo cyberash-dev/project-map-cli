@@ -1,9 +1,6 @@
 # `project-map-cli` — Detection rework
 
 Specification of the endpoints/interactions detection rework.
-Requirements source of truth:
-`~/Projects/intraservice-map/docs/project-map-detection-rework.md` v4.1;
-implementation mapping: `docs/detection-rework-plan.md`.
 
 This file is declared under `partitions["project-map"].sandbox_paths`.
 That exemption is what lets a record of a phase nobody has started stay
@@ -58,7 +55,7 @@ lifecycle:
     scope: first-time-approval
 partition_id: project-map
 name: project-map/detection-facts
-version: "2.0.0"
+version: "3.0.0"
 boundary_type: generated_published_artifact
 members:
   - project-map:CTR-006
@@ -79,6 +76,10 @@ notes: |
   configuration sections project-map:CTR-004 declares, rather than the
   whole configuration document. Every value of it changes once; see
   project-map:DLT-030.
+  v3.0.0 — breaking: `analyzer_build_digest` and
+  `adapter_registry_digest` are two values computed from two
+  preimages, and the analyzer value covers the provenance of the
+  pinned parser set. Both change once; see project-map:DLT-033.
 ---
 ```
 
@@ -2158,7 +2159,7 @@ partition_id: project-map
 question: |
   Both validation services route the path of an outbound call through a
   helper the sink's base type declares, rather than passing it to the
-  sending member directly. In `yandex_pay_plus` seventeen of the
+  sending member directly. In one of them seventeen of the
   nineteen call sites in its own interactions tree read
   `url=self.endpoint_url('/webapi/Order')`, where `endpoint_url` joins
   the class constant the sink already declares as its target with its
@@ -2195,14 +2196,14 @@ owner: cyberash
 default_if_unresolved: |
   declare the helper on the sink
 notes: |
-  It does not block the spec: only the pay_plus half of the outbound
+  It does not block the spec: only one half of the outbound
   ladder depends on the answer, and the phase proceeds on the default
   under project-map:ASM-003.
   Raised from reading the two validation services before implementing
   the outbound ladder, not from a reported defect. The form is not
   peculiar to one service: a base type that owns both the target and the
   path join is the ordinary shape of a hand-written HTTP client.
-  `midas` does not hit it. Its sending members take a record whose
+  The other does not hit it. Its sending members take a record whose
   fields the caller assigns, which the chain
   `[{arg: 0}, {field: APIMethod}]` already expresses against the record
   lattice of project-map:CTR-007.
@@ -3642,7 +3643,7 @@ as_is: |
   defect everywhere else.
   A serializer escapes prose. Every remaining prose position that
   carries a token therefore renders it altered: the H1 spells a project
-  named yandex_pay_plus as `yandex\_pay\_plus`, and the same happens to
+  named example_service as `example\_service`, and the same happens to
   a bounded-context path, a table name, a model name, a source path, a
   revision, an alembic operation name in a migration summary, and a
   topic a worker subscribes to.
@@ -4278,6 +4279,976 @@ tests_new_behavior: |
 
 ```yaml
 ---
+id: project-map:DLT-033
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-06T12:55:22.411Z
+    change_request: P0 detection fixes
+    scope: first-time-approval
+partition_id: project-map
+title: the two artifact fingerprints are two values, and the analyzer names what it was built from
+target_id: project-map:CTR-008
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: no_longer_guaranteed
+surface_impact:
+  - id: project-map:SUR-001
+    intended_version: "3.0.0"
+  - id: project-map:SUR-003
+    intended_version: "3.0.0"
+as_is: |
+  project-map:CTR-008 declares an `analyzer_build_digest` covering the
+  detector source, the tree-sitter runtime, every language grammar, the
+  specification and YAML parsers and the canonicalizer, and the
+  adapter-registry digest as a separate value. The emission honors
+  neither half.
+  One constant is passed to both artifact fields and to the registry
+  version project-map:CTR-004 folds into the unit digest, so the two
+  values the contract declares separate are one value, and the registry
+  digest covers whatever the analyzer covers.
+  That constant covers the detector tree and the fact IR alone. No
+  grammar, no runtime and no parser version enters it. A machine whose
+  tree-sitter grammar or YAML parser is pinned at another version emits
+  other bytes under an identical fingerprint, so check mode reports
+  ordinary drift where it declares a fingerprint failure, and the
+  two-machine comparison the digest exists to protect does not hold.
+to_be: |
+  The artifact carries two values computed from two preimages, each
+  opened by a label naming the value it is the preimage of, so the two
+  are unequal by construction rather than by their inputs differing.
+  The adapter-registry digest covers every detector module specialized
+  to a target language or a target framework: the node vocabulary of a
+  language, the members and packages of a third-party library, and the
+  routing idioms of a router. The analyzer build digest covers that set,
+  the remaining detector source, the canonicalizer, the fact identity
+  and merge algebra, the specification ingestion and the rendering, and
+  the provenance of the pinned parser set: the name, the resolved
+  version and the registry integrity of the tree-sitter runtime, of
+  every language grammar, and of the YAML parser, read from the
+  committed lockfile when the analyzer is built.
+  The registry version project-map:CTR-004 folds into the unit digest is
+  the adapter-registry digest, which is what that contract names it.
+  The provenance is a declaration of the pinned dependency set and not a
+  hash of the compiled native artifacts. Two checkouts of one lockfile
+  produce one analyzer build digest, which is what check mode requires.
+  One analyzer build digest does not prove one grammar behavior: every
+  grammar compiles natively at install, so the same tarball rebuilt
+  under another toolchain or another runtime ABI carries the same
+  digest.
+migration_note: |
+  Every repository emitting a facts artifact sees `analyzer_build_digest`,
+  `adapter_registry_digest` and `analysis_unit_digest` change once, and
+  `build --check` reports exit 3 until the artifact is rebuilt and
+  committed. No fact id, no diagnostic and no coverage measure changes
+  value.
+tests_old_behavior: |
+  The obligation that two runs over one analysis unit with equal
+  fingerprints emit equal bytes is unchanged, and so is every fact-id
+  and array-order obligation project-map:CTR-008 already carries.
+tests_new_behavior: |
+  A build emits two fingerprints that differ; an edit inside the
+  registry coverage moves both values while an edit to the canonicalizer
+  moves the analyzer value alone; a change to a pinned parser version
+  moves the analyzer value alone; and a lockfile naming no entry for a
+  pinned parser fails the analyzer build rather than digesting a partial
+  set.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-034
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-06T12:55:22.475Z
+    change_request: P0 detection fixes
+    scope: first-time-approval
+partition_id: project-map
+title: an artifact that names no fingerprint is a fingerprint failure, not drift
+target_id: project-map:BEH-006
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: no_longer_guaranteed
+surface_impact:
+  - id: project-map:SUR-001
+    intended_version: "3.0.0"
+as_is: |
+  Exit 3 is declared for a committed artifact whose fingerprint differs
+  from the running analyzer's. The emission reads both fingerprint
+  fields off the committed bytes and maps three cases onto the same
+  absent value: bytes that are not a JSON object, a field that is not
+  present, and a field that is present as something other than a string.
+  That absent value is read as agreement, so a committed artifact naming
+  no analyzer build is reported as ordinary drift with exit 1.
+  It does not reach exit 0 today only because a built artifact always
+  carries both fields, so the byte comparison rejects it through the
+  wrong rule, under the wrong exit code, with a message naming drift
+  where the artifact names nothing.
+to_be: |
+  Exit 3 covers a committed artifact whose analyzer build digest or
+  adapter registry digest differs from the running analyzer's, is not
+  present, or is present as a value that is not a string, and covers a
+  committed artifact whose bytes are not a JSON object.
+  Exit 1 stays with a committed artifact that is absent and with one
+  whose bytes differ while both fingerprints agree. The precedence of
+  project-map:BEH-006 is unchanged: a mandatory diagnostic outranks a
+  fingerprint failure, which outranks a byte difference.
+migration_note: |
+  A consumer whose committed artifact carries both fingerprints as
+  strings sees no change. One whose artifact was truncated, hand-edited
+  or written by a producer predating the fields is reported as a
+  fingerprint failure rather than as drift, and is told to rebuild
+  against the analyzer that owns it rather than to reconcile bytes.
+tests_old_behavior: |
+  Exit 0 on an artifact that agrees, exit 1 on an absent artifact and
+  exit 1 on a byte difference under agreeing fingerprints are unchanged,
+  and so is exit 4 on a mandatory diagnostic outranking both.
+tests_new_behavior: |
+  Deleting either fingerprint field from the committed artifact exits 3;
+  committing bytes that are not a JSON object exits 3; and an artifact
+  differing only in the adapter registry digest exits 3 rather than
+  passing on an equality that held because the two values were one.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-035
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-06T13:29:14.830Z
+    change_request: P0 detection fixes
+    scope: first-time-approval
+partition_id: project-map
+title: a proof path that closes on itself is typed, and an exhausted budget says so
+target_id: project-map:CTR-007
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: no_longer_guaranteed
+surface_impact:
+  - id: project-map:SUR-002
+    intended_version: "3.1.0"
+  - id: project-map:SUR-003
+    intended_version: "3.0.0"
+as_is: |
+  project-map:CTR-007 closes the reason enum on twelve codes and bounds
+  every contributing branch to three statically resolved call edges on
+  one proof path. Two resolvers contradict it.
+  The Python declared-sink resolver follows a path argument back through
+  local bindings and formatting calls with no record of where it has
+  been and no bound on how far it goes. It returns syntax nodes, so the
+  only value it can produce for a path it failed to prove is the one the
+  fold gives an absent node, which is unknown(dynamic). A binding that
+  names itself, which is what `url = url.format(x)` writes, alternates
+  between the same two nodes until the stack is exhausted and the build
+  raises rather than emitting a fact.
+  The Go sink-value fold bounds itself at three constant edges, which is
+  the declared bound, but returns unknown(dynamic) when the bound is
+  reached and returns the same value when it was handed no node at all.
+  A consumer cannot tell a value the analyzer never reached from one it
+  declined to follow further.
+to_be: |
+  Both resolvers carry the stop conditions the enum already names.
+  The Python resolver returns a normalized value rather than a syntax
+  node, and threads one proof path: the set of nodes it has visited and
+  the number of edges it has spent. A node already on the path yields
+  unknown(recursive). The visited check precedes the budget check, so a
+  cycle is reported as a cycle whatever its length. A hop that reaches
+  no node yields unknown(dynamic), because reaching nothing is absence
+  and not exhaustion.
+  The Go sink-value fold consults the next constant edge before the
+  budget, so a value with no further edge yields unknown(dynamic) and a
+  value whose next contributing edge is refused yields
+  unknown(depth_exceeded). The numeric bound is unchanged: three edges
+  resolve and a fourth is refused.
+  Def-use resolution inside one procedure is priced: following a name to
+  the expression that bound it costs one edge, and unwrapping a
+  formatting call to the template it renders costs none, because it
+  reads one expression rather than crossing a definition. This price is
+  a second and stricter bound inside the three-edge interprocedural
+  bound project-map:CTR-007 already fixes, and it is what makes an
+  acyclic chain terminate: a visited set bounds a walk that repeats, and
+  not a walk that is long.
+  Neither resolver branches, so each has exactly one proof path from its
+  anchor. Exploration by minimum interprocedural distance and
+  de-duplication of states reached by a longer path hold without a
+  worklist, and the obligation covering a proof graph carrying a short
+  branch and a long one is not closed by either of them.
+migration_note: |
+  A repository whose Python declared sink builds its path from a
+  self-referential binding stops failing the build and emits the site
+  with its path typed unknown(recursive). One whose path is four local
+  rebindings deep changes from a resolved literal to
+  unknown(depth_exceeded), and its `outbound_resolved` measure falls by
+  that site. One whose Go sink value sits four constant edges from the
+  call changes from unknown(dynamic) to unknown(depth_exceeded).
+  Each of those changes the fact id, because the canonical path is part
+  of the semantic core, and the rendered route cell with it. A
+  repository whose paths resolve within three edges is unchanged.
+tests_old_behavior: |
+  A path resolved within the bound keeps its literal, so the three-edge
+  case is asserted to resolve rather than dropped. A Go value naming no
+  constant still yields unknown(dynamic) through the branch that reaches
+  no further edge.
+tests_new_behavior: |
+  A self-referential binding terminates at exit 0 and types its path
+  unknown(recursive) while still emitting the site with its method and
+  its destination; a fourth def-use edge types the path
+  unknown(depth_exceeded); a fourth Go constant edge yields
+  unknown(depth_exceeded) while a fold handed no node yields
+  unknown(dynamic); and two builds over the recursive fixture emit
+  identical bytes.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-036
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-06T14:17:10.128Z
+    change_request: P0 detection fixes
+    scope: first-time-approval
+partition_id: project-map
+title: a router identity crosses one call edge, and a field the literal left alone is its zero value
+target_id: project-map:CTR-007
+kind: extend
+baseline_version: project-map:BL-001
+compatibility_action: no_longer_guaranteed
+surface_impact:
+  - id: project-map:SUR-002
+    intended_version: "3.1.0"
+  - id: project-map:SUR-003
+    intended_version: "3.0.0"
+as_is: |
+  project-map:CTR-007 applies interprocedural summaries to declared
+  sinks alone, so router value identity is resolved inside one procedure
+  and inside one file. The shape a generated chi server takes puts the
+  registrations in a second procedure that receives the router as a
+  field of a struct parameter, and the idiomatic layout puts the mount
+  in a second file. Both lose the identity, and with it the mount prefix
+  the route is composed from.
+  The record lattice the contract already fixes is unreachable on that
+  path: nothing seeds a record from the composite literal at the call
+  site, so a field the literal assigned carries no value in the callee
+  and a field it left alone carries no value either, although the source
+  language fixes what an unassigned field holds.
+  A generated server guards its router with a comparison against the
+  null literal and constructs a fresh router in the guarded branch. With
+  no value proven for the guarded name, the branch is analyzed as
+  written and the registrations attach to the fresh router, which is
+  mounted nowhere.
+to_be: |
+  Interprocedural summaries apply to declared sinks and to router value
+  identity. The inbound budget is one statically resolved call edge per
+  proof path, inside the three the contract fixes; a second edge yields
+  unknown(depth_exceeded). An edge is followed only where no other rule
+  claims the call, so a member a configuration declares
+  identity-preserving stays fully modeled and is never entered.
+  A record seeded from a composite literal carries, per field, the value
+  the literal assigned. A field the literal did not assign holds the
+  declared zero value of its declared type where the source language
+  fixes one, and unknown(dynamic) where it does not. The declared type
+  is read through the imports of the file that declares the struct, not
+  through those of the file that writes the literal.
+  A branch guarded by a comparison of a proven value against the source
+  language's null literal contributes no binding, no registration and no
+  mount on a proof path where that value is proven. Where the value is
+  not proven, or holds a lost identity, the branch is analyzed as
+  written.
+  Router value identity is resolved over the whole analysis unit rather
+  than one file at a time, because an identity minted in one file is
+  findable only in the index that minted it.
+migration_note: |
+  A repository whose sub-router reaches its registrations through one
+  call edge, or whose mount and registrations sit in different files of
+  one unit, sees those routes gain the prefix they were composed
+  without. The canonical route changes, and with it the fact id and the
+  rendered route cell. A repository whose registrations already sat on
+  the constructed value is unchanged.
+tests_old_behavior: |
+  A registration on the constructed value, one after a declared
+  identity-preserving member, and one inside a grouping closure that
+  shadows the name each keep the route they had. A router reached
+  through a helper the unit cannot resolve keeps its typed hole.
+tests_new_behavior: |
+  A router carried in a composite-literal field through one call edge
+  composes the full route and merges with the served route of the same
+  contract; a string field the literal never assigned contributes the
+  empty segment rather than a hole; the guarded branch contributes
+  nothing; a mount recorded in another file of the unit composes; a
+  second call edge yields unknown(depth_exceeded); and one helper
+  reached from two mount points serves both routes.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-037
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-06T14:17:10.192Z
+    change_request: P0 detection fixes
+    scope: first-time-approval
+partition_id: project-map
+title: a helper the unit can resolve is no longer a helper declared nowhere
+target_id: project-map:BEH-009
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: no_longer_guaranteed
+surface_impact:
+  - id: project-map:SUR-002
+    intended_version: "3.1.0"
+  - id: project-map:SUR-003
+    intended_version: "3.0.0"
+as_is: |
+  project-map:BEH-009 types a fact unresolved where a router value
+  passes through a helper declared nowhere, and emits no fact where the
+  receiver is a field of the router value rather than the router value
+  itself. Both clauses were written when identity was resolved inside
+  one procedure, so they read every helper the configuration does not
+  name as unresolvable and every field read as unprovable.
+  With the summary of project-map:DLT-036 a helper the analysis unit
+  declares is resolvable, and a field of a value proven to be a record
+  carrying a router is provable. The clauses as written would forbid
+  what the summary proves.
+to_be: |
+  A router value passing through a helper the analysis unit cannot
+  resolve, or through one the budget refuses to enter, yields a fact
+  typed unresolved. A router selected dynamically does the same. Their
+  registrations are never merged into the registrations of every other
+  router sharing the same type.
+  The receiver being a field of a value the analysis did not prove to be
+  a record carrying a router yields no fact. A field of a record the
+  analysis did prove carries the identity that record's field holds.
+migration_note: |
+  A repository whose router reaches its registrations through a helper
+  the unit declares sees those registrations attributed to the mounted
+  router rather than typed unresolved. One whose helper lives outside
+  the unit is unchanged.
+tests_old_behavior: |
+  A same-named member called on a receiver that is not a router still
+  yields no fact, and two distinct routers are still never merged by
+  their shared type. A router reached through a helper outside the unit
+  keeps its typed hole.
+tests_new_behavior: |
+  A router carried through a resolvable helper composes its mounted
+  route; a router carried through a second edge is typed
+  unresolved with unknown(depth_exceeded); and a receiver that is a
+  field of a value proven to be no record still yields no fact.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-038
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-06T14:17:10.258Z
+    change_request: P0 detection fixes
+    scope: first-time-approval
+partition_id: project-map
+title: a mount whose sub-router did not resolve is diagnosed, not dropped
+target_id: project-map:CTR-006
+kind: extend
+baseline_version: project-map:BL-001
+compatibility_action: ignore
+surface_impact:
+  - id: project-map:SUR-003
+    intended_version: "3.0.0"
+as_is: |
+  A mount call on a proven router whose mounted argument does not
+  resolve to a router with a proven identity is abandoned: no mount is
+  recorded, no fact is emitted and no diagnostic is raised. The routes
+  that sub-router registers elsewhere compose without the prefix, and
+  nothing in the artifact says a prefix was lost.
+  The closed diagnostic set carries no code for it. Every other boundary
+  the analyzer cannot see through raises one.
+to_be: |
+  The closed diagnostic set gains `router_mount_unresolved`. It is
+  raised where a mount call on a proven router names a sub-router the
+  analysis could not resolve to a proven identity. Its canonical callee
+  is the declared router origin joined to the mount member and its call
+  shape carries the arity and the receiver type, so two spellings of one
+  mount merge onto one core.
+  It is not a mandatory check code. A mandatory code names an authoring
+  error the user fixes by editing a configuration or a marker; a mount
+  the analyzer cannot see through is a shape of code, which the
+  unclassified baseline of project-map:CTR-010 suppresses and
+  `build --strict` ratchets.
+migration_note: |
+  A repository mounting a sub-router the unit cannot resolve sees one
+  new diagnostic row per distinct mount shape. A linker reading an
+  unrecognized diagnostic code treats it as it treats any other. No fact
+  changes, and `build --check` still compares bytes.
+tests_old_behavior: |
+  Every existing diagnostic code keeps its canonical core and its count,
+  and the two mandatory check codes stay the two they were.
+tests_new_behavior: |
+  A mount naming a sub-router built outside the unit emits one
+  `router_mount_unresolved` carrying the declared origin joined to the
+  mount member, emits no endpoint fact for it, and does not fail check
+  mode on the code alone.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-039
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-13T14:51:45.786Z
+    change_request: anchor-first route detection
+    scope: first-time-approval
+partition_id: project-map
+title: a repository declares where its router is served
+target_id: project-map:CTR-005
+kind: extend
+baseline_version: project-map:BL-001
+compatibility_action: ignore
+surface_impact:
+  - id: project-map:SUR-001
+    intended_version: "3.0.0"
+as_is: |
+  `detect.inbound` carries the routers a repository declares and nothing
+  about where a router reaches the outside. The analysis therefore has to
+  infer which router is the composition root, and the inference is
+  under-determined: a router carrying no mount record is either the root
+  or a sub-router mounted where the unit cannot see, and the two are one
+  syntactic form.
+to_be: |
+  `detect.inbound.serve_roots[]` declares the entry points. Each entry
+  carries `function`, the exact import-qualified symbol of a declaration
+  the analysis unit holds; `result`, the index of the returned value that
+  is the router; and `mount`, the absolute prefix that declaration's
+  router is exposed under.
+  `function` names one declaration and carries no glob or suffix syntax.
+  `result` is a non-negative integer and is never implicit. `mount` is
+  required and absolute, and "/" contributes no segment under the path
+  grammar project-map:CTR-007 fixes.
+  Several entries are several exposures: one router declared under
+  "/public" and under "/admin" yields two route sets.
+  Each declared mount applies exactly once. `openapi.serves[].mount`
+  composes the path of a served specification and `serve_roots[].mount`
+  composes the path of a code registration; neither reaches the other.
+  The two are the same class of declared anchor and are not joined by an
+  identifier, because a cross-reference between them adds configuration
+  and proves nothing further.
+  The key is optional and defaults to the empty list, so a configuration
+  that does not carry it validates unchanged.
+migration_note: |
+  A configuration gains an optional key. No existing configuration
+  becomes invalid. What changes for a repository that does not fill it is
+  governed by project-map:DLT-041, not by this record.
+tests_old_behavior: |
+  A configuration declaring routers and no serve root still validates,
+  and every existing selector and identity-preserving obligation of
+  project-map:CTR-005 is unchanged.
+tests_new_behavior: |
+  A `mount` that is not absolute, a negative or fractional `result`, a
+  `function` carrying glob syntax, and two entries agreeing on
+  `(function, result, mount)` are each config-time errors raised before
+  any build; a well-formed entry validates and reaches the analysis.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-040
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-13T14:51:45.848Z
+    change_request: anchor-first route detection
+    scope: first-time-approval
+partition_id: project-map
+title: a route that reaches no declared entry point has a reason of its own
+target_id: project-map:CTR-007
+kind: extend
+baseline_version: project-map:BL-001
+compatibility_action: ignore
+surface_impact:
+  - id: project-map:SUR-003
+    intended_version: "3.0.0"
+as_is: |
+  The closed reason enum carries twelve codes, and none of them names a
+  route whose mount chain is proven as far as the analysis can see and
+  still reaches no declared entry point. Spelling that state
+  `cross_boundary` or `dynamic` would put it in the same class as a value
+  the analysis failed to fold, when it is instead a value the analysis
+  folded and then refused to publish as absolute.
+to_be: |
+  The closed enum gains `unanchored_router`. It names a registration
+  whose router reaches no declared serve root, whatever the analysis
+  proved below that point.
+  A consumer reading an unrecognized reason treats the value as
+  unresolved, so adding a code is a minor bump by the rule
+  project-map:CTR-007 already states.
+migration_note: |
+  A linker pinned to the twelve-code enum sees a thirteenth and treats it
+  as unresolved, which is the behavior the compatibility rule already
+  requires of it.
+tests_old_behavior: |
+  Each of the twelve existing codes is still reached by the fixture that
+  triggers exactly it.
+tests_new_behavior: |
+  A registration on a router that reaches no declared serve root carries
+  `unknown(unanchored_router)` and no other reason.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-041
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-13T14:51:45.913Z
+    change_request: anchor-first route detection
+    scope: first-time-approval
+partition_id: project-map
+title: a router reaching no declared entry point publishes no path at all
+target_id: project-map:BEH-009
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: no_longer_guaranteed
+surface_impact:
+  - id: project-map:SUR-002
+    intended_version: "3.1.0"
+  - id: project-map:SUR-003
+    intended_version: "3.0.0"
+as_is: |
+  A router value carrying no mount record contributes no prefix, so its
+  registrations are published at the registration argument alone and
+  graded resolved. That is correct for a composition root and wrong for a
+  sub-router whose mount the unit cannot see, and the two are one
+  syntactic form: a declaration returning a router that no in-unit call
+  site consumes. The wrong case is silent, which makes it the worst
+  failure the detector has — a fact that reads as proven and names a
+  route the service does not serve.
+to_be: |
+  An absolute route is composed only from a declared serve root, as
+  project-map:BEH-019 fixes. A registration whose router reaches no
+  anchor, or whose chain to the anchor carries an unproven link, is
+  emitted with its path typed `unknown(unanchored_router)` and its source
+  anchor, and it raises the diagnostic of the same name.
+  The partial chain the analysis did prove is evidence and is not
+  emitted. Publishing it would push a suffix match onto the consumer,
+  which is ambiguous wherever two mounts end in the same segments, so the
+  ambiguity is refused at the producer rather than moved.
+  No registration is published at a bare path under any condition.
+migration_note: |
+  Every repository that does not declare `detect.inbound.serve_roots[]`
+  sees each router registration change from an absolute or bare path to
+  `unknown(unanchored_router)`, and grade unresolved. The canonical route
+  is part of the semantic core, so those fact ids change and a consumer
+  re-baselines once.
+  A repository that declares its entry point sees the routes it already
+  had, now composed from the declared mount, and the ones it never had
+  because the chain ended at an unmounted router.
+  The served half of a repository carrying an OpenAPI inventory is
+  untouched: `openapi.serves[].mount` composes it and no anchor is
+  involved.
+tests_old_behavior: |
+  A registration on a router mounted inside the unit under a declared
+  anchor keeps the route it had. A registration on a router whose
+  identity was lost keeps its typed hole, with the reason the loss
+  carried.
+tests_new_behavior: |
+  A fixture declaring no serve root emits every registration with
+  `unknown(unanchored_router)`, one diagnostic per registration, and no
+  bare path; the same fixture with an entry point declared composes the
+  absolute route; and a chain carrying one unproven link is unanchored
+  whole rather than published from the proven part.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-042
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-13T15:07:54.879Z
+    change_request: anchor-first route detection
+    scope: first-time-approval
+partition_id: project-map
+title: the cross-check is computed after the merge, per route
+target_id: project-map:CTR-006
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: no_longer_guaranteed
+surface_impact:
+  - id: project-map:SUR-003
+    intended_version: "3.0.0"
+as_is: |
+  `openapi_route_not_in_code` is computed over the served inventory alone,
+  before the code registrations are merged into it, and it counts an
+  inventory fact whose handler stayed unknown. Every inventory fact carries
+  an unknown handler, because no tier proves one. The diagnostic therefore
+  equals the served-route count of each contract whatever the code half
+  proved, and it aggregates per contract rather than naming the route it is
+  about.
+  There is no diagnostic for the other direction. A registration the
+  analysis placed absolutely, against a repository that declares an
+  inventory, is reported nowhere when the inventory does not declare it.
+to_be: |
+  Both directions are computed after the merge, over the finalized endpoint
+  facts, and each names one route.
+  An endpoint fact whose provenance is the inventory alone raises
+  `openapi_route_not_in_code` with the method and the canonical path as its
+  callee and a count of one. An endpoint fact whose provenance is the code
+  alone raises `router_route_not_in_openapi` the same way, and only where
+  the repository declares an inventory to be measured against.
+  A registration whose path is unknown raises neither. It cannot merge by
+  construction, so reporting it as a route the inventory does not declare
+  would restate what `unanchored_router` already said about the same site.
+  Success is a merged fact carrying both provenances. Neither code is
+  mandatory for check mode and no configuration suppresses either: a
+  suppression axis whose flag goes stale silently disables the cross-check,
+  which is a worse failure than the noise it removes.
+migration_note: |
+  A repository carrying an inventory sees `openapi_route_not_in_code`
+  change from one diagnostic per contract, counting every served route, to
+  one per route the code half did not account for. A repository whose code
+  half accounts for every served route sees the code disappear rather than
+  report a count equal to its inventory. Both are diagnostics, so no fact
+  and no fact id moves.
+tests_old_behavior: |
+  A served route with no code registration is still reported, and a
+  specification the reader cannot open still raises
+  `openapi_spec_unreadable` from the ingest.
+tests_new_behavior: |
+  A fixture whose inventory and code agree raises neither code; one whose
+  inventory declares a route the code does not raises
+  `openapi_route_not_in_code` naming that route; one whose code proves a
+  route the inventory does not raises `router_route_not_in_openapi`; and a
+  fixture whose registrations are unanchored raises `unanchored_router`
+  alone.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-043
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-13T18:08:40.585Z
+    change_request: anchor-first route detection
+    scope: first-time-approval
+partition_id: project-map
+title: the inbound summary spends the same three edges every other proof path may
+target_id: project-map:CTR-007
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: no_longer_guaranteed
+surface_impact:
+  - id: project-map:SUR-002
+    intended_version: "3.1.0"
+  - id: project-map:SUR-003
+    intended_version: "3.0.0"
+as_is: |
+  project-map:DLT-036 bounded the inbound router summary at one statically
+  resolved call edge, inside the three project-map:CTR-007 fixes. One edge
+  was chosen because it covered the shape the validation service was read
+  through at the time, and project-map:OQ-006 recorded the question of
+  raising it with an explicit trigger: the first repository whose
+  sub-router sits two edges from the entry point.
+  That repository is the validation service itself, measured rather than
+  supposed. Its root is built in a method, that method hands the router to
+  a per-contract builder, and the builder hands it to the registering
+  wrapper. Ninety-six registrations therefore sit two edges from the body
+  that constructs their router, and at one edge every one of them reaches
+  no anchor and publishes no path.
+to_be: |
+  The inbound summary spends up to three statically resolved call edges on
+  one proof path, which is the bound project-map:CTR-007 already fixes for
+  every other resolver. A fourth edge is refused and its seed carries
+  unknown(depth_exceeded), as before.
+  Nothing else changes: a body is still entered at most once per distinct
+  seed signature, a repeated state is still refused, and the site is still
+  claimed at the bound rather than dropped.
+migration_note: |
+  A repository whose router crosses two or three call edges sees those
+  registrations gain the prefix they were composed without, so their
+  canonical route, their fact id and their rendered cell all change once.
+  A repository whose router crosses at most one edge is unchanged.
+  The analysis enters more bodies, each under its own seed signature, so
+  the work grows with the fan-in of every helper that takes a router. On
+  the validation service, thirteen hundred Go files, the difference was
+  inside the noise of one run.
+tests_old_behavior: |
+  A body reached by no edge is still walked once with its router unproven,
+  and a repeated seed still refuses re-entry.
+tests_new_behavior: |
+  A registration two call edges from the router's construction composes its
+  absolute route; one four edges away is refused and carries
+  unknown(depth_exceeded) into the body it seeds.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-044
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-13T18:24:49.478Z
+    change_request: anchor-first route detection
+    scope: first-time-approval
+partition_id: project-map
+title: a state reached by a longer path never survives the shorter one
+target_id: project-map:CTR-007
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: no_longer_guaranteed
+surface_impact:
+  - id: project-map:SUR-002
+    intended_version: "3.1.0"
+  - id: project-map:SUR-003
+    intended_version: "3.0.0"
+as_is: |
+  project-map:DLT-043 says the inbound summary enters a body at most once
+  per distinct seed signature. That sentence is wrong against the contract
+  it amends: project-map:CTR-007 explores states by minimum
+  interprocedural distance and de-duplicates a state reached by a LONGER
+  path, and a key carrying only the seed lets the first arrival win
+  whatever its distance.
+  At one edge the error could not show, because every arrival was at the
+  same distance. At three it can. A helper reached from the entry point
+  both directly and through a chain is entered at whichever distance the
+  walk reaches first; when that is the longer one, the calls below it are
+  refused for budget and the shorter arrival is suppressed as a repeat. A
+  site that is provable then reports unanchored, and reordering two
+  independent calls changes the answer.
+  The same asymmetry survives one step further: a walk that already
+  claimed a site along the longer path has emitted its registration before
+  the shorter path runs, so the site is reported twice.
+to_be: |
+  The de-duplication key of the inbound summary carries the
+  interprocedural distance alongside the seed. A body already entered at a
+  distance no greater than the current one is refused as a repeat; one
+  entered only at a greater distance is entered again, and the nearer
+  walk supersedes the farther.
+  A site claimed along two paths keeps the claim of the least distance, so
+  it is reported once and reported as the nearer walk proved it.
+  A mount is recorded once per site: a body re-entered along a shorter path
+  re-walks its mounts, and an appended duplicate would read as a value
+  mounted twice and unanchor everything below it.
+  The result no longer depends on the order two independent calls are
+  written in, which is what project-map:CTR-007 requires of every resolver.
+migration_note: |
+  A repository whose router-taking helper is reached from more than one
+  depth sees the sites below it resolve where they reported unanchored,
+  and sees one fact where it had two. A repository whose helpers are each
+  reached at one distance is unchanged.
+tests_old_behavior: |
+  A four-edge chain is still refused, a two-edge chain still resolves, and
+  a repeated arrival at the same distance is still entered once.
+tests_new_behavior: |
+  A helper written so the longer call precedes the shorter one resolves its
+  site and emits it once, with no diagnostic.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-045
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-17T12:17:48.182Z
+    change_request: structural python serve anchor
+    scope: first-time-approval
+partition_id: project-map
+title: the declaration-DSL form composes from an anchor like every other form
+target_id: project-map:BEH-008
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: no_longer_guaranteed
+surface_impact:
+  - id: project-map:SUR-002
+    intended_version: "3.1.0"
+  - id: project-map:SUR-003
+    intended_version: "3.0.0"
+as_is: |
+  project-map:DLT-041 fixed that an absolute route is composed only from
+  an anchor, and named the failure it removes: a registration published
+  at a path the service does not serve, graded resolved and therefore
+  silent. It was landed for the value-identity form of
+  project-map:BEH-009 alone.
+  The declaration-DSL form of project-map:BEH-008 still composes a route
+  for every registration the unit holds, whether an application collects
+  it or not. A route table that no application references, one left
+  behind by a deleted deployment or written for a sibling service, is
+  published as served and graded resolved. That is the same defect
+  project-map:DLT-041 names, in the form it did not reach, so the rule
+  reads as general while half the detector does not honour it.
+to_be: |
+  A registration of the declaration-DSL form composes an absolute route
+  only where project-map:BEH-021 anchors it. One that no serving call
+  reaches is emitted with its path typed `unknown(unanchored_router)`
+  and its source anchor, and raises the diagnostic of the same name,
+  which is what project-map:DLT-041 already fixes for the other form.
+  The prefix the registration's own form declares is composed below the
+  anchor and is unchanged.
+  The partial path the analysis did prove is evidence and is not
+  emitted, on the same ground project-map:DLT-041 gives: a suffix
+  pushed onto the consumer is ambiguous wherever two collections end in
+  the same segments.
+migration_note: |
+  A repository whose route collections are held by an application the
+  analysis unit reaches sees the routes it already had, unchanged in
+  path and grade.
+  A repository whose serving entry point lies outside the analysis unit,
+  a separate deployment module being the ordinary case, sees every
+  registration become `unknown(unanchored_router)` and grade unresolved.
+  The canonical route is part of the semantic core, so those fact ids
+  change and a consumer re-baselines once. Widening the unit to hold the
+  serving module restores them.
+  A repository carrying an OpenAPI inventory is untouched on the served
+  half: `openapi.serves[].mount` composes it and no anchor is involved.
+tests_old_behavior: |
+  For a collection an anchored application holds, the declared prefix is
+  still composed, an inherited verb is still taken across modules, and a
+  same-named class originating elsewhere still produces no fact.
+tests_new_behavior: |
+  A collection no application holds emits every registration with
+  `unknown(unanchored_router)`, one diagnostic per registration, and no
+  bare path; the same collection referenced by an anchored application
+  composes its absolute route.
+---
+```
+
+```yaml
+---
+id: project-map:DLT-046
+type: Delta
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-18T09:25:42.870Z
+    change_request: render only a route the analysis proved
+    scope: first-time-approval
+partition_id: project-map
+title: the endpoints section renders only a route the analysis proved
+target_id: project-map:CTR-003
+kind: replace
+baseline_version: project-map:BL-001
+compatibility_action: no_longer_guaranteed
+surface_impact:
+  - id: project-map:SUR-002
+    intended_version: "3.1.0"
+as_is: |
+  project-map:CTR-003 has the two detection ids render the facts of
+  project-map:CTR-006, and project-map:DLT-035 has a path no resolver
+  proved reach the document as the typed hole it is. For the dependency
+  section that pairing is right: the row names an owner and a call the
+  reader can go and look at, and the hole says what the analyzer could
+  not follow.
+  For the endpoints section it defeats what the section is for. A row
+  whose route is a hole names no route: it cannot be read, cannot be
+  compared against a served specification, and cannot be looked up. On a
+  service whose generated server declares its options type outside the
+  analysis unit, a third of the rows are that: ninety-eight of two
+  hundred eighty-nine on the validation service, each one a registration
+  the analyzer located and a route it never composed.
+  The reader of this document is ordinarily a coding agent, and a
+  document where a third of one table names nothing costs more to
+  discount than it pays to carry.
+to_be: |
+  The endpoints section renders an endpoint fact whose route the analysis
+  proved, which is a path value that is a literal. A fact whose path
+  carries a typed hole stays exclusively in the artifact
+  project-map:GA-002 emits, where the linker and check mode already read
+  it. Where no fact has a proven route the section renders neither a
+  heading nor a body, as an empty collection already does.
+  The method, the provenance and the contracts do not enter the choice. A
+  row whose route is proven and whose method is a hole renders, because
+  the route is what the section is read for and the method is a column of
+  it; a repository whose handler declarations sit outside the analysis
+  unit keeps the routes it serves.
+  Selection is on the value the row carries and not on the derived
+  resolution, which project-map:DLT-024 keeps out of this document
+  altogether.
+  The dependency section is untouched: a hole still renders there, and
+  the guarantee project-map:DLT-035 records holds for it unchanged.
+migration_note: |
+  A consumer sees fewer rows under `HTTP endpoints`: exactly those whose
+  route the analyzer never composed. The rows that remain are unchanged,
+  in the same order, with the same cells, so a diff is a deletion and
+  never a rewrite. The validation service drops from two hundred
+  eighty-nine rows to one hundred eighty-nine; a repository whose paths
+  all resolve sees no change at all.
+  The facts artifact does not change by one byte: the refused facts,
+  their provenance, their evidence and every diagnostic they raise are
+  still emitted, and check mode still compares them.
+  The note project-map:SUR-002 carries for v3.1.0, that a path a resolver
+  could not prove renders as the typed hole it is, holds from here for
+  the dependency section alone.
+tests_old_behavior: |
+  A proven route still renders with its method, provenance and contracts,
+  and the dependency section still renders a typed hole in its own route
+  cell.
+tests_new_behavior: |
+  A registration reaching no anchor does not render while a proven one
+  beside it does; a unit whose every registration is unproven renders no
+  endpoints heading; and a row whose route is proven renders even where
+  its method is a hole.
+---
+```
+
+```yaml
+---
 id: project-map:BEH-018
 type: Behavior
 lifecycle:
@@ -4347,6 +5318,273 @@ test_obligation:
   failure_scenarios:
     - a configuration-time failure reported as a stale document
     - a non-zero code that lets the commit through
+---
+```
+
+```yaml
+---
+id: project-map:BEH-019
+type: Behavior
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-13T14:51:45.979Z
+    change_request: anchor-first route detection
+    scope: first-time-approval
+partition_id: project-map
+title: detection — a declared serve root anchors the routers it reaches
+given: |
+  - a configuration declaring `detect.inbound.serve_roots[]` per
+    project-map:CTR-005
+  - an analysis unit holding the declaration each entry names
+when: detection runs over the analysis unit
+then: |
+  each entry resolves to exactly one declaration, and the value that
+  declaration returns at the declared `result` index is followed to the
+  router value it holds. The follow crosses at most three statically
+  resolved call edges on one proof path, which is the bound
+  project-map:CTR-007 fixes; a call whose callee the unit resolves is
+  entered and its own returned value is followed in turn.
+  A router value the follow proves is anchored at the declared `mount`.
+  Every router reachable from it through the proven mount graph is
+  anchored with it, and a registration on any of them composes an
+  absolute route from the declared mount downward.
+  A declared anchor is a trust input of the same class as
+  `identity_preserving`: it names a position, and the analysis proves the
+  value at that position rather than inferring one from a name. It is not
+  a nominal heuristic under project-map:INV-004, and no route is composed
+  from the anchor's spelling.
+negative_cases:
+  - the symbol resolves to no declaration, or to declarations in more
+    than one package of the unit => diagnostic serve_root_unresolved, and
+    no router is anchored by that entry
+  - the declared `result` index lies outside the declaration's result
+    arity => diagnostic serve_root_unresolved
+  - the followed value carries a lost identity, or the follow reaches its
+    bound => diagnostic serve_root_unresolved
+  - a declaration returning a value that is not a router => diagnostic
+    serve_root_unresolved
+out_of_scope:
+  - what a registration reaching no anchor emits, which
+    project-map:DLT-041 governs
+  - the reconciliation of an anchored route against a served
+    specification, which project-map:CTR-006 governs
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-002
+  - project-map:POL-003
+test_obligation:
+  predicate: |
+    A fixture whose declared entry point returns its router directly
+    anchors it; one whose entry point returns the result of a call two
+    edges from the construction anchors it too; one naming a declaration
+    the unit does not hold raises serve_root_unresolved and fails check
+    mode; and a fixture declaring no entry point anchors nothing.
+  test_template: integration
+  boundary_classes:
+    - an entry point returning a constructed router directly
+    - an entry point returning a call, one edge from the construction
+    - an entry point returning a call, two edges from the construction
+    - a symbol naming no declaration in the unit
+    - a result index outside the declaration's arity
+    - an entry point whose returned value is not a router
+  failure_scenarios:
+    - a router anchored because the declaration's name reads like an
+      entry point rather than because the value was proven
+    - an entry point four edges from the construction silently anchored
+    - serve_root_unresolved raised without failing check mode
+---
+```
+
+```yaml
+---
+id: project-map:BEH-020
+type: Behavior
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-13T15:24:53.711Z
+    change_request: anchor-first route detection
+    scope: first-time-approval
+partition_id: project-map
+title: detection — the standard-library multiplexer is a router with its own pattern grammar
+given: |
+  - an analysis unit holding a value constructed by the `net/http`
+    multiplexer constructor, resolved through import provenance
+  - a configuration declaring that origin under
+    `detect.inbound.routers[]`
+when: detection runs over the analysis unit
+then: |
+  a registration on that value is claimed, and its pattern argument is
+  read under the grammar the multiplexer itself fixes: an optional method,
+  an optional host, and a path, in that order.
+  A pattern naming a method emits that method. A pattern naming `GET`
+  emits two facts, one for `GET` and one for `HEAD`, because the
+  multiplexer answers both. A pattern naming no method leaves the method
+  typed unknown and is never expanded into a finite set the source did not
+  write.
+  A pattern naming a host types the path unknown, because the route such a
+  pattern names is not the path alone. The site is still claimed.
+  A registration whose handler argument the analysis proves to be a router
+  value is a mount of that value under the pattern, and the value's own
+  registrations compose below it.
+  The multiplexer is a router value like any other: its registrations
+  compose an absolute route only by reaching a declared serve root, per
+  project-map:BEH-019 and project-map:DLT-041.
+negative_cases:
+  - a same-named member on a receiver the analysis did not prove to be a
+    multiplexer => no fact
+  - a pattern the fold cannot prove => the path is typed and the site is
+    still claimed
+out_of_scope:
+  - the precedence rules the multiplexer applies between two patterns that
+    both match a request, which are a routing-time property and not a
+    property of the registration
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-002
+  - project-map:POL-003
+test_obligation:
+  predicate: |
+    A fixture registering `GET /x` emits a GET fact and a HEAD fact on one
+    path; one registering `/y` with no method emits one fact whose method
+    is typed unknown; one registering a pattern carrying a host emits a
+    fact whose path is typed; one mounting a router under a pattern
+    composes the routes below it; and every one of them is unanchored
+    until a serve root is declared.
+  test_template: integration
+  boundary_classes:
+    - a pattern naming a method
+    - a pattern naming GET
+    - a pattern naming no method
+    - a pattern naming a host
+    - a handler argument proven to be a router
+    - a same-named member on a receiver that is not a multiplexer
+  failure_scenarios:
+    - a method-less pattern expanded into an invented set of verbs
+    - a host-carrying pattern published as though the path were the route
+    - GET emitted without HEAD
+---
+```
+
+```yaml
+---
+id: project-map:BEH-021
+type: Behavior
+lifecycle:
+  status: approved
+  approval_record:
+    owner_role: tech-lead
+    approver_identity: cyberash
+    timestamp: 2026-08-17T12:17:48.119Z
+    change_request: structural python serve anchor
+    scope: first-time-approval
+partition_id: project-map
+title: detection — a serving call anchors the application it is handed
+given: |
+  - an analysis unit holding a call whose callee resolves, by import
+    provenance, to the serving entry point of a built-in framework
+    adapter
+when: detection runs over the analysis unit
+when_not: the unit holds no such call
+then: |
+  the value handed to the call as its application argument is resolved
+  inside the enclosing body to the application classes it holds: a
+  constructor call names one directly, and a name the body binds names
+  every class its bindings construct. A body binding that name in
+  several branches serves each of them, so every branch contributes an
+  anchor and none of them wins over another.
+  Each anchored class carries its route collections in the attributes
+  its own body binds and in those a base class binds under a name its
+  own body does not, first binding in method-resolution order winning,
+  which is the binding Python reads. A class attribute is
+  folded to the registrations it transitively contains through a tuple
+  or list literal, a splat of either, a concatenation of two of them, a
+  name bound at module level in the same module or in a module the unit
+  holds under an import, and an attribute of another class the unit
+  holds. The fold carries a visited set, so a cycle terminates instead
+  of recurring.
+  A registration reached this way is anchored at the root, which is what
+  the serving entry point exposes, and its route is composed from that
+  root downward by project-map:BEH-008.
+  This anchor is derived rather than declared, and it is structural in
+  the sense project-map:INV-004 requires: the serving entry point is
+  recognized by the module its callee resolves to and never by its
+  spelling, and no route is composed from the name of a class or of an
+  attribute.
+negative_cases:
+  - the application argument resolves to no class the unit holds =>
+    diagnostic serve_root_unresolved, and that call anchors nothing
+  - a class attribute holding an expression outside the folded forms =>
+    that expression contributes no anchored registration, and the
+    registrations it holds report as project-map:DLT-045 fixes
+  - a unit holding no serving call anchors nothing, and no diagnostic
+    names an entry point the repository never declared
+out_of_scope:
+  - the anchor a configuration declares, which project-map:BEH-019
+    governs
+  - what a registration reaching no anchor emits, which
+    project-map:DLT-045 governs
+  - the reconciliation of an anchored route against a served
+    specification, which project-map:CTR-006 governs
+applicability:
+  invariant_to_all_axes: true
+concurrency_model:
+  actor_concurrency: single_per_process
+  read_consistency: strong
+  idempotency: none
+  time_source: none
+data_scope: all_data
+policy_refs:
+  - project-map:POL-002
+  - project-map:POL-003
+test_obligation:
+  predicate: |
+    A fixture whose serving call is handed a constructor directly
+    anchors that application's collections; one whose serving call is
+    handed a name bound in two branches anchors both; a collection
+    reached only through an inherited attribute, through a
+    concatenation, and through a splat is anchored in each of the three;
+    a collection held by a base attribute every served class rebinds is
+    anchored by none, and neither is one no application holds; and a
+    serving call handed a value naming no class raises
+    serve_root_unresolved.
+  test_template: integration
+  boundary_classes:
+    - a serving call handed a constructor call
+    - a serving call handed a name bound in more than one branch
+    - a collection reached through an attribute a base class binds and
+      the served class does not
+    - a collection held by an attribute a served class rebinds over its
+      base, which the base binding no longer reaches
+    - a collection reached through a concatenation of two attributes
+    - a collection spliced into another by a splat
+    - a collection no anchored application holds
+    - a serving call whose argument names no class of the unit
+  failure_scenarios:
+    - a collection anchored because its name reads like a route table
+      rather than because an application was proven to hold it
+    - one branch of a multi-branch binding silently winning over the
+      others
+    - a cycle between two class attributes recurring without terminating
 ---
 ```
 

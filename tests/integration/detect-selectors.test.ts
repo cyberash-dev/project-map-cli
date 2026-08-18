@@ -26,7 +26,7 @@ const ROUTER = [
 	"detect:",
 	"  inbound:",
 	"    routers:",
-	'      - dsl: "sendr_aiohttp.PrefixedUrl"',
+	'      - dsl: "routing_dsl.PrefixedUrl"',
 	"        path_arg: { kind: arg, selector: 0 }",
 	'        prefix_from: { kind: class_const, selector: "PREFIX" }',
 	"        verb_from:",
@@ -50,7 +50,7 @@ describe("detect configuration", () => {
 		const config = await loadYaml(workspace.dir, HEAD + ROUTER);
 
 		const router = config.detect.inbound.routers[0];
-		expect(router?.dsl).toBe("sendr_aiohttp.PrefixedUrl");
+		expect(router?.dsl).toBe("routing_dsl.PrefixedUrl");
 		expect(router?.pathArg).toEqual([{ kind: "arg", selector: 0 }]);
 		expect(router?.prefixFrom).toEqual([
 			{ kind: "class_const", selector: "PREFIX" },

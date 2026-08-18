@@ -9,6 +9,8 @@ export type GoTypeDeclaration = {
 	readonly name: string;
 	/** Types embedded without a field name, which is how Go composes behavior. */
 	readonly embedded: readonly string[];
+	/** Named fields with their declared type as written in this package. */
+	readonly fields: ReadonlyMap<string, string>;
 };
 
 export type GoDeclarationIndex = {
@@ -18,6 +20,13 @@ export type GoDeclarationIndex = {
 	resultOf(name: string): string | null;
 	/** The declaration of a package-level function, for a constructor summary. */
 	functionOf(name: string): SyntaxNode | null;
+	/** The declaration of a method, keyed on its receiver's unpointered type. */
+	methodOf(receiverType: string, name: string): SyntaxNode | null;
+	/**
+	 * The file a declaration was read from, keyed the way it was stored: a
+	 * syntax node is a fresh wrapper on every access, so it cannot be a key.
+	 */
+	fileOf(key: string): string | null;
 };
 
 export function goDeclarationIndex(
@@ -27,19 +36,50 @@ export function goDeclarationIndex(
 	const types = new Map<string, GoTypeDeclaration>();
 	const results = new Map<string, string>();
 	const functions = new Map<string, SyntaxNode>();
+	const methods = new Map<string, SyntaxNode>();
+	const origins = new Map<string, string>();
 	for (const file of files) {
 		const root = rootOf(file.tree);
 		readSpecs(root, "const_spec", constants);
 		readSpecs(root, "var_spec", constants);
 		readTypes(root, types);
 		readFunctions(root, results, functions);
+		readMethods(root, methods);
+		for (const key of functions.keys()) {
+			origins.set(`func:${key}`, origins.get(`func:${key}`) ?? file.relPath);
+		}
+		for (const key of methods.keys()) {
+			origins.set(
+				`method:${key}`,
+				origins.get(`method:${key}`) ?? file.relPath,
+			);
+		}
 	}
 	return {
 		constOf: (name) => constants.get(name) ?? null,
 		typeOf: (name) => types.get(name) ?? null,
 		resultOf: (name) => results.get(name) ?? null,
 		functionOf: (name) => functions.get(name) ?? null,
+		methodOf: (receiverType, name) =>
+			methods.get(`${receiverType}.${name}`) ?? null,
+		fileOf: (key) => origins.get(key) ?? null,
 	};
+}
+
+function readMethods(root: SyntaxNode, into: Map<string, SyntaxNode>): void {
+	for (const declaration of root.namedChildren) {
+		if (declaration.type !== "method_declaration") {
+			continue;
+		}
+		const name = declaration.childForFieldName("name");
+		const receiver = declaration
+			.childForFieldName("receiver")
+			?.namedChildren[0]?.childForFieldName("type");
+		if (name === null || receiver === null || receiver === undefined) {
+			continue;
+		}
+		into.set(`${unpointer(receiver.text)}.${name.text}`, declaration);
+	}
 }
 
 function readSpecs(
@@ -66,8 +106,27 @@ function readTypes(
 		if (name === null || body === null) {
 			continue;
 		}
-		into.set(name.text, { name: name.text, embedded: embeddedOf(body) });
+		into.set(name.text, {
+			name: name.text,
+			embedded: embeddedOf(body),
+			fields: fieldsOf(body),
+		});
 	}
+}
+
+function fieldsOf(body: SyntaxNode): ReadonlyMap<string, string> {
+	const found = new Map<string, string>();
+	for (const field of findAll(
+		body,
+		(node) => node.type === "field_declaration",
+	)) {
+		const name = field.childForFieldName("name");
+		const type = field.childForFieldName("type");
+		if (name !== null && type !== null) {
+			found.set(name.text, type.text);
+		}
+	}
+	return found;
 }
 
 /**

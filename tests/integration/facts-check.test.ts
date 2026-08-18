@@ -23,6 +23,17 @@ function codesOf(artifact: unknown): string[] {
 	);
 }
 
+function digestAt(artifact: unknown, key: string): string {
+	if (typeof artifact !== "object" || artifact === null) {
+		throw new Error("the artifact is not an object");
+	}
+	const found: unknown = Reflect.get(artifact, key);
+	if (typeof found !== "string") {
+		throw new Error(`the artifact carries no ${key}`);
+	}
+	return found;
+}
+
 async function tamper(
 	dir: string,
 	edit: (document: Record<string, unknown>) => void,
@@ -79,10 +90,20 @@ describe("build --check over the facts artifact", () => {
 	});
 
 	/* @covers project-map:DLT-006 */
+	/* @covers project-map:BEH-006 */
 	it("exits 3 when the committed artifact names another analyzer build", async () => {
 		await tamper(workspace.dir, (document) => {
 			document["analyzer_build_digest"] = `sha256:${"0".repeat(64)}`;
 			document["coverage"] = { inbound: "drifted too" };
+		});
+
+		expect(await runCli(workspace.dir, ["build", "--check"])).toBe(3);
+	});
+
+	/* @covers project-map:BEH-006 */
+	it("exits 3 when the committed artifact names another adapter registry", async () => {
+		await tamper(workspace.dir, (document) => {
+			document["adapter_registry_digest"] = `sha256:${"0".repeat(64)}`;
 		});
 
 		expect(await runCli(workspace.dir, ["build", "--check"])).toBe(3);
@@ -97,6 +118,53 @@ describe("build --check over the facts artifact", () => {
 		);
 
 		expect(await runCli(workspace.dir, ["build", "--check"])).toBe(0);
+	});
+});
+
+describe("the fingerprints build --check reads", () => {
+	let workspace: Workspace;
+
+	beforeEach(async () => {
+		workspace = await createWorkspace("python-outbound");
+		await runCli(workspace.dir, ["build"]);
+	});
+	afterEach(async () => {
+		await workspace.dispose();
+	});
+
+	/* @covers project-map:CTR-008 */
+	/* @covers project-map:DLT-033 */
+	it("names its analyzer build and its adapter registry as two values", async () => {
+		const artifact: unknown = JSON.parse(
+			await readFile(path.join(workspace.dir, ARTIFACT), "utf8"),
+		);
+		const analyzer = digestAt(artifact, "analyzer_build_digest");
+		const registry = digestAt(artifact, "adapter_registry_digest");
+
+		expect(analyzer).toMatch(/^sha256:[0-9a-f]{64}$/);
+		expect(registry).toMatch(/^sha256:[0-9a-f]{64}$/);
+		expect(analyzer).not.toBe(registry);
+	});
+
+	/* @covers project-map:BEH-006 */
+	/* @covers project-map:DLT-034 */
+	it.each(["analyzer_build_digest", "adapter_registry_digest"])(
+		"exits 3 when the committed artifact names no %s",
+		async (field) => {
+			await tamper(workspace.dir, (document) => {
+				Reflect.deleteProperty(document, field);
+			});
+
+			expect(await runCli(workspace.dir, ["build", "--check"])).toBe(3);
+		},
+	);
+
+	/* @covers project-map:BEH-006 */
+	/* @covers project-map:DLT-034 */
+	it("exits 3 when the committed artifact is not a JSON object", async () => {
+		await writeFile(path.join(workspace.dir, ARTIFACT), "not json\n", "utf8");
+
+		expect(await runCli(workspace.dir, ["build", "--check"])).toBe(3);
 	});
 });
 

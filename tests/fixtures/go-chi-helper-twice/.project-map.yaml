@@ -1,0 +1,26 @@
+project:
+  name: go-chi-helper-twice
+  language: go
+
+repository_identity: sample/go-chi-helper-twice
+
+sections: []
+
+analysis_unit:
+  sources:
+    include: ["**/*.go"]
+
+detect:
+  inbound:
+    serve_roots:
+      - function: "internal/api.Build"
+        result: 0
+        mount: "/"
+    routers:
+      - dsl: "github.com/go-chi/chi/v5"
+        path_arg: { kind: arg, selector: 0 }
+        identity_preserving: []
+
+output:
+  markdown: PROJECT_MAP.md
+  facts: .project-map/facts.json

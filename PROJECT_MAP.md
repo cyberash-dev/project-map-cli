@@ -105,6 +105,18 @@ Fields:
 - `storage: StorageConfig`
 - `interactions: InteractionsConfig`
 
+### `Diagnostic`
+
+- Source: `src/core/domain/facts/diagnostic.ts`
+
+Fields:
+
+- `code: DiagnosticCode`
+- `canonical_callee: string`
+- `canonical_call_shape: CallShape`
+- `evidence: readonly Evidence[]`
+- `count: number`
+
 ### `OutboundOperationFact`
 
 - Source: `src/core/domain/facts/fact.ts`
@@ -149,18 +161,6 @@ Fields:
 - `source: SourceLocation`
 - `members: readonly string[]`
 
-### `Diagnostic`
-
-- Source: `src/core/domain/facts/diagnostic.ts`
-
-Fields:
-
-- `code: DiagnosticCode`
-- `canonical_callee: string`
-- `canonical_call_shape: CallShape`
-- `evidence: readonly Evidence[]`
-- `count: number`
-
 ### `SourceAnchor`
 
 - Source: `src/core/domain/facts/anchor.ts`
@@ -200,6 +200,11 @@ Fields:
 - `resolution: Resolution`
 - `evidence: readonly Evidence[]`
 
+### `GoPackageIndex`
+
+- Source: `src/features/detect/index/go/packages.ts`
+- Methods: `at, forImport, matchesFor`
+
 ### `Worker`
 
 - Source: `src/core/domain/project-map.ts`
@@ -221,6 +226,11 @@ Fields:
 - `model: string`
 - `source: SourceLocation`
 
+### `PythonImportIndex`
+
+- Source: `src/features/detect/index/python/imports.ts`
+- Methods: `originOf, moduleOf, isShadowedLocally`
+
 ### `Field`
 
 - Source: `src/core/domain/project-map.ts`
@@ -241,11 +251,6 @@ Fields:
 - `tables: readonly string[]`
 - `summary: string`
 - `source: SourceLocation`
-
-### `PythonImportIndex`
-
-- Source: `src/features/detect/index/python/imports.ts`
-- Methods: `originOf, moduleOf, isShadowedLocally`
 
 ### `ProjectMap`
 
@@ -272,6 +277,11 @@ Fields:
 
 - Source: `src/core/ports/filesystem.port.ts`
 - Methods: `write, ensureDir`
+
+### `PythonDeclarationIndex`
+
+- Source: `src/features/detect/index/python/declarations.ts`
+- Methods: `classOf, classes`
 
 ### `BoundedContext`
 
@@ -328,24 +338,6 @@ Fields:
 
 - Source: `src/features/build/build.use-case.ts`
 - Methods: `constructor, execute, buildExtractionContext, runExtractors, assembleMap, parseAll, loadOverview`
-
-### `ConfigTimeError`
-
-- Source: `src/core/domain/config-time-error.ts`
-- Inherits: `Error`
-- Methods: `constructor`
-
-### `DeclaredRouter`
-
-- Source: `src/core/ports/config.port.ts`
-
-Fields:
-
-- `dsl: string`
-- `pathArg: Selector`
-- `prefixFrom: Selector | null`
-- `verbFrom: VerbSource | null`
-- `identityPreserving: readonly IdentityPreserving[]`
 
 ## Enums
 

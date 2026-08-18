@@ -22,17 +22,31 @@ import {
 	pythonImportIndex,
 	type PythonImportIndex,
 } from "../index/python/imports.js";
+import type { Diagnostic } from "../../../core/domain/facts/diagnostic.js";
+import { type DiagnosticSite, mergeDiagnostics } from "../merge/diagnostics.js";
 import type { DraftEndpointFact } from "../merge/merge-table.js";
 import { deriveResolution } from "../merge/resolution.js";
 import { canonicalPath } from "../openapi/path-grammar.js";
 import { argumentFor, keywordArguments } from "./argument-selector.js";
 import { verbsOfHandler } from "./handler-verbs.js";
+import {
+	pythonServeAnchors,
+	siteKey,
+	type ServeAnchors,
+} from "./python/serve-anchor.js";
 
 export type PythonDslRequest = {
 	readonly unit: AnalysisUnit;
 	readonly parser: ISourceParser;
 	readonly routers: readonly DeclaredRouter[];
 };
+
+export type PythonDslResult = {
+	readonly facts: readonly DraftEndpointFact[];
+	readonly diagnostics: readonly Diagnostic[];
+};
+
+const UNANCHORED: ValueIr = { kind: "unknown", reason: "unanchored_router" };
 
 type ModuleView = {
 	readonly file: ParsedFile;
@@ -48,16 +62,49 @@ type ModuleView = {
  */
 export function detectPythonDslRoutes(
 	request: PythonDslRequest,
-): readonly DraftEndpointFact[] {
+): PythonDslResult {
 	if (request.routers.length === 0) {
-		return [];
+		return { facts: [], diagnostics: [] };
 	}
 	const modules = parseModules(request);
+	const anchors = pythonServeAnchors(modules);
 	const drafts: DraftEndpointFact[] = [];
+	const sites: DiagnosticSite[] = [];
 	for (const view of modules.values()) {
-		drafts.push(...routesOfModule(view, modules, request.routers));
+		drafts.push(
+			...routesOfModule(view, modules, request.routers, anchors, sites),
+		);
 	}
-	return drafts;
+	return {
+		facts: drafts,
+		diagnostics: mergeDiagnostics([
+			...sites,
+			...unresolvedSites(anchors, modules),
+		]),
+	};
+}
+
+/**
+ * A serving call whose application resolves nowhere leaves the routes it would
+ * have anchored unanchored, so it fails check mode on the code alone.
+ */
+function unresolvedSites(
+	anchors: ServeAnchors,
+	modules: ReadonlyMap<string, ModuleView>,
+): readonly DiagnosticSite[] {
+	return anchors.unresolved.flatMap((call) => {
+		const view = modules.get(call.relPath);
+		return view === undefined
+			? []
+			: [
+					{
+						code: "serve_root_unresolved" as const,
+						canonicalCallee: call.symbol,
+						shape: { arity: 1, receiver_type: null },
+						anchor: anchorOf(call.node, view),
+					},
+				];
+	});
 }
 
 function parseModules(request: PythonDslRequest): Map<string, ModuleView> {
@@ -84,6 +131,8 @@ function routesOfModule(
 	view: ModuleView,
 	modules: ReadonlyMap<string, ModuleView>,
 	routers: readonly DeclaredRouter[],
+	anchors: ServeAnchors,
+	sites: DiagnosticSite[],
 ): DraftEndpointFact[] {
 	const drafts: DraftEndpointFact[] = [];
 	for (const call of findAll(
@@ -98,11 +147,35 @@ function routesOfModule(
 		if (router === null) {
 			continue;
 		}
+		const isAnchored = anchors.anchored.has(siteKey(view.file.relPath, call));
+		if (!isAnchored) {
+			sites.push(unanchoredSite(call, view, router));
+		}
 		drafts.push(
-			...draftsFor({ call, callee: callee.text, view, modules, router }),
+			...draftsFor({
+				call,
+				callee: callee.text,
+				view,
+				modules,
+				router,
+				isAnchored,
+			}),
 		);
 	}
 	return drafts;
+}
+
+function unanchoredSite(
+	call: SyntaxNode,
+	view: ModuleView,
+	router: DeclaredRouter,
+): DiagnosticSite {
+	return {
+		code: "unanchored_router",
+		canonicalCallee: router.dsl,
+		shape: { arity: 2, receiver_type: null },
+		anchor: anchorOf(call, view),
+	};
 }
 
 /**
@@ -151,6 +224,7 @@ type DraftRequest = {
 	readonly view: ModuleView;
 	readonly modules: ReadonlyMap<string, ModuleView>;
 	readonly router: DeclaredRouter;
+	readonly isAnchored: boolean;
 };
 
 function draftsFor(request: DraftRequest): DraftEndpointFact[] {
@@ -170,7 +244,9 @@ function draftsFor(request: DraftRequest): DraftEndpointFact[] {
 	if (literal === null) {
 		return [];
 	}
-	const path = canonicalPath([prefixOf(request), literal]);
+	const path: ValueIr = request.isAnchored
+		? { kind: "literal", value: canonicalPath([prefixOf(request), literal]) }
+		: UNANCHORED;
 	const anchor = anchorOf(request.call, request.view);
 	const verbs = verbsOfHandler({
 		handlerNode: handlerNodeFor(request, positional, keywords),
@@ -234,7 +310,7 @@ function anchorOf(node: SyntaxNode, view: ModuleView): SourceAnchor {
 }
 
 type EndpointDraftRequest = {
-	readonly path: string;
+	readonly path: ValueIr;
 	readonly method: ValueIr;
 	readonly anchor: SourceAnchor;
 };
@@ -245,7 +321,7 @@ function endpointDraft(request: EndpointDraftRequest): DraftEndpointFact {
 			{
 				http: {
 					method: request.method,
-					path: { kind: "literal", value: request.path } as const,
+					path: request.path,
 				},
 			},
 		],

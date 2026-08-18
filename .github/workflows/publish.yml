@@ -20,6 +20,8 @@ jobs:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
       - run: npm ci
+      # Proves the committed constants before a build regenerates them.
+      - run: node scripts/emit-build-digest.mjs --check
       - run: npm run build --if-present
       - run: npm test --if-present
       - run: npm publish --provenance

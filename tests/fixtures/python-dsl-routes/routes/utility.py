@@ -1,4 +1,4 @@
-from vendor.sendr_aiohttp import ShiftedUrl, Url
+from vendor.routing_dsl import ShiftedUrl, Url
 
 from handlers.utility import DecoratedHandler, PingHandler
 

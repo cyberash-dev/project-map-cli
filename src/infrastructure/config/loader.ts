@@ -263,6 +263,11 @@ function resolveDetect(raw: ConfigFile): DetectConfig {
 				verbFrom: entry.verb_from,
 				identityPreserving: entry.identity_preserving,
 			})),
+			serveRoots: raw.detect.inbound.serve_roots.map((entry) => ({
+				function: entry.function,
+				result: entry.result,
+				mount: entry.mount,
+			})),
 		},
 		outbound: {
 			sinks: raw.detect.outbound.sinks.map(resolveSink),

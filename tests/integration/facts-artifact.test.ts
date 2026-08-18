@@ -108,8 +108,8 @@ describe("specification version alignment", () => {
 		const detectionCorrection = normativeRecord(deltas, "project-map:DLT-011");
 		const mapCorrection = normativeRecord(deltas, "project-map:DLT-013");
 
-		expect(cliSurface).toContain('version: "2.0.0"');
-		expect(mapSurface).toContain('version: "3.0.0"');
+		expect(cliSurface).toContain('version: "3.0.0"');
+		expect(mapSurface).toContain('version: "3.1.0"');
 		expect(configurationDelta).toContain('intended_version: "2.0.0"');
 		expect(detectionDelta).toContain('intended_version: "2.0.0"');
 		expect(policyDelta).toMatch(

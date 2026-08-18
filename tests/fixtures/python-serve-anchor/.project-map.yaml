@@ -1,0 +1,30 @@
+project:
+  name: served
+  language: python
+
+repository_identity: sample/served
+
+sections: []
+
+analysis_unit:
+  sources:
+    include: ["**/*.py"]
+
+detect:
+  inbound:
+    routers:
+      - dsl: "routing_dsl.PrefixedUrl"
+        path_arg: { kind: arg, selector: 0 }
+        prefix_from: { kind: class_const, selector: "PREFIX" }
+        verb_from:
+          kind: handler_methods
+          handler: { kind: arg, selector: 1 }
+      - dsl: "routing_dsl.Url"
+        path_arg: { kind: arg, selector: 0 }
+        verb_from:
+          kind: handler_methods
+          handler: { kind: arg, selector: 1 }
+
+output:
+  markdown: PROJECT_MAP.md
+  facts: .project-map/facts.json

@@ -39,14 +39,14 @@ describe("canonical array ordering", () => {
 	it("orders contract refs by contract id, then operation id", () => {
 		const shuffled: readonly ContractRef[] = [
 			{ contract_id: "pay.v1", operation_id: "b" },
-			{ contract_id: "midas.v2", operation_id: "z" },
+			{ contract_id: "orders-api.v2", operation_id: "z" },
 			{ contract_id: "pay.v1", operation_id: "a" },
 		];
 
 		const ordered = orderContractRefs(shuffled);
 
 		expect(ordered.map((r) => `${r.contract_id}/${r.operation_id}`)).toEqual([
-			"midas.v2/z",
+			"orders-api.v2/z",
 			"pay.v1/a",
 			"pay.v1/b",
 		]);

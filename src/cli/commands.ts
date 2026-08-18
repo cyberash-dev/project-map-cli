@@ -16,7 +16,10 @@ import {
 	versionUseCase,
 } from "./container.js";
 import type { ResolvedConfig } from "../core/ports/config.port.js";
-import { DETECTOR_SOURCE_DIGEST } from "../features/detect/registry/build-digest.generated.js";
+import {
+	ADAPTER_REGISTRY_DIGEST,
+	ANALYZER_BUILD_DIGEST,
+} from "../features/detect/registry/build-digest.generated.js";
 import {
 	renderFactsArtifact,
 	renderFactsSidecar,
@@ -392,7 +395,7 @@ async function detectFacts(
 		cwd: process.cwd(),
 		config,
 		specLocators: config.openapi.serves.map((entry) => entry.spec),
-		registryVersion: DETECTOR_SOURCE_DIGEST,
+		registryVersion: ADAPTER_REGISTRY_DIGEST,
 	});
 	const factSet = detectUseCase(container.parser).execute({
 		unit,
@@ -406,8 +409,8 @@ async function detectFacts(
 		artifact: renderFactsArtifact({
 			repositoryIdentity: unit.repositoryIdentity,
 			unitDigest: unit.digest,
-			analyzerBuildDigest: DETECTOR_SOURCE_DIGEST,
-			registryDigest: DETECTOR_SOURCE_DIGEST,
+			analyzerBuildDigest: ANALYZER_BUILD_DIGEST,
+			registryDigest: ADAPTER_REGISTRY_DIGEST,
 			facts: factSet.facts,
 			diagnostics: factSet.diagnostics,
 			coverage: factSet.coverage,
@@ -496,8 +499,8 @@ async function artifactOutcome(request: CheckRequest): Promise<CheckOutcome> {
 	return checkFactsArtifact({
 		committed,
 		built: request.detection.artifact,
-		analyzerBuildDigest: DETECTOR_SOURCE_DIGEST,
-		registryDigest: DETECTOR_SOURCE_DIGEST,
+		analyzerBuildDigest: ANALYZER_BUILD_DIGEST,
+		registryDigest: ADAPTER_REGISTRY_DIGEST,
 		factSet: request.detection.factSet,
 	});
 }
@@ -546,7 +549,7 @@ async function reportUnitDigest(opts: FactsOptions): Promise<void> {
 		cwd: process.cwd(),
 		config,
 		specLocators: config.openapi.serves.map((entry) => entry.spec),
-		registryVersion: DETECTOR_SOURCE_DIGEST,
+		registryVersion: ADAPTER_REGISTRY_DIGEST,
 	});
 	process.stdout.write(`${unit.digest}\n`);
 }

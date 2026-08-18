@@ -18,16 +18,16 @@ function indexOf(source: string) {
 describe("python import index", () => {
 	/* @covers project-map:BEH-008 */
 	it("resolves a plain from-import to its module and original name", () => {
-		const index = indexOf("from a.b.sendr_aiohttp import PrefixedUrl\n");
+		const index = indexOf("from a.b.routing_dsl import PrefixedUrl\n");
 
-		expect(index.originOf("PrefixedUrl")).toBe("a.b.sendr_aiohttp.PrefixedUrl");
+		expect(index.originOf("PrefixedUrl")).toBe("a.b.routing_dsl.PrefixedUrl");
 	});
 
 	/* @covers project-map:BEH-008 */
 	it("resolves an aliased import to the original name, not the alias", () => {
-		const index = indexOf("from a.b.sendr_aiohttp import Url as PureUrl\n");
+		const index = indexOf("from a.b.routing_dsl import Url as PureUrl\n");
 
-		expect(index.originOf("PureUrl")).toBe("a.b.sendr_aiohttp.Url");
+		expect(index.originOf("PureUrl")).toBe("a.b.routing_dsl.Url");
 		expect(index.originOf("Url")).toBeNull();
 	});
 

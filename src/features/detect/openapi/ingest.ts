@@ -72,7 +72,7 @@ export function ingestServedContracts(request: IngestRequest): IngestResult {
 	return {
 		drafts,
 		facts,
-		diagnostics: [...diagnostics, ...notInCodeDiagnostics(facts)],
+		diagnostics,
 	};
 }
 
@@ -136,34 +136,4 @@ function unreadableDiagnostic(locator: string): Diagnostic {
 		evidence: [],
 		count: 1,
 	};
-}
-
-/**
- * Every inventory fact whose handler stayed unknown is a route the code half
- * did not reach. They aggregate into one diagnostic per served contract.
- */
-function notInCodeDiagnostics(
-	facts: readonly EndpointFact[],
-): readonly Diagnostic[] {
-	const byContract = new Map<string, number>();
-	for (const fact of facts) {
-		if (fact.handler.kind !== "unknown") {
-			continue;
-		}
-		for (const ref of fact.contract_refs) {
-			byContract.set(
-				ref.contract_id,
-				(byContract.get(ref.contract_id) ?? 0) + 1,
-			);
-		}
-	}
-	return [...byContract.entries()]
-		.sort(([left], [right]) => (left < right ? -1 : 1))
-		.map(([contractId, count]) => ({
-			code: "openapi_route_not_in_code" as const,
-			canonical_callee: contractId,
-			canonical_call_shape: { arity: 0, receiver_type: null },
-			evidence: [],
-			count,
-		}));
 }

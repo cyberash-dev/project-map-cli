@@ -1,0 +1,26 @@
+project:
+  name: go-serve-root-layered
+  language: go
+
+repository_identity: sample/go-serve-root-layered
+
+sections: []
+
+analysis_unit:
+  sources:
+    include: ["**/*.go"]
+
+detect:
+  inbound:
+    serve_roots:
+      - function: "internal/api.NewRouter"
+        result: 0
+        mount: "/api"
+    routers:
+      - dsl: "github.com/go-chi/chi/v5"
+        path_arg: { kind: arg, selector: 0 }
+        identity_preserving: []
+
+output:
+  markdown: PROJECT_MAP.md
+  facts: .project-map/facts.json

@@ -1,0 +1,11 @@
+openapi: 3.1.0
+info:
+  title: pay
+  version: "1"
+paths:
+  /pay/v1/screens/cart:
+    post:
+      operationId: getCartScreen
+      responses:
+        "200":
+          description: ok

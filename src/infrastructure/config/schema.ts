@@ -30,6 +30,44 @@ const IdentityPreservingSchema = z
 		message: "an identity_preserving entry with `from: arg` requires `index`",
 	});
 
+/**
+ * The declaration a router reaches the outside through. A glob would name a set
+ * and the anchor has to name one position, so glob syntax is refused here
+ * rather than resolved to whichever declaration happened to match.
+ */
+const ServeRootSchema = z.object({
+	function: z
+		.string()
+		.min(1)
+		.refine((symbol) => !/[*?[\]]/.test(symbol), {
+			message: "a serve_roots `function` names one symbol and carries no glob",
+		}),
+	result: z.number().int().min(0),
+	mount: z.string().startsWith("/", {
+		message: "a serve_roots `mount` is an absolute prefix and starts with `/`",
+	}),
+});
+
+type ServeRootEntry = z.infer<typeof ServeRootSchema>;
+
+function duplicateServeRoot(
+	entries: readonly ServeRootEntry[],
+	ctx: z.RefinementCtx,
+): void {
+	const seen = new Set<string>();
+	entries.forEach((entry, index) => {
+		const key = `${entry.function}#${entry.result}#${entry.mount}`;
+		if (seen.has(key)) {
+			ctx.addIssue({
+				code: "custom",
+				path: [index],
+				message: `serve_roots declares ${entry.function} at ${entry.mount} twice`,
+			});
+		}
+		seen.add(key);
+	});
+}
+
 /** A bare string names a member and inherits every sink-level binding. */
 const SinkCallSchema = z
 	.union([
@@ -203,6 +241,10 @@ export const ConfigFileSchema = z
 				unclassified_baseline: z.string().min(1).nullable().default(null),
 				inbound: z
 					.object({
+						serve_roots: z
+							.array(ServeRootSchema)
+							.default([])
+							.superRefine(duplicateServeRoot),
 						routers: z
 							.array(
 								z.object({
@@ -223,7 +265,7 @@ export const ConfigFileSchema = z
 							)
 							.default([]),
 					})
-					.default({ routers: [] }),
+					.default({ routers: [], serve_roots: [] }),
 				outbound: z
 					.object({
 						sinks: z.array(SinkSchema).default([]),
@@ -248,7 +290,7 @@ export const ConfigFileSchema = z
 			})
 			.default({
 				unclassified_baseline: null,
-				inbound: { routers: [] },
+				inbound: { routers: [], serve_roots: [] },
 				outbound: { sinks: [], registry: [], module_ids: [] },
 			}),
 		analysis_unit: z
@@ -280,7 +322,10 @@ function requireIdentityWhereFactsAreEmitted(
 		repository_identity: string | null;
 		openapi: { serves: readonly unknown[]; consumes: readonly unknown[] };
 		detect: {
-			inbound: { routers: readonly unknown[] };
+			inbound: {
+				routers: readonly unknown[];
+				serve_roots: readonly unknown[];
+			};
 			outbound: {
 				sinks: readonly unknown[];
 				registry: readonly unknown[];
@@ -297,6 +342,7 @@ function requireIdentityWhereFactsAreEmitted(
 		document.openapi.serves.length > 0 ||
 		document.openapi.consumes.length > 0 ||
 		document.detect.inbound.routers.length > 0 ||
+		document.detect.inbound.serve_roots.length > 0 ||
 		document.detect.outbound.sinks.length > 0 ||
 		document.detect.outbound.registry.length > 0 ||
 		document.detect.outbound.module_ids.length > 0;

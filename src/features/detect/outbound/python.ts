@@ -365,12 +365,7 @@ function declaredTier(
 	return outboundDraft({
 		provenance: "declared",
 		method: declaredMethod(site, match),
-		path: canonicalPathIr([
-			foldPythonValue(
-				provenPath(composed, site, context),
-				context.view.imports,
-			),
-		]),
+		path: canonicalPathIr([provenPath(composed, site, context, proofPath())]),
 		destinations:
 			join === null ? destinations : inLibraryDestinations(destinations),
 		ownerOperation: site.ownerOperation,
@@ -537,6 +532,24 @@ function throughPathVia(
 	);
 }
 
+/** Bounds one proof path of project-map:CTR-007 to three def-use edges. */
+const MAX_PROOF_STEPS = 3;
+
+type ProofPath = {
+	readonly seen: Set<string>;
+	readonly steps: number;
+};
+
+function proofPath(): ProofPath {
+	return { seen: new Set(), steps: 0 };
+}
+
+/* A call and its leftmost receiver share a start offset, so the span alone
+ * would read `x.format(y)` and `x` as one node. */
+function nodeKey(node: SyntaxNode): string {
+	return `${node.startIndex}:${node.endIndex}:${node.type}`;
+}
+
 /**
  * Follows a path argument back to the literal it was built from: a local name
  * to the expression that bound it, a template call to the template it formats,
@@ -546,20 +559,35 @@ function provenPath(
 	node: SyntaxNode | null,
 	site: CallSite,
 	context: Context,
-): SyntaxNode | null {
+	path: ProofPath,
+): ValueIr {
 	if (node === null) {
-		return null;
+		return { kind: "unknown", reason: "dynamic" };
 	}
-	if (node.type === "identifier") {
-		return provenPath(localBinding(site.call, node.text), site, context);
+	const key = nodeKey(node);
+	if (path.seen.has(key)) {
+		return { kind: "unknown", reason: "recursive" };
 	}
+	path.seen.add(key);
 	if (node.type === "call") {
-		return provenPath(templateOfCall(node), site, context);
+		return provenPath(templateOfCall(node), site, context, path);
 	}
 	if (node.type === "attribute") {
-		return classConstant(node, site, context);
+		return foldPythonValue(
+			classConstant(node, site, context),
+			context.view.imports,
+		);
 	}
-	return node;
+	if (node.type !== "identifier") {
+		return foldPythonValue(node, context.view.imports);
+	}
+	if (path.steps >= MAX_PROOF_STEPS) {
+		return { kind: "unknown", reason: "depth_exceeded" };
+	}
+	return provenPath(localBinding(site.call, node.text), site, context, {
+		seen: path.seen,
+		steps: path.steps + 1,
+	});
 }
 
 /** The template a formatting call renders; the arguments become holes. */

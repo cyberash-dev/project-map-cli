@@ -175,8 +175,25 @@ export type ClientRegistry = {
 	readonly access: string;
 };
 
+/**
+ * Where a router reaches the outside. The analysis proves the value at the
+ * declared position; the declaration names the position and nothing else, so it
+ * is a trust input of the same class as `identity_preserving`.
+ */
+export type ServeRoot = {
+	/** The exact import-qualified symbol of a declaration inside the unit. */
+	readonly function: string;
+	/** Index of the returned value that holds the router. */
+	readonly result: number;
+	/** Absolute prefix that router is exposed under. */
+	readonly mount: string;
+};
+
 export type DetectConfig = {
-	readonly inbound: { readonly routers: readonly DeclaredRouter[] };
+	readonly inbound: {
+		readonly routers: readonly DeclaredRouter[];
+		readonly serveRoots: readonly ServeRoot[];
+	};
 	readonly outbound: {
 		readonly sinks: readonly DeclaredSink[];
 		readonly registry: readonly ClientRegistry[];

@@ -6,7 +6,7 @@ import type {
 import { factId } from "../../src/features/detect/canonical/fact-id.js";
 
 const SCHEMA_VERSION = "1";
-const REPOSITORY = "midas";
+const REPOSITORY = "orders-api";
 
 function anOutboundFact(
 	overrides: Partial<OutboundOperationFact> = {},

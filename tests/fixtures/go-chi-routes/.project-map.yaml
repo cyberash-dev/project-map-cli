@@ -12,6 +12,10 @@ analysis_unit:
 
 detect:
   inbound:
+    serve_roots:
+      - function: "internal/api.Build"
+        result: 0
+        mount: "/"
     routers:
       - dsl: "github.com/go-chi/chi/v5"
         path_arg: { kind: arg, selector: 0 }

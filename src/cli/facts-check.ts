@@ -43,7 +43,9 @@ export function checkFactsArtifact(check: ArtifactCheck): CheckOutcome {
 
 /**
  * Read off the committed bytes rather than the sidecar: check mode never opens
- * the sidecar, so a fingerprint it carried would be invisible here.
+ * the sidecar, so a fingerprint it carried would be invisible here. An artifact
+ * naming no fingerprint is a fingerprint failure, not drift: a consumer told to
+ * reconcile bytes would rebuild against an analyzer the artifact never named.
  */
 function fingerprintMismatch(check: ArtifactCheck): string | null {
 	if (check.committed === null) {
@@ -51,10 +53,16 @@ function fingerprintMismatch(check: ArtifactCheck): string | null {
 	}
 	const committed = parse(check.committed);
 	if (committed === null) {
-		return null;
+		return "the committed artifact carries no fingerprint";
+	}
+	if (committed.analyzer === null) {
+		return "the committed artifact names no analyzer build";
 	}
 	if (committed.analyzer !== check.analyzerBuildDigest) {
 		return "the committed artifact names another analyzer build";
+	}
+	if (committed.registry === null) {
+		return "the committed artifact names no adapter registry";
 	}
 	if (committed.registry !== check.registryDigest) {
 		return "the committed artifact names another adapter registry";
@@ -62,19 +70,21 @@ function fingerprintMismatch(check: ArtifactCheck): string | null {
 	return null;
 }
 
-function parse(
-	content: string,
-): { readonly analyzer: string; readonly registry: string } | null {
+type Fingerprints = {
+	readonly analyzer: string | null;
+	readonly registry: string | null;
+};
+
+function parse(content: string): Fingerprints | null {
 	try {
 		const document: unknown = JSON.parse(content);
 		if (typeof document !== "object" || document === null) {
 			return null;
 		}
-		const analyzer = readString(document, "analyzer_build_digest");
-		const registry = readString(document, "adapter_registry_digest");
-		return analyzer === null || registry === null
-			? null
-			: { analyzer, registry };
+		return {
+			analyzer: readString(document, "analyzer_build_digest"),
+			registry: readString(document, "adapter_registry_digest"),
+		};
 	} catch {
 		return null;
 	}

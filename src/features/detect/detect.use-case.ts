@@ -15,6 +15,7 @@ import { ingestServedContracts } from "./openapi/ingest.js";
 import { detectGoOutbound } from "./outbound/go.js";
 import { detectPythonOutbound } from "./outbound/python.js";
 import { coverageOf } from "./merge/coverage.js";
+import { crossCheckDiagnostics } from "./merge/cross-check.js";
 import { FACTS_SCHEMA_VERSION } from "./render/artifact.js";
 
 export type FactSet = {
@@ -51,9 +52,11 @@ export class DetectFactsUseCase {
 			unit: request.unit,
 			parser: this.parser,
 			routers: request.detect.inbound.routers,
+			serveRoots: request.detect.inbound.serveRoots,
 		};
 		const goRouted = detectGoRouterRoutes(inbound);
-		const routed = [...detectPythonDslRoutes(inbound), ...goRouted.facts];
+		const pythonRouted = detectPythonDslRoutes(inbound);
+		const routed = [...pythonRouted.facts, ...goRouted.facts];
 		/*
 		 * Stage three: the inventory and the code registrations are reconciled
 		 * by semantic core rather than raced, so a route declared in both
@@ -88,9 +91,14 @@ export class DetectFactsUseCase {
 			facts: [...endpoints, ...operations],
 			diagnostics: [
 				...inventory.diagnostics,
+				...pythonRouted.diagnostics,
 				...goRouted.diagnostics,
 				...outbound.diagnostics,
 				...goOutbound.diagnostics,
+				...crossCheckDiagnostics({
+					endpoints,
+					hasInventory: request.openapi.serves.length > 0,
+				}),
 			],
 			coverage: coverageOf({
 				endpoints,

@@ -19,7 +19,7 @@ function aUnit(
 	specs: readonly { locator: string; text: string }[],
 ): AnalysisUnit {
 	return {
-		repositoryIdentity: "midas",
+		repositoryIdentity: "orders-api",
 		sources: [],
 		configDocuments: [],
 		specs,
@@ -53,7 +53,7 @@ describe("openapi inventory ingestion", () => {
 	it("emits one fact per declared path and method", () => {
 		const unit = aUnit([{ locator: "repo:openapi.yaml", text: ORDERS_SPEC }]);
 
-		const result = ingest(unit, [serves("repo:openapi.yaml", "midas.v2")]);
+		const result = ingest(unit, [serves("repo:openapi.yaml", "orders-api.v2")]);
 
 		expect(result.facts).toHaveLength(2);
 		expect(
@@ -66,7 +66,7 @@ describe("openapi inventory ingestion", () => {
 		const unit = aUnit([{ locator: "repo:openapi.yaml", text: ORDERS_SPEC }]);
 
 		const result = ingest(unit, [
-			serves("repo:openapi.yaml", "midas.v2", "/v2"),
+			serves("repo:openapi.yaml", "orders-api.v2", "/v2"),
 		]);
 
 		const paths = result.facts.flatMap((fact) =>
@@ -83,7 +83,7 @@ describe("openapi inventory ingestion", () => {
 	it("falls back to method and canonical path where the document names no operation", () => {
 		const unit = aUnit([{ locator: "repo:openapi.yaml", text: ORDERS_SPEC }]);
 
-		const result = ingest(unit, [serves("repo:openapi.yaml", "midas.v2")]);
+		const result = ingest(unit, [serves("repo:openapi.yaml", "orders-api.v2")]);
 
 		const ids = result.facts
 			.flatMap((fact) => fact.contract_refs.map((ref) => ref.operation_id))
@@ -94,10 +94,11 @@ describe("openapi inventory ingestion", () => {
 
 describe("openapi inventory reconciliation", () => {
 	/* @covers project-map:BEH-007 */
-	it("leaves the handler unknown and raises a diagnostic per served route", () => {
+	/* @covers project-map:DLT-042 */
+	it("leaves the handler unknown and reconciles nothing on its own", () => {
 		const unit = aUnit([{ locator: "repo:openapi.yaml", text: ORDERS_SPEC }]);
 
-		const result = ingest(unit, [serves("repo:openapi.yaml", "midas.v2")]);
+		const result = ingest(unit, [serves("repo:openapi.yaml", "orders-api.v2")]);
 
 		expect(result.facts.every((fact) => fact.handler.kind === "unknown")).toBe(
 			true,
@@ -106,7 +107,7 @@ describe("openapi inventory reconciliation", () => {
 			result.diagnostics.filter(
 				(diagnostic) => diagnostic.code === "openapi_route_not_in_code",
 			),
-		).toHaveLength(1);
+		).toHaveLength(0);
 	});
 
 	/* @covers project-map:BEH-007 */
@@ -118,8 +119,8 @@ describe("openapi inventory reconciliation", () => {
 		]);
 
 		const result = ingest(unit, [
-			serves("repo:a.yaml", "midas.v2"),
-			serves("repo:b.yaml", "midas.internal"),
+			serves("repo:a.yaml", "orders-api.v2"),
+			serves("repo:b.yaml", "orders-api.internal"),
 		]);
 
 		expect(result.facts).toHaveLength(2);
@@ -127,8 +128,8 @@ describe("openapi inventory reconciliation", () => {
 			fact.contract_refs.some((ref) => ref.operation_id === "listOrders"),
 		);
 		expect(listOrders?.contract_refs.map((ref) => ref.contract_id)).toEqual([
-			"midas.internal",
-			"midas.v2",
+			"orders-api.internal",
+			"orders-api.v2",
 		]);
 		expect(listOrders?.resolution).toBe("resolved");
 	});
@@ -141,8 +142,8 @@ describe("openapi inventory reconciliation", () => {
 		]);
 
 		const result = ingest(unit, [
-			serves("repo:a.yaml", "midas.v2"),
-			serves("repo:b.yaml", "midas.v2"),
+			serves("repo:a.yaml", "orders-api.v2"),
+			serves("repo:b.yaml", "orders-api.v2"),
 		]);
 
 		expect(
@@ -177,7 +178,7 @@ describe("openapi inventory reconciliation", () => {
 	it("orders facts by their identity", () => {
 		const unit = aUnit([{ locator: "repo:openapi.yaml", text: ORDERS_SPEC }]);
 
-		const result = ingest(unit, [serves("repo:openapi.yaml", "midas.v2")]);
+		const result = ingest(unit, [serves("repo:openapi.yaml", "orders-api.v2")]);
 
 		const ids = result.facts.map((fact) => fact.id);
 		expect([...ids].sort()).toEqual(ids);

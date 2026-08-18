@@ -10,6 +10,10 @@ export const DIAGNOSTIC_CODES = [
 	"openapi_spec_unreadable",
 	"openapi_route_not_in_code",
 	"generated_operation_unresolved",
+	"router_mount_unresolved",
+	"unanchored_router",
+	"serve_root_unresolved",
+	"router_route_not_in_openapi",
 ] as const;
 
 export type DiagnosticCode = (typeof DIAGNOSTIC_CODES)[number];
@@ -18,6 +22,7 @@ export type DiagnosticCode = (typeof DIAGNOSTIC_CODES)[number];
 export const MANDATORY_CHECK_CODES: ReadonlySet<DiagnosticCode> = new Set([
 	"selector_unresolved",
 	"marker_invalid",
+	"serve_root_unresolved",
 ]);
 
 /** Arity and the proven receiver type: what makes two call sites one shape. */

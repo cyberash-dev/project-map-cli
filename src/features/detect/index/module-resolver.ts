@@ -27,8 +27,8 @@ export function resolveModulePath(
 
 /**
  * Whether a configured type matches a resolved origin. Matching is on whole
- * dotted segments from the right, so `sendr_aiohttp.Url` matches
- * `vendor.sendr_aiohttp.Url` and never `other_sendr_aiohttp.Url`.
+ * dotted segments from the right, so `routing_dsl.Url` matches
+ * `vendor.routing_dsl.Url` and never `other_routing_dsl.Url`.
  */
 export function originMatches(configured: string, origin: string): boolean {
 	if (configured === origin) {

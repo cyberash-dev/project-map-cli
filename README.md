@@ -47,14 +47,15 @@ The reworked detection behind `endpoints` / `interactions` recognises code by
 import provenance and declared configuration, never by identifier names. It
 replaced the prior name-shaped extractors in 1.0.0.
 
-| Mechanism                | Python                                     | Go                             |
-| ------------------------ | ------------------------------------------ | ------------------------------ |
-| Inbound, from a spec     | `openapi.serves[]` — any language          | same                           |
-| Inbound, from code       | declaration DSL (`detect.inbound.routers`) | router values (chi and alikes) |
-| Outbound, generated      | `openapi.consumes[]` modules               | —                              |
-| Outbound, transport      | requests, aiohttp, httpx, urllib3          | —                              |
-| Outbound, declared sink  | `detect.outbound.sinks[]`                  | `detect.outbound.sinks[]`      |
-| Outbound, shared library | `detect.outbound.module_ids[]`             | —                              |
+| Mechanism                | Python                                     | Go                                         |
+| ------------------------ | ------------------------------------------ | ------------------------------------------ |
+| Inbound, from a spec     | `openapi.serves[]` — any language          | same                                       |
+| Inbound, from code       | declaration DSL (`detect.inbound.routers`) | router values: chi, `net/http.ServeMux`    |
+| Inbound, serve anchor    | derived from `aiohttp.web.run_app`         | declared in `detect.inbound.serve_roots[]` |
+| Outbound, generated      | `openapi.consumes[]` modules               | —                                          |
+| Outbound, transport      | requests, aiohttp, httpx, urllib3          | —                                          |
+| Outbound, declared sink  | `detect.outbound.sinks[]`                  | `detect.outbound.sinks[]`                  |
+| Outbound, shared library | `detect.outbound.module_ids[]`             | —                                          |
 
 ## Architecture
 
@@ -72,12 +73,15 @@ src/
     detect/                            # Structural detection → facts.json
       detect.use-case.ts
       canonical/                       # RFC 8785 JCS, array order, fact identity
-      index/                           # Import, declaration and hierarchy indexes
+      index/                           # Import, declaration, package and hierarchy indexes
       value/                           # Value normalizer (literal, config_ref, …)
       openapi/                         # Inventory ingest + canonical path grammar
       inbound/                         # Route registration adapters, per language
+        go/                            #   chi, net/http.ServeMux, serve roots, router scope
+        python/                        #   serve anchors derived from the serving call
       outbound/                        # Classification ladder, per language
-      merge/                           # Semantic core, merge table, coverage
+      merge/                           # Semantic core, merge table, coverage, cross-check
+      registry/                        # Generated build digests (emit-build-digest.mjs)
       render/                          # Artifact and sidecar emission
     build/
       build.use-case.ts                # Composition of all extractor slices
@@ -95,7 +99,7 @@ src/
       rendering/
         markdown.ts                    # mdast → GFM
         json.ts
-        detection-sections.ts          # The three opt-in detection sections
+        detection-sections.ts          # The two opt-in detection sections
     version/
   infrastructure/                      # Adapter implementations for each port
     parser/
@@ -181,10 +185,12 @@ project-map version
 | 3    | the committed facts artifact names another analyzer build or adapter registry |
 | 4    | the build raised a mandatory check diagnostic                                 |
 | 5    | a config-time error, raised before any build runs                             |
+| 6    | `--strict` found a diagnostic the unclassified baseline does not cover        |
+| 7    | the installed CLI is below the repository's `min_tool_version`                |
 
 3 outranks 1: a fingerprint difference accounts for every byte difference
-downstream of it. 4 is independent of the committed bytes. 6 is reachable only
-with `--strict`.
+downstream of it. 4 is independent of the committed bytes. 7 is raised before
+anything beyond the configuration is read.
 
 ### Adopting detection on a repository that already has diagnostics
 
@@ -281,7 +287,7 @@ built-in adapter: every fact comes from `openapi.serves`,
 configures none renders both sections empty.
 
 ```yaml
-repository_identity: arcadia/billing/my_service # required once detection is on
+repository_identity: example-org/my-service # required once detection is on
 
 sections:
   - endpoints # H2 "HTTP endpoints" — inbound facts
@@ -304,8 +310,12 @@ openapi:
 
 detect:
   inbound:
+    serve_roots: # Go only; Python derives its anchor, see below
+      - function: "example-org/my-service/internal/api.NewRouter"
+        result: 0 # which returned value is the router
+        mount: "/" # the absolute prefix it is exposed under
     routers:
-      - dsl: "sendr_aiohttp.PrefixedUrl" # matched by import origin, not name
+      - dsl: "routing_dsl.PrefixedUrl" # matched by import origin, not name
         path_arg: { kind: arg, selector: 0 }
         prefix_from: { kind: class_const, selector: PREFIX }
         verb_from:
@@ -316,7 +326,7 @@ detect:
           - { member: withStats, from: arg, index: 0 }
   outbound:
     sinks:
-      - base_type: "sendr_interactions.AbstractInteractionClient"
+      - base_type: "service_client.AbstractInteractionClient"
         call: [get, post, put, patch, delete]
         path_arg: { kind: arg, selector: url }
         path_via: { member: endpoint_url, arg: 0 } # helper joining path to target
@@ -325,8 +335,8 @@ detect:
       - container_type: "interactions.InteractionClients"
         access: "self.clients"
     module_ids: # a client type whose operations live in a library
-      - type: "pay.lib.interactions.split.client.AbstractYandexSplitClient"
-        module_id: "pay.lib.interactions.split"
+      - type: "acme.lib.interactions.billing.client.AbstractBillingClient"
+        module_id: "acme.lib.interactions.billing"
 
 output:
   facts: .project-map/facts.json
@@ -336,12 +346,61 @@ Selectors are a closed set of steps — `arg`, `field`, `class_const`, `receiver
 and a dotted `property-path`. A glob or a name pattern in a selector is a
 config-time error: matching by name is what this rework exists to remove.
 
+### An absolute route needs an anchor
+
+A router that no mount record reaches is not a composition root; it is a
+sub-router whose mount the analysis cannot see, and the two are one syntactic
+form. Publishing the second at a bare path is a fact that reads as proven and
+names a route the service does not serve, so it is refused: an absolute route
+is composed only downward from a serve anchor.
+
+- **Go** declares the anchor. `serve_roots[]` names the declaration a router
+  reaches the outside through, the index of the returned value that is the
+  router, and the absolute prefix it is exposed under. The returned value is
+  followed through up to three statically resolved call edges, so a root built
+  two calls below the declared symbol still anchors.
+- **Python** needs no configuration. A call resolving by import provenance to
+  `aiohttp.web.run_app` is the anchor; the application classes each branch of
+  the binding constructs are resolved, and the route collections their class
+  attributes hold — through tuples, splats, `+` concatenation, module constants
+  across imports and `Class.attr` references, first binding in MRO order — are
+  anchored at the root.
+
+A registration reaching no anchor is still emitted, with its path typed
+`unknown(unanchored_router)` and its source anchor, and raises the diagnostic of
+the same name. The partial prefix the analysis did prove is evidence and is not
+published: a suffix match is ambiguous wherever two mounts end in the same
+segments, and moving that ambiguity to the consumer does not remove it.
+
+`serve_root_unresolved` is raised where a declared symbol names no single
+declaration, where the `result` index lies outside the declaration's arity, or
+where the followed value is not a router. It is a **mandatory** check code:
+`build --check` exits 4 on it, on the code alone, without waiting for the bytes
+to drift.
+
+### Diagnostics the detection raises
+
+| Code                                 | Mandatory | Names                                                          |
+| ------------------------------------ | --------- | -------------------------------------------------------------- |
+| `serve_root_unresolved`              | yes       | a declared or derived anchor that resolved to no router        |
+| `unanchored_router`                  | no        | a registration whose router reached no anchor                  |
+| `router_mount_unresolved`            | no        | a mount whose sub-router did not resolve                       |
+| `router_route_not_in_openapi`        | no        | a route the code proved and the inventory does not declare     |
+| `openapi_route_not_in_code`          | no        | a served route the code half never registered                  |
+| `external_registration_unclassified` | no        | a registration inside the candidate universe nothing claimed   |
+| `external_call_unclassified`         | no        | an outbound call inside the candidate universe nothing claimed |
+
+The two cross-check codes are computed after the merge, one route at a time, so
+a route proven on both sides raises neither. No configuration suppresses them: a
+suppression flag that goes stale silently disables the cross-check. Use
+`--strict` and the unclassified baseline to ratchet instead.
+
 ### The facts artifact
 
 ```jsonc
 {
 	"schema_version": "1",
-	"repository_identity": "arcadia/billing/my_service",
+	"repository_identity": "example-org/my-service",
 	"analysis_unit_digest": "sha256:…", // what was read
 	"analyzer_build_digest": "sha256:…", // which analyzer read it
 	"adapter_registry_digest": "sha256:…", // with which adapters
@@ -360,9 +419,19 @@ not fold is `unknown(dynamic)`, a destination the repository does not bind is
 `unknown(operation_in_library_root)`, and each fact carries a `resolution` of
 `resolved`, `ambiguous`, `unresolved` or `conflicting`. Coverage denominators
 are honest — an axis nothing declares reports `unmeasured` rather than a
-completed fraction. The grade and the measures live in the artifact alone. The
-document renders neither: a coverage tally moves without the structure moving,
-and a row's grade only restates the `unknown(...)` cell already beside it.
+completed fraction. The grade and the measures live in the artifact alone; the
+document renders neither, because a coverage tally moves without the structure
+moving and a row's grade only restates the `unknown(...)` cell beside it.
+
+The artifact is the complete record; the document is the readable subset. Since
+3.0.0 the `HTTP endpoints` table renders only a route the analysis proved — a
+path that is a literal — because a row whose route is a hole names no route a
+reader can look up or compare against a specification. A row whose route is
+proven and whose method is not still renders: the route is what the section is
+read for. Everything filtered out stays in `facts.json` with its provenance,
+its evidence and its diagnostics, which is where `--check` and a linker read it.
+`External dependencies` is unfiltered — a dependency row names an owner and a
+call worth looking at whatever its route resolved to.
 
 The artifact carries no timestamp; the generation time and build duration live
 in `.project-map/facts.meta.json`, which `--check` never opens. Add the sidecar

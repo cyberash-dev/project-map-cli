@@ -1,0 +1,11 @@
+openapi: 3.1.0
+info:
+  title: drift
+  version: "1"
+paths:
+  /api/only-in-spec:
+    get:
+      operationId: onlyInSpec
+      responses:
+        "200":
+          description: ok

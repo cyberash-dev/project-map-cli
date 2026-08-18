@@ -40,6 +40,7 @@ async function seed(dir: string): Promise<void> {
 async function materializeAt(
 	dir: string,
 	specLocators: readonly string[] = [],
+	registryVersion = "test-registry-1",
 ): Promise<AnalysisUnit> {
 	const config = await new CosmiconfigLoader().load(dir, null);
 	if (!config) {
@@ -54,7 +55,7 @@ async function materializeAt(
 		cwd: dir,
 		config,
 		specLocators,
-		registryVersion: "test-registry-1",
+		registryVersion,
 	});
 }
 
@@ -99,6 +100,15 @@ describe("analysis unit materialization", () => {
 	});
 
 	/* @covers project-map:CTR-004 */
+	/* @covers project-map:DLT-033 */
+	it("digests one tree differently under another registry version", async () => {
+		const first = await materializeAt(workspace.dir, [], "test-registry-1");
+		const second = await materializeAt(workspace.dir, [], "test-registry-2");
+
+		expect(second.digest).not.toBe(first.digest);
+	});
+
+	/* @covers project-map:CTR-004 */
 	/* @covers project-map:INV-003 */
 	it("digests a copy at another absolute path identically", async () => {
 		const original = await materializeAt(workspace.dir);
@@ -109,6 +119,18 @@ describe("analysis unit materialization", () => {
 		await elsewhere.dispose();
 
 		expect(copied.digest).toBe(original.digest);
+	});
+});
+
+describe("what moves the analysis unit digest", () => {
+	let workspace: Workspace;
+
+	beforeEach(async () => {
+		workspace = await createWorkspace();
+		await seed(workspace.dir);
+	});
+	afterEach(async () => {
+		await workspace.dispose();
 	});
 
 	/* @covers project-map:DLT-030 */

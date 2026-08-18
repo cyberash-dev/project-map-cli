@@ -1,0 +1,32 @@
+project:
+  name: generated-go
+  language: go
+
+repository_identity: sample/generated-go
+
+sections: []
+
+analysis_unit:
+  sources:
+    include: ["**/*.go"]
+
+openapi:
+  serves:
+    - spec: repo:openapi/pay.yaml
+      contract_id: sample.pay.v1
+
+detect:
+  inbound:
+    serve_roots:
+      - function: "internal/api.Build"
+        result: 0
+        mount: "/"
+    routers:
+      - dsl: "github.com/go-chi/chi/v5"
+        path_arg: { kind: arg, selector: 0 }
+        identity_preserving:
+          - { member: withStats, from: arg, index: 0 }
+
+output:
+  markdown: PROJECT_MAP.md
+  facts: .project-map/facts.json
