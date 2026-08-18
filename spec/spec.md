@@ -157,8 +157,8 @@ coverage_evidence:
       Files under tests/ are inside scope so the token reacts to a
       change in the evidence, but they implement no normative ID and are
       therefore claimed by no Implementation binding footprint.
-freshness_token: 92fab145a3760782db4ff5c013fe1a3bd22959887ac4c6c16bab1bcf7e647939
-baseline_commit_sha: bd642d3df1334f5f78c9178cdc95ab3083245362
+freshness_token: 895929df9adbea5373295e95da952355e0c2d65ea12f5905176e4f6bc08874fa
+baseline_commit_sha: f79cade93822f527a3fcbd07c5f109133fa0acc0
 mechanism: git_tree_hash_v1
 notes: |
   The baseline carries no preserved as-is behavior by itself (SDD §6.3).
